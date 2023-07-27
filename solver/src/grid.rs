@@ -128,6 +128,13 @@ impl Grid {
             .collect()
     }
 
+    pub fn iter_by_cells(&self) -> Vec<CellPair> {
+        self.iter_by_rows()
+            .into_iter()
+            .flat_map(|row| row.into_iter())
+            .collect()
+    }
+
     pub fn line_to_compartments(vertical: bool, line: Vec<CellPair>) -> Vec<Compartment> {
         let mut containers = Vec::new();
         let mut cells = Vec::new();

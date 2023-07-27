@@ -179,7 +179,7 @@ pub fn run_basic(grid: &mut Grid) -> SolveResults {
     res
 }
 
-pub fn solve_round(grid: &mut Grid) -> Result<SolveResults, ValidationResult> {
+pub fn solve_round(grid: &mut Grid, enable_chains: bool) -> Result<SolveResults, ValidationResult> {
     validate(grid)?;
     if grid.is_solved() {
         return Ok(PuzzleSolved);
@@ -196,8 +196,12 @@ pub fn solve_round(grid: &mut Grid) -> Result<SolveResults, ValidationResult> {
                     Ok(SettiMinMax)
                 } else if let Some(n) = strats::fish(grid) {
                     Ok(Fish(n))
-                } else if let Some(((x, y), n, steps, error_grid)) = strats::chain(grid) {
-                    Ok(Chain((x, y), n, Rc::new(steps), error_grid))
+                } else if enable_chains {
+                    if let Some(((x, y), n, steps, error_grid)) = strats::chain(grid) {
+                        Ok(Chain((x, y), n, Rc::new(steps), error_grid))
+                    } else {
+                        return Err(OutOfStrats);
+                    }
                 } else {
                     return Err(OutOfStrats);
                 }

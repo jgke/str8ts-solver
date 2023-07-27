@@ -1,7 +1,9 @@
 use solver::solver::SolveResults;
 
+#[derive(Debug, Clone)]
 pub struct Difficulty {
     pub star_count: usize,
+    pub move_count: usize,
     pub basic_reductions: bool,
     pub min_max_reductions: bool,
     pub cross_compartment_ranges: bool,
@@ -16,18 +18,21 @@ pub struct Difficulty {
 }
 
 pub fn puzzle_difficulty(history: &[&SolveResults]) -> Difficulty {
+    let move_count = history.len();
+
     let mut star_count = history
         .iter()
         .map(|res| res.difficulty())
         .max()
         .unwrap_or(0);
 
-    if (star_count == 1 || star_count == 3) && history.len() > 30 {
+    if (star_count == 1 || star_count == 3) && move_count > 30 {
         star_count += 1;
     }
 
     Difficulty {
         star_count,
+        move_count,
         basic_reductions: history.len() > 1,
         min_max_reductions: history
             .iter()

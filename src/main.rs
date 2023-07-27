@@ -1,3 +1,6 @@
+use crate::generator::get_puzzle_difficulty;
+use rand::{thread_rng, Rng};
+
 #[macro_use]
 mod utils;
 mod difficulty;
@@ -24,11 +27,17 @@ fn main() {
     use std::io::Write;
 
     let mut iterations = 0;
-    let size = 9;
-    let blocker_count = 20;
-    let blocker_num_count = 4;
-    let target_difficulty = 7;
+    let final_grid;
     loop {
+        iterations += 1;
+        let size = 9;
+        let blocker_count = thread_rng().gen_range(12..=15);
+        let blocker_num_count = thread_rng().gen_range(3..=5);
+        let target_difficulty = 5;
+        if iterations % 10000 == 0 {
+            print!(".");
+            let _ = std::io::stdout().flush();
+        }
         match generator::generator(
             size,
             blocker_count,
@@ -36,19 +45,18 @@ fn main() {
             target_difficulty,
             true,
         ) {
-            None => {
-                iterations += 1;
-                if iterations % 10000 == 0 {
-                    print!(".");
-                    let _ = std::io::stdout().flush();
-                }
-            }
+            None => {}
             Some((grid, difficulty)) => {
                 println!("\nGenerated grid with difficulty {}:\n{}", difficulty, grid);
                 if difficulty == target_difficulty {
+                    final_grid = grid;
                     break;
                 }
             }
         }
     }
+    println!(
+        "Strats: {:#?}",
+        get_puzzle_difficulty(&final_grid, true).unwrap()
+    );
 }

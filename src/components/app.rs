@@ -106,7 +106,7 @@ pub fn app() -> Html {
         let history_state = history_state.clone();
         Callback::from(move |_| {
             let mut new_grid = (*grid_state).clone();
-            match solve_round(&mut new_grid) {
+            match solve_round(&mut new_grid, true) {
                 Ok(str) => {
                     let mut new_history = (**history_state).clone();
                     new_history.push(((*grid_state).clone(), str));
@@ -148,7 +148,7 @@ pub fn app() -> Html {
             let mut prev_grid = new_grid.clone();
             let mut new_history = (**history_state).clone();
             loop {
-                match solve_round(&mut new_grid) {
+                match solve_round(&mut new_grid, true) {
                     Ok(str) => {
                         new_history.push((prev_grid, str.clone()));
                         prev_grid = new_grid.clone();
