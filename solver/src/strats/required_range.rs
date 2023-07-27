@@ -1,0 +1,67 @@
+use crate::bitset::BitSet;
+use crate::grid::Grid;
+use crate::strats::required_in_compartment_by_range;
+use rustc_hash::FxHashSet;
+
+pub fn required_range(grid: &mut Grid) -> bool {
+    let mut changes = false;
+
+    for row in grid.iter_by_compartments() {
+        for compartment in row {
+            let compartment_positions: FxHashSet<(usize, usize)> =
+                compartment.cells.iter().map(|(p, _)| *p).collect();
+            let sample_pos = compartment.cells[0].0;
+
+            for num in required_in_compartment_by_range(grid.x, &compartment, BitSet::default()) {
+                changes |= grid.set_impossible_in(
+                    sample_pos,
+                    compartment.vertical,
+                    num,
+                    &compartment_positions,
+                );
+            }
+        }
+    }
+
+    changes
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::utils::*;
+
+    #[test]
+    fn test_required_range() {
+        let mut grid = g("
+########
+#..##..#
+#.####.#
+########
+########
+#.####.#
+#..##..#
+########
+");
+        grid.cells[1][1] = det([1, 2]);
+        grid.cells[2][1] = det([1, 2]);
+        grid.cells[1][2] = det([1, 2]);
+        assert!(required_range(&mut grid));
+
+        assert_eq!(grid.cells[1][1], det([1, 2]));
+        assert_eq!(grid.cells[2][1], det([1, 2]));
+        assert_eq!(grid.cells[1][2], det([1, 2]));
+
+        assert_eq!(grid.cells[5][1], det([3, 4, 5, 6, 7, 8]));
+        assert_eq!(grid.cells[6][1], det([3, 4, 5, 6, 7, 8]));
+        assert_eq!(grid.cells[6][2], det([1, 2, 3, 4, 5, 6, 7, 8]));
+
+        assert_eq!(grid.cells[1][5], det([3, 4, 5, 6, 7, 8]));
+        assert_eq!(grid.cells[1][6], det([3, 4, 5, 6, 7, 8]));
+        assert_eq!(grid.cells[2][6], det([1, 2, 3, 4, 5, 6, 7, 8]));
+
+        assert_eq!(grid.cells[6][5], det([1, 2, 3, 4, 5, 6, 7, 8]));
+        assert_eq!(grid.cells[5][6], det([1, 2, 3, 4, 5, 6, 7, 8]));
+        assert_eq!(grid.cells[6][6], det([1, 2, 3, 4, 5, 6, 7, 8]));
+    }
+}

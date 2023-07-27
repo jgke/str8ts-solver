@@ -1,0 +1,33 @@
+[package]
+name = "str8ts-solver"
+version = "0.1.0"
+edition = "2021"
+description = "Str8ts solver"
+readme = "README.md"
+repository = "https://github.com/jgke/str8ts-solver"
+license = "MIT OR Apache-2.0"
+
+[workspace]
+
+[dependencies]
+itertools = "0.11.0"
+wasm-bindgen = "0.2.87"
+yew = { version="0.20", features=["csr"] }
+solver = { path = "solver" }
+rustc-hash = "1.1.0"
+gloo = "0.8.1"
+[dependencies.web-sys]
+version = "0.3"
+features = [
+    "console",
+    "FormData",
+    "HtmlFormElement",
+]
+
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rand = "0.8.5"
+rayon = "1.7.0"
+
+[profile.release]
+debug = 1
