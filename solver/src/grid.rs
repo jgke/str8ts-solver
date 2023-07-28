@@ -59,10 +59,12 @@ pub struct Grid {
 }
 
 impl Grid {
-    pub fn new(cells: Vec<Vec<Cell>>) -> Grid {
-        assert_eq!(cells.len(), cells[0].len());
+    pub fn new(cells: Vec<Vec<Cell>>) -> Result<Grid, String> {
         let size = cells.len();
-        Grid {
+        if size == 0 || cells.iter().any(|row| row.len() != size) {
+            return Err("Invalid grid dimensions".to_string());
+        }
+        Ok(Grid {
             cells,
             x: size,
             y: size,
@@ -70,7 +72,7 @@ impl Grid {
             col_requirements: (0..size).map(|_| BitSet::default()).collect(),
             row_forbidden: (0..size).map(|_| BitSet::default()).collect(),
             col_forbidden: (0..size).map(|_| BitSet::default()).collect(),
-        }
+        })
     }
 
     pub fn is_solved(&self) -> bool {
@@ -268,13 +270,13 @@ impl Grid {
                         ('0', '1') => res.push(Black),
                         (c @ '1'..='9', '0') => res.push(Requirement((c as u8) - b'0')),
                         (c @ '1'..='9', '1') => res.push(Blocker((c as u8) - b'0')),
-                        other => unimplemented!("{:?}", other),
+                        (other, _) => return Err(format!("Unexpected character: {}", other)),
                     }
                 }
                 cells.push(res);
             }
 
-            Ok(Grid::new(cells))
+            Grid::new(cells)
         } else {
             let mut cells = Vec::new();
             let size = puzzle.len();
@@ -286,12 +288,13 @@ impl Grid {
                         'a'..='i' => res.push(Blocker((c as u8) - b'a' + 1)),
                         '.' => res.push(Indeterminate((1..=size as u8).collect())),
                         '#' => res.push(Black),
-                        other => unimplemented!("{}", other),
+                        other => return Err(format!("Unexpected character: {}", other)),
                     }
                 }
                 cells.push(res);
             }
-            Ok(Grid::new(cells))
+
+            Grid::new(cells)
         }
     }
 }

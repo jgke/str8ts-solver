@@ -86,7 +86,7 @@ pub fn app() -> Html {
         ];
         Grid::parse(base).unwrap()
     });
-    let error_state = use_state(|| None);
+    let error_state: UseStateHandle<Option<String>> = use_state(|| None);
     let history_state: UseStateHandle<HistoryState> = use_state(|| Rc::new(Vec::new()));
     let history_focus_state: UseStateHandle<HistoryFocusState> =
         use_state(|| (Rc::new(vec![]), None));
@@ -119,7 +119,7 @@ pub fn app() -> Html {
                     history_state.set(Rc::new(new_history));
                 }
                 Err(e) => {
-                    error_state.set(Some(e));
+                    error_state.set(Some(e.to_string()));
                 }
             }
             grid_state.set(new_grid);
@@ -137,7 +137,7 @@ pub fn app() -> Html {
                     latest_hint.set(Some(str));
                 }
                 Err(e) => {
-                    error_state.set(Some(e));
+                    error_state.set(Some(e.to_string()));
                 }
             }
         })
@@ -180,7 +180,7 @@ pub fn app() -> Html {
                         }
                     }
                     Err(e) => {
-                        error_state.set(Some(e));
+                        error_state.set(Some(e.to_string()));
                         break;
                     }
                 }
@@ -227,14 +227,19 @@ pub fn app() -> Html {
         let history_focus_locked = history_focus_locked;
         let edit_mode = edit_mode.clone();
         let importer_open = importer_open.clone();
-        Callback::from(move |new_grid| {
-            grid_state.set(new_grid);
-            error_state.set(None);
-            history_state.set(Rc::new(Vec::new()));
-            history_focus_state.set((Rc::new(vec![]), None));
-            history_focus_locked.set(None);
-            edit_mode.set(false);
-            importer_open.set(false);
+        Callback::from(move |new_grid| match new_grid {
+            Ok(new_grid) => {
+                grid_state.set(new_grid);
+                error_state.set(None);
+                history_state.set(Rc::new(Vec::new()));
+                history_focus_state.set((Rc::new(vec![]), None));
+                history_focus_locked.set(None);
+                edit_mode.set(false);
+                importer_open.set(false);
+            }
+            Err(err) => {
+                error_state.set(Some(err));
+            }
         })
     };
 

@@ -5,18 +5,15 @@ use yew::{function_component, html, use_state, Callback, Html, Properties};
 
 #[derive(Properties, PartialEq)]
 pub struct ImporterProps {
-    pub on_import: Callback<Grid>,
+    pub on_import: Callback<Result<Grid, String>>,
 }
 
 #[function_component(Importer)]
 pub fn header(props: &ImporterProps) -> Html {
     let ImporterProps { on_import } = props;
 
-    let error = use_state(move || None);
-
     let onsubmit = {
         let on_import = on_import.clone();
-        let error = error;
         Callback::from(move |e: SubmitEvent| {
             e.prevent_default();
             e.stop_propagation();
@@ -26,10 +23,7 @@ pub fn header(props: &ImporterProps) -> Html {
             .unwrap();
             let field = data.get("data").as_string().unwrap();
             let grid = Grid::parse(vec![field]);
-            match grid {
-                Ok(grid) => on_import.emit(grid),
-                Err(e) => error.set(Some(e)),
-            }
+            on_import.emit(grid);
         })
     };
 
