@@ -2,7 +2,7 @@
 name = "str8ts-solver"
 version = "0.1.0"
 edition = "2021"
-description = "Str8ts solver"
+description = "Str8ts generator and solver"
 readme = "README.md"
 repository = "https://github.com/jgke/str8ts-solver"
 license = "AGPL"
@@ -27,6 +27,7 @@ features = [
 ]
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+clap = { version = "4.3.19", features = ["derive"] }
 rand = "0.8.5"
 
 [profile.release]

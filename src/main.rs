@@ -18,18 +18,42 @@ fn main() {
 
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 fn main() {
+    use clap::Parser;
     use solver::difficulty::get_puzzle_difficulty;
     use solver::generator;
+    /// Generate a srt8ts puzzle.
+    #[derive(Parser, Debug)]
+    #[command(author, version, about, long_about = None)]
+    struct Args {
+        /// Size of the puzzle
+        #[arg(long, default_value_t = 9)]
+        size: usize,
+        /// Amount of black squares in the puzzle
+        #[arg(long, default_value_t = 15)]
+        blocker_count: usize,
+        /// Amount of numbers inside black squares
+        #[arg(long, default_value_t = 5)]
+        blocker_num_count: usize,
+        /// Target difficulty in stars.
+        #[arg(long, default_value_t = 5)]
+        target_difficulty: usize,
+        /// Should the puzzle be unsymmetric
+        #[arg(long, default_value_t = true)]
+        not_symmetric: bool,
+    }
+
+    let Args {
+        size,
+        blocker_count,
+        blocker_num_count,
+        target_difficulty,
+        not_symmetric,
+    } = Args::parse();
 
     use log::info;
     env_logger::init_from_env(
         env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "warn"),
     );
-
-    let size = 9;
-    let blocker_count = 15; //thread_rng().gen_range(12..=15);
-    let blocker_num_count = 5; //thread_rng().gen_range(3..=5);
-    let target_difficulty = 5;
 
     info!(
         "Generating a puzzle with difficulty {}, this may take a few moments...",
@@ -45,7 +69,7 @@ fn main() {
         blocker_count,
         blocker_num_count,
         target_difficulty,
-        true,
+        !not_symmetric,
     );
     info!("Generated grid with difficulty {}", target_difficulty);
     info!(

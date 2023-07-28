@@ -183,12 +183,19 @@ pub fn remove_numbers<Rand: Rng + Send + Clone>(
 
                 candidates
                     .into_par_iter()
-                    .filter_map(|((x, y), rng)| {
+                    .filter_map(|((x, y), mut rng)| {
                         let mut grid = grid.clone();
                         grid.cells[y][x] = Cell::Indeterminate((1..=size as u8).collect());
                         if symmetric {
                             grid.cells[size - y - 1][size - x - 1] =
                                 Cell::Indeterminate((1..=size as u8).collect());
+                        } else {
+                            let nx = rng.gen_range(0..size);
+                            let ny = rng.gen_range(0..size);
+                            if let Cell::Solution(_) = grid.cells[ny][nx] {
+                                grid.cells[size - y - 1][size - x - 1] =
+                                    Cell::Indeterminate((1..=size as u8).collect());
+                            }
                         }
                         {
                             let grid_hash = get_grid_hash(&grid);
