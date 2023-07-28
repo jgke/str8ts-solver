@@ -6,6 +6,7 @@ use yew::{classes, function_component, html, use_state, Callback, Html, Properti
 pub struct HeaderProps {
     pub is_solved: bool,
     pub on_step: Callback<MouseEvent>,
+    pub on_hint: Callback<MouseEvent>,
     pub on_solve: Callback<MouseEvent>,
 
     pub set_edit_mode: Callback<bool>,
@@ -18,6 +19,7 @@ pub fn header(props: &HeaderProps) -> Html {
     let HeaderProps {
         is_solved,
         on_step,
+        on_hint,
         on_solve,
         set_edit_mode,
         edit_mode,
@@ -98,6 +100,13 @@ pub fn header(props: &HeaderProps) -> Html {
                 onclick={on_step.clone()}
             >
                 {"Solve 1 step"}
+            </button>
+            <button
+                disabled={*is_solved}
+                class={classes!(button_classes, "p-2")}
+                onclick={on_hint.clone()}
+            >
+                {"Show hint"}
             </button>
             <input id="hamburger" class="hidden peer/hamburger" type="checkbox" onchange={open_hamburger} checked={*hamburger_open} />
             <label for="hamburger" class={classes!(button_classes, "cursor-pointer", "p-2", "w-[42px]", "h-[42px]")}>

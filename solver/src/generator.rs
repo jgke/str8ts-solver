@@ -3,6 +3,7 @@ use crate::grid::{Cell, Grid};
 use crate::solver::run_fast_basic;
 use crate::solver::SolveResults::OutOfBasicStrats;
 use crate::validator::validate;
+use log::debug;
 use rand::seq::SliceRandom;
 use rand::SeedableRng;
 use rand::{thread_rng, Rng};
@@ -11,7 +12,6 @@ use rustc_hash::FxHashSet;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::sync::{Arc, Mutex};
-use log::debug;
 
 #[derive(Debug, Clone)]
 struct Task<T, R>(T, R, Grid);

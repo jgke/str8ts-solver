@@ -31,8 +31,14 @@ fn main() {
     let blocker_num_count = 5; //thread_rng().gen_range(3..=5);
     let target_difficulty = 5;
 
-    info!("Generating a puzzle with difficulty {}, this may take a few moments...", target_difficulty);
-    info!("Settings: size={}x{}, {} black squares of which {} contain numbers", size, size, blocker_count, blocker_num_count);
+    info!(
+        "Generating a puzzle with difficulty {}, this may take a few moments...",
+        target_difficulty
+    );
+    info!(
+        "Settings: size={}x{}, {} black squares of which {} contain numbers",
+        size, size, blocker_count, blocker_num_count
+    );
 
     let grid = generator::generator(
         size,
@@ -42,6 +48,9 @@ fn main() {
         true,
     );
     info!("Generated grid with difficulty {}", target_difficulty);
-    info!("Strats required: {:#?}", get_puzzle_difficulty(&grid, true).unwrap());
+    info!(
+        "Strats required: {:#?}",
+        get_puzzle_difficulty(&grid, true).unwrap()
+    );
     println!("{}", grid);
 }

@@ -93,12 +93,18 @@ pub fn app() -> Html {
     let history_focus_locked: UseStateHandle<Option<HistoryFocusState>> = use_state(|| None);
     let edit_mode: UseStateHandle<bool> = use_state(|| false);
     let importer_open: UseStateHandle<bool> = use_state(|| true);
+    let latest_hint: UseStateHandle<Option<SolveResults>> = use_state(|| None);
 
     let (focus_state, sub_index) = if let Some(locked) = &*history_focus_locked {
         locked.clone()
     } else {
         (*history_focus_state).clone()
     };
+
+    {
+        let latest_hint = latest_hint.clone();
+        use_effect_with_deps(move |_| latest_hint.set(None), grid_state.clone());
+    }
 
     let onclick = {
         let grid_state = grid_state.clone();
@@ -117,6 +123,23 @@ pub fn app() -> Html {
                 }
             }
             grid_state.set(new_grid);
+        })
+    };
+
+    let on_hint = {
+        let grid_state = grid_state.clone();
+        let error_state = error_state.clone();
+        let latest_hint = latest_hint.clone();
+        Callback::from(move |_| {
+            let mut new_grid = (*grid_state).clone();
+            match solve_round(&mut new_grid, true) {
+                Ok(str) => {
+                    latest_hint.set(Some(str));
+                }
+                Err(e) => {
+                    error_state.set(Some(e));
+                }
+            }
         })
     };
 
@@ -222,6 +245,7 @@ pub fn app() -> Html {
                     <Header
                         is_solved={grid_state.is_solved()}
                         on_step={onclick}
+                        {on_hint}
                         on_solve={onclick_all}
                         edit_mode={*edit_mode}
                         {set_edit_mode}
@@ -229,6 +253,13 @@ pub fn app() -> Html {
 
                     if *importer_open {
                         <Importer {on_import} />
+                    }
+
+                    if let Some(hint) = &*latest_hint {
+                        <div class="border dark:bg-blue-400 dark:text-white p-2 my-2">
+                            <b class="font-bold">{"Hint:"}</b>
+                            { format!("{}", hint) }
+                        </div>
                     }
 
                     <RenderGrid
@@ -246,7 +277,7 @@ pub fn app() -> Html {
                     }
                 </div>
             </div>
-            <div class="flex flex-col border w-full md:w-[30rem] p-4 ml-4 md:max-h-[90vh]">
+            <div class="flex flex-col border dark:border-blue-400 w-full md:w-[30rem] p-4 ml-4 md:max-h-[90vh]">
                 <h2 class="dark:text-white font-bold text-2xl my-2">{"Solution log"}</h2>
                 <div class="overflow-y-scroll">
                     <SolutionHistory
