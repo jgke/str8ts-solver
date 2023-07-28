@@ -11,6 +11,7 @@ use rustc_hash::FxHashSet;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::sync::{Arc, Mutex};
+use log::debug;
 
 #[derive(Debug, Clone)]
 struct Task<T, R>(T, R, Grid);
@@ -48,10 +49,9 @@ pub fn recur<Rand: Rng + Send + Clone>(grid: Grid, rng: &mut Rand) -> Option<Gri
     queue.push(Task(0, rng.clone(), grid));
 
     while let Some(Task(depth, mut rng, grid)) = queue.pop() {
-        println!("queue={}", queue.len());
         if depth > max_depth {
             max_depth = depth;
-            println!(
+            debug!(
                 "Reached {}/{} (queue={})",
                 max_depth,
                 target_depth,
@@ -139,7 +139,7 @@ pub fn remove_numbers<Rand: Rng + Send + Clone>(
     while !queue.is_empty() {
         iterations += 1;
         {
-            println!(
+            debug!(
                 "queue len={} iter={} seen elements={}",
                 queue.len(),
                 iterations,
@@ -167,7 +167,7 @@ pub fn remove_numbers<Rand: Rng + Send + Clone>(
                     } else if star_count > best_difficulty.0
                         || (star_count == best_difficulty.0 && move_count > best_difficulty.1)
                     {
-                        println!("New best, difficulty = {}:\n{}", star_count, grid);
+                        debug!("New best, difficulty = {}:\n{}", star_count, grid);
 
                         *best_difficulty = (star_count, move_count);
                         *best_grid.lock().unwrap() = grid.clone();
@@ -272,15 +272,15 @@ pub fn generate_puzzle<Rand: Rng + Send + Clone>(
 
     validate(&grid).ok()?;
 
-    println!("Attempting to generate\n{}", grid);
+    debug!("Attempting to generate\n{}", grid);
 
     let grid = recur(grid, rng)?;
 
-    println!("\nSolved grid:\n{}", grid);
+    debug!("\nSolved grid:\n{}", grid);
     let final_grid = remove_numbers(grid, target_difficulty, symmetric, rng).unwrap();
-    println!("Calculating final difficulty");
+    debug!("Calculating final difficulty");
     let difficulty = get_puzzle_difficulty(&final_grid, true).unwrap().star_count;
-    println!("Final difficulty: {}", difficulty);
+    debug!("Final difficulty: {}", difficulty);
     Some((final_grid, difficulty))
 }
 
