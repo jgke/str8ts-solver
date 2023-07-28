@@ -1,4 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use rand::SeedableRng;
+use solver::generator::generate_puzzle;
 use solver::grid::Grid;
 use solver::solver::{solve_round, SolveResults};
 
@@ -12,14 +14,14 @@ fn full_solve(mut grid: Grid, enable_chains: bool) -> usize {
             }
             Ok(_) => {}
             Err(e) => {
-                panic!("{}", e);
+                panic!("Failed to solve grid: {}\n{}", e, grid);
             }
         }
     }
     loop_count
 }
 
-fn criterion_benchmark(c: &mut Criterion) {
+fn solver_benchmark(c: &mut Criterion) {
     let typical_grid = Grid::parse(vec![
         "12#.7...6".to_string(),
         ".#.4..3..".to_string(),
@@ -55,9 +57,25 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 }
 
+fn generator_benchmark(c: &mut Criterion) {
+    c.bench_function("generator", |b| {
+        let rng = rand_chacha::ChaCha8Rng::seed_from_u64(33);
+        b.iter(|| {
+            generate_puzzle(
+                black_box(9),
+                black_box(15),
+                black_box(5),
+                black_box(5),
+                black_box(true),
+                &mut (rng.clone()),
+            )
+        })
+    });
+}
+
 criterion_group! {
     name = benches;
     config = Criterion::default().sample_size(10);
-    targets = criterion_benchmark
+    targets = solver_benchmark, generator_benchmark
 }
 criterion_main!(benches);

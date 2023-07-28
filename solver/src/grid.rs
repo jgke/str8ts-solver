@@ -135,6 +135,17 @@ impl Grid {
             .collect()
     }
 
+    pub fn iter_by_cell_pos_matching<F>(&self, mut predicate: F) -> Vec<(usize, usize)>
+    where
+        F: FnMut(&Cell) -> bool,
+    {
+        self.iter_by_rows()
+            .into_iter()
+            .flat_map(|row| row.into_iter())
+            .filter_map(|((x, y), cell)| if predicate(&cell) { Some((x, y)) } else { None })
+            .collect()
+    }
+
     pub fn line_to_compartments(vertical: bool, line: Vec<CellPair>) -> Vec<Compartment> {
         let mut containers = Vec::new();
         let mut cells = Vec::new();

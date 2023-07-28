@@ -1,71 +1,71 @@
-use crate::difficulty::{puzzle_difficulty, Difficulty};
+use crate::difficulty::get_puzzle_difficulty;
+use crate::grid::{Cell, Grid};
+use crate::solver::run_fast_basic;
+use crate::solver::SolveResults::OutOfBasicStrats;
+use crate::validator::validate;
 use rand::seq::SliceRandom;
+use rand::SeedableRng;
 use rand::{thread_rng, Rng};
 use rayon::prelude::*;
 use rustc_hash::FxHashSet;
-use solver::grid::{Cell, Grid};
-use solver::solver::SolveResults::OutOfBasicStrats;
-use solver::solver::{run_fast_basic, solve_round, SolveResults};
-use solver::validator::validate;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::sync::{Arc, Mutex};
 
-#[derive(Debug, Clone, Eq, PartialEq)]
-struct Task<T>(T, Grid);
+#[derive(Debug, Clone)]
+struct Task<T, R>(T, R, Grid);
 
-impl<T: Ord> Ord for Task<T> {
+impl<T: Ord, R> Eq for Task<T, R> {}
+
+impl<T: Ord, R> PartialEq<Self> for Task<T, R> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.eq(&other.0) && self.2.eq(&other.2)
+    }
+}
+
+impl<T: Ord, R> Ord for Task<T, R> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.0.cmp(&other.0)
     }
 }
 
-impl<T: Ord> PartialOrd for Task<T> {
+impl<T: Ord, R> PartialOrd for Task<T, R> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
 fn remaining_numbers(grid: &Grid) -> usize {
-    grid.iter_by_rows()
-        .into_iter()
-        .flat_map(|row| row.into_iter())
-        .map(|(_, cell)| match cell {
-            Cell::Requirement(_) => 0,
-            Cell::Solution(_) => 0,
-            Cell::Blocker(_) => 0,
-            Cell::Indeterminate(_) => 1,
-            Cell::Black => 0,
-        })
-        .sum::<usize>()
+    grid.iter_by_cell_pos_matching(|cell| matches!(cell, Cell::Indeterminate(_)))
+        .len()
 }
 
-pub fn recur(grid: Grid) -> Option<Grid> {
+pub fn recur<Rand: Rng + Send + Clone>(grid: Grid, rng: &mut Rand) -> Option<Grid> {
     let mut queue = BinaryHeap::new();
     let mut max_depth = 0;
     let target_depth = remaining_numbers(&grid);
 
-    queue.push(Task(0, grid));
+    queue.push(Task(0, rng.clone(), grid));
 
-    while let Some(Task(depth, grid)) = queue.pop() {
+    while let Some(Task(depth, mut rng, grid)) = queue.pop() {
+        println!("queue={}", queue.len());
         if depth > max_depth {
             max_depth = depth;
-            //println!(
-            //    "Reached {}/{} (queue={})",
-            //    max_depth,
-            //    target_depth,
-            //    queue.len()
-            //);
+            println!(
+                "Reached {}/{} (queue={})",
+                max_depth,
+                target_depth,
+                queue.len()
+            );
         }
 
         if grid.is_solved() {
             return Some(grid);
         }
 
-        let mut cells = grid
-            .iter_by_rows()
+        let ((x, y), nums) = grid
+            .iter_by_cells()
             .into_iter()
-            .flat_map(|row| row.into_iter())
             .filter_map(|((x, y), cell)| match cell {
                 Cell::Requirement(_) => None,
                 Cell::Solution(_) => None,
@@ -73,59 +73,34 @@ pub fn recur(grid: Grid) -> Option<Grid> {
                 Cell::Indeterminate(nums) => Some(((x, y), nums)),
                 Cell::Black => None,
             })
-            .take(1)
+            .next()
+            .unwrap();
+
+        let nums = nums
+            .into_iter()
+            .map(|num| (num, rng.clone()))
             .collect::<Vec<_>>();
-
-        cells.shuffle(&mut thread_rng());
-
-        queue.append(
-            &mut cells
-                .into_iter()
-                .flat_map(|((x, y), nums)| {
-                    let nums = nums.into_iter().collect::<Vec<_>>();
-                    let mut vec: Vec<_> = nums
-                        .into_par_iter()
-                        .filter_map(|num| {
-                            let mut new_grid = grid.clone();
-                            new_grid.cells[y][x] = Cell::Requirement(num);
-                            while run_fast_basic(&mut new_grid) != OutOfBasicStrats {
-                                if validate(&new_grid).is_err() {
-                                    break;
-                                }
-                            }
-                            if validate(&new_grid).is_ok() {
-                                Some(Task(target_depth - remaining_numbers(&grid), new_grid))
-                            } else {
-                                None
-                            }
-                        })
-                        .collect();
-                    vec.shuffle(&mut thread_rng());
-                    vec.into_iter()
-                })
-                .collect(),
-        );
+        let mut vec: Vec<_> = nums
+            .into_par_iter()
+            .filter_map(|(num, rng)| {
+                let mut new_grid = grid.clone();
+                new_grid.cells[y][x] = Cell::Requirement(num);
+                while run_fast_basic(&mut new_grid) != OutOfBasicStrats {
+                    if validate(&new_grid).is_err() {
+                        break;
+                    }
+                }
+                if validate(&new_grid).is_ok() {
+                    Some(Task(target_depth - remaining_numbers(&grid), rng, new_grid))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        vec.shuffle(&mut rng);
+        queue.append(&mut vec.into_iter().collect());
     }
     None
-}
-
-pub fn get_puzzle_difficulty(grid: &Grid, enable_chains: bool) -> Option<Difficulty> {
-    let solution = {
-        let mut grid = grid.clone();
-        let mut history = Vec::new();
-        loop {
-            match solve_round(&mut grid, enable_chains) {
-                Ok(SolveResults::PuzzleSolved) => {
-                    break;
-                }
-                Ok(res) => history.push(res),
-                Err(_) => return None,
-            }
-        }
-        history
-    };
-    let solution = solution.iter().collect::<Vec<_>>();
-    Some(puzzle_difficulty(&solution))
 }
 
 fn get_grid_hash(grid: &Grid) -> u128 {
@@ -144,9 +119,14 @@ fn get_grid_hash(grid: &Grid) -> u128 {
     hash
 }
 
-pub fn remove_numbers(grid: Grid, target_difficulty: usize, symmetric: bool) -> Option<Grid> {
-    let mut queue: BinaryHeap<Task<(usize, usize)>> = BinaryHeap::new();
-    queue.push(Task((0, 0), grid.clone()));
+pub fn remove_numbers<Rand: Rng + Send + Clone>(
+    grid: Grid,
+    target_difficulty: usize,
+    symmetric: bool,
+    rng: &mut Rand,
+) -> Option<Grid> {
+    let mut queue: BinaryHeap<Task<(usize, usize), Rand>> = BinaryHeap::new();
+    queue.push(Task((0, 0), rng.clone(), grid.clone()));
     let size = grid.cells.len();
 
     let diff = get_puzzle_difficulty(&grid, target_difficulty >= 6).unwrap();
@@ -168,7 +148,7 @@ pub fn remove_numbers(grid: Grid, target_difficulty: usize, symmetric: bool) -> 
         }
 
         let mut pool = Vec::new();
-        for _ in 0..rayon::current_num_threads() {
+        for _ in 0..2 * rayon::current_num_threads() {
             if let Some(item) = queue.pop() {
                 pool.push(item);
             }
@@ -176,7 +156,7 @@ pub fn remove_numbers(grid: Grid, target_difficulty: usize, symmetric: bool) -> 
 
         let mut next_candidates = pool
             .into_par_iter()
-            .flat_map(|Task((star_count, move_count), grid)| {
+            .flat_map(|Task((star_count, move_count), mut rng, grid)| {
                 {
                     let mut best_difficulty = best_difficulty.lock().unwrap();
                     if star_count > target_difficulty
@@ -195,22 +175,15 @@ pub fn remove_numbers(grid: Grid, target_difficulty: usize, symmetric: bool) -> 
                 }
 
                 let mut candidates = grid
-                    .iter_by_rows()
+                    .iter_by_cell_pos_matching(|cell| matches!(cell, Cell::Solution(_)))
                     .into_iter()
-                    .flat_map(|row| row.into_iter())
-                    .filter_map(|((x, y), cell)| match cell {
-                        Cell::Requirement(_) => None,
-                        Cell::Solution(_) => Some((x, y)),
-                        Cell::Blocker(_) => None,
-                        Cell::Indeterminate(_) => None,
-                        Cell::Black => None,
-                    })
+                    .map(|cand| (cand, rng.clone()))
                     .collect::<Vec<_>>();
-                candidates.shuffle(&mut thread_rng());
+                candidates.shuffle(&mut rng);
 
                 candidates
                     .into_par_iter()
-                    .filter_map(|(x, y)| {
+                    .filter_map(|((x, y), rng)| {
                         let mut grid = grid.clone();
                         grid.cells[y][x] = Cell::Indeterminate((1..=size as u8).collect());
                         if symmetric {
@@ -226,7 +199,7 @@ pub fn remove_numbers(grid: Grid, target_difficulty: usize, symmetric: bool) -> 
                             seen.insert(grid_hash);
                         }
                         get_puzzle_difficulty(&grid, target_difficulty >= 6).map(|difficulty| {
-                            Task((difficulty.star_count, difficulty.move_count), grid)
+                            Task((difficulty.star_count, difficulty.move_count), rng, grid)
                         })
                     })
                     .collect::<Vec<_>>()
@@ -240,19 +213,19 @@ pub fn remove_numbers(grid: Grid, target_difficulty: usize, symmetric: bool) -> 
     Some(x)
 }
 
-pub fn generator(
+pub fn generate_puzzle<Rand: Rng + Send + Clone>(
     size: usize,
     mut blocker_count: usize,
     mut blocker_num_count: usize,
     target_difficulty: usize,
     symmetric: bool,
+    mut rng: &mut Rand,
 ) -> Option<(Grid, usize)> {
     let mut grid = Grid::parse(vec![format!("{}", "0".repeat(2 * size * size))]).unwrap();
 
     let mut blockers = grid
-        .iter_by_rows()
+        .iter_by_cells()
         .into_iter()
-        .flat_map(|row| row.into_iter())
         .filter(|((x, y), _)| {
             if symmetric {
                 *x <= size / 2 && *y <= size / 2
@@ -262,7 +235,7 @@ pub fn generator(
         })
         .map(|(pos, _)| pos)
         .collect::<Vec<_>>();
-    blockers.shuffle(&mut thread_rng());
+    blockers.shuffle(&mut rng);
 
     if symmetric {
         blocker_count /= 2;
@@ -275,46 +248,24 @@ pub fn generator(
         }
     }
 
-    let mut open_cells = grid
-        .iter_by_rows()
-        .into_iter()
-        .flat_map(|row| row.into_iter())
-        .filter_map(|((x, y), cell)| match cell {
-            Cell::Requirement(_) => None,
-            Cell::Solution(_) => None,
-            Cell::Blocker(_) => None,
-            Cell::Indeterminate(_) => Some((x, y)),
-            Cell::Black => None,
-        })
-        .collect::<Vec<_>>();
-    open_cells.shuffle(&mut thread_rng());
-
     let mut blocker_cells = grid
-        .iter_by_rows()
+        .iter_by_cell_pos_matching(|cell| matches!(cell, Cell::Black))
         .into_iter()
-        .flat_map(|row| row.into_iter())
-        .filter(|((x, y), _)| {
+        .filter(|(x, y)| {
             if symmetric {
                 *x <= size / 2 && *y <= size / 2
             } else {
                 true
             }
         })
-        .filter_map(|((x, y), cell)| match cell {
-            Cell::Requirement(_) => None,
-            Cell::Solution(_) => None,
-            Cell::Blocker(_) => None,
-            Cell::Indeterminate(_) => None,
-            Cell::Black => Some((x, y)),
-        })
         .collect::<Vec<_>>();
-    blocker_cells.shuffle(&mut thread_rng());
+    blocker_cells.shuffle(&mut rng);
 
     for (x, y) in blocker_cells.into_iter().take(blocker_num_count) {
-        let n = thread_rng().gen_range(1..=size);
+        let n = rng.gen_range(1..=size);
         grid.cells[y][x] = Cell::Blocker(n as u8);
         if symmetric {
-            let n2 = thread_rng().gen_range(1..=size);
+            let n2 = rng.gen_range(1..=size);
             grid.cells[size - y - 1][size - x - 1] = Cell::Blocker(n2 as u8);
         }
     }
@@ -323,12 +274,39 @@ pub fn generator(
 
     println!("Attempting to generate\n{}", grid);
 
-    let grid = recur(grid)?;
+    let grid = recur(grid, rng)?;
 
     println!("\nSolved grid:\n{}", grid);
-    let final_grid = remove_numbers(grid, target_difficulty, symmetric).unwrap();
+    let final_grid = remove_numbers(grid, target_difficulty, symmetric, rng).unwrap();
     println!("Calculating final difficulty");
     let difficulty = get_puzzle_difficulty(&final_grid, true).unwrap().star_count;
     println!("Final difficulty: {}", difficulty);
     Some((final_grid, difficulty))
+}
+
+pub fn generator(
+    size: usize,
+    blocker_count: usize,
+    blocker_num_count: usize,
+    target_difficulty: usize,
+    symmetric: bool,
+) -> Grid {
+    loop {
+        let mut rng = rand_chacha::ChaCha8Rng::from_seed(thread_rng().gen());
+        match generate_puzzle(
+            size,
+            blocker_count,
+            blocker_num_count,
+            target_difficulty,
+            symmetric,
+            &mut rng,
+        ) {
+            None => {}
+            Some((grid, difficulty)) => {
+                if difficulty == target_difficulty {
+                    return grid;
+                }
+            }
+        }
+    }
 }

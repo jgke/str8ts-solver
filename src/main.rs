@@ -1,9 +1,5 @@
-use crate::generator::get_puzzle_difficulty;
-use rand::{thread_rng, Rng};
-
 #[macro_use]
 mod utils;
-mod difficulty;
 
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 mod components;
@@ -21,42 +17,25 @@ fn main() {
 }
 
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
-mod generator;
-#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 fn main() {
-    use std::io::Write;
+    use solver::difficulty::get_puzzle_difficulty;
+    use solver::generator;
 
-    let mut iterations = 0;
-    let final_grid;
-    loop {
-        iterations += 1;
-        let size = 9;
-        let blocker_count = thread_rng().gen_range(12..=15);
-        let blocker_num_count = thread_rng().gen_range(3..=5);
-        let target_difficulty = 5;
-        if iterations % 10000 == 0 {
-            print!(".");
-            let _ = std::io::stdout().flush();
-        }
-        match generator::generator(
-            size,
-            blocker_count,
-            blocker_num_count,
-            target_difficulty,
-            true,
-        ) {
-            None => {}
-            Some((grid, difficulty)) => {
-                println!("\nGenerated grid with difficulty {}:\n{}", difficulty, grid);
-                if difficulty == target_difficulty {
-                    final_grid = grid;
-                    break;
-                }
-            }
-        }
-    }
-    println!(
-        "Strats: {:#?}",
-        get_puzzle_difficulty(&final_grid, true).unwrap()
+    let size = 9;
+    let blocker_count = 15; //thread_rng().gen_range(12..=15);
+    let blocker_num_count = 5; //thread_rng().gen_range(3..=5);
+    let target_difficulty = 5;
+
+    let grid = generator::generator(
+        size,
+        blocker_count,
+        blocker_num_count,
+        target_difficulty,
+        true,
     );
+    println!(
+        "\nGenerated grid with difficulty {}:\n{}",
+        target_difficulty, grid
+    );
+    println!("Strats: {:#?}", get_puzzle_difficulty(&grid, true).unwrap());
 }

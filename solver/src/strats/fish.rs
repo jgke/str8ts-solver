@@ -71,7 +71,18 @@ pub fn fish(grid: &mut Grid) -> Option<usize> {
                         }
                     }
 
-                    assert!(candidates.len() <= fish_count);
+                    if candidates.len() > fish_count {
+                        // puzzle not solvable
+                        let positions: FxHashSet<(usize, usize)> = candidates
+                            .iter()
+                            .flat_map(|line| line.iter())
+                            .copied()
+                            .collect();
+                        for position in &positions {
+                            changes |= grid.set_impossible(*position, num);
+                        }
+                        changes = true;
+                    }
                     if candidates.len() == fish_count {
                         let positions: FxHashSet<(usize, usize)> = candidates
                             .iter()

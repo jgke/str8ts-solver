@@ -1040,6 +1040,9 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "itertools 0.11.0",
+ "rand",
+ "rand_chacha",
+ "rayon",
  "rustc-hash",
 ]
 
@@ -1050,7 +1053,6 @@ dependencies = [
  "gloo",
  "itertools 0.11.0",
  "rand",
- "rayon",
  "rustc-hash",
  "solver",
  "wasm-bindgen",

@@ -1,4 +1,4 @@
-use crate::difficulty::{puzzle_difficulty, Difficulty};
+use solver::difficulty::{puzzle_difficulty, Difficulty};
 use solver::grid::Grid;
 use solver::solver::SolveResults;
 use std::rc::Rc;
@@ -13,6 +13,7 @@ pub struct PuzzleRatingProps {
 pub fn render_puzzle_rating(props: &PuzzleRatingProps) -> Html {
     let Difficulty {
         star_count,
+        move_count: _,
         basic_reductions,
         min_max_reductions,
         cross_compartment_ranges,

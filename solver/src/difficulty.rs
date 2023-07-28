@@ -1,4 +1,5 @@
-use solver::solver::SolveResults;
+use crate::grid::Grid;
+use crate::solver::{solve_round, SolveResults};
 
 #[derive(Debug, Clone)]
 pub struct Difficulty {
@@ -59,4 +60,23 @@ pub fn puzzle_difficulty(history: &[&SolveResults]) -> Difficulty {
             .filter(|e| matches!(e, SolveResults::Chain(_, _, steps, _) if steps.len() >= 8))
             .count(),
     }
+}
+
+pub fn get_puzzle_difficulty(grid: &Grid, enable_chains: bool) -> Option<Difficulty> {
+    let solution = {
+        let mut grid = grid.clone();
+        let mut history = Vec::new();
+        loop {
+            match solve_round(&mut grid, enable_chains) {
+                Ok(SolveResults::PuzzleSolved) => {
+                    break;
+                }
+                Ok(res) => history.push(res),
+                Err(_) => return None,
+            }
+        }
+        history
+    };
+    let solution = solution.iter().collect::<Vec<_>>();
+    Some(puzzle_difficulty(&solution))
 }
