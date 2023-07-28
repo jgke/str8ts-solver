@@ -5,7 +5,7 @@ edition = "2021"
 description = "Str8ts solver"
 readme = "README.md"
 repository = "https://github.com/jgke/str8ts-solver"
-license = "MIT OR Apache-2.0"
+license = "AGPL"
 
 [workspace]
 
