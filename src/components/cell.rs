@@ -126,7 +126,7 @@ pub fn render_cell(props: &RenderCellProps) -> Html {
     if *editing {
         return html! {
             <div class={classes!("border", "border-primary", cell_size)}>
-                <textarea class="w-12 h-12 resize-none border-none bg-none" ref={input_ref} {onfocus} autofocus=true {onblur} value={initial_value} />
+                <textarea class={classes!(cell_size, "resize-none", "border-none", "bg-none")} ref={input_ref} {onfocus} autofocus=true {onblur} value={initial_value} />
             </div>
         };
     }
