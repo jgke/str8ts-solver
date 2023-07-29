@@ -38,7 +38,9 @@ fn solver_benchmark(c: &mut Criterion) {
     c.bench_function("grid typical puzzle", |b| {
         b.iter(|| full_solve(black_box(typical_grid.clone()), true))
     });
+}
 
+fn slow_solver_benchmark(c: &mut Criterion) {
     let chain_grid = Grid::parse(vec![
         ".#6#23...".to_string(),
         ".........".to_string(),
@@ -75,7 +77,13 @@ fn generator_benchmark(c: &mut Criterion) {
 
 criterion_group! {
     name = benches;
-    config = Criterion::default().sample_size(10);
-    targets = solver_benchmark, generator_benchmark
+    config = Criterion::default();
+    targets = solver_benchmark
 }
-criterion_main!(benches);
+
+criterion_group! {
+    name = slow_benches;
+    config = Criterion::default().sample_size(10);
+    targets = slow_solver_benchmark, generator_benchmark
+}
+criterion_main!(benches, slow_benches);
