@@ -274,7 +274,7 @@ pub fn app() -> Html {
                         on_change={on_cell_update}
                         edit_mode={*edit_mode}/>
                     if let Some(s) = &*error_state {
-                        <div class="mt-4 bg-error p-4 max-w-[600px]">{s}</div>
+                        <div class="my-4 bg-error p-4 max-w-[600px]">{s}</div>
                     }
 
                     if grid_state.is_solved() {
@@ -282,7 +282,7 @@ pub fn app() -> Html {
                     }
                 </div>
             </div>
-            <div class="flex flex-col border dark:border-blue-400 w-full md:w-[30rem] p-4 ml-4 md:max-h-[90vh]">
+            <div class="flex flex-col border dark:border-blue-400 w-full md:w-[30rem] p-4 mx-4 md:max-h-[90vh]">
                 <h2 class="dark:text-white font-bold text-2xl my-2">{"Solution log"}</h2>
                 <div class="overflow-y-scroll">
                     <SolutionHistory
