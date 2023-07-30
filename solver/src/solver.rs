@@ -9,6 +9,7 @@ use std::rc::Rc;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SolveResults {
     UpdateImpossibles,
+    Singles,
     Stranded,
     DefiniteMinMax,
     RequiredRange,
@@ -30,6 +31,7 @@ impl SolveResults {
             UpdateImpossibles => 1,
             Stranded => 1,
             DefiniteMinMax => 1,
+            Singles => 2,
             RequiredRange => 3,
             Sets(_) => 3,
             RequiredAndForbidden => 5,
@@ -52,7 +54,8 @@ impl Display for SolveResults {
         match self {
             UpdateImpossibles => write!(f, "Remove trivially impossible numbers"),
             Stranded => write!(f, "Remove stranded numbers"),
-            DefiniteMinMax => write!(f, "Remove unreachable numbers from compartments "),
+            DefiniteMinMax => write!(f, "Remove unreachable numbers from compartments"),
+            Singles => write!(f, "Find hidden singles"),
             RequiredRange => write!(
                 f,
                 "Remove numbers from other compartments if they are required in others"
@@ -143,6 +146,8 @@ pub fn run_fast_basic(grid: &mut Grid) -> SolveResults {
     let res = {
         if strats::update_impossibles(grid) {
             UpdateImpossibles
+        } else if strats::singles(grid) {
+            Singles
         } else if strats::stranded(grid) {
             Stranded
         } else if strats::definite_min_max(grid) {
@@ -162,6 +167,8 @@ pub fn run_basic(grid: &mut Grid) -> SolveResults {
     let res = {
         if strats::update_impossibles(grid) {
             UpdateImpossibles
+        } else if strats::singles(grid) {
+            Singles
         } else if strats::stranded(grid) {
             Stranded
         } else if strats::definite_min_max(grid) {

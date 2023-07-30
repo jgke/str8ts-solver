@@ -12,6 +12,7 @@ fn border_for_solution(cell: &SolveResults) -> &'static str {
         SolveResults::PuzzleSolved
         | SolveResults::OutOfBasicStrats
         | SolveResults::UpdateImpossibles
+        | SolveResults::Singles
         | SolveResults::Stranded
         | SolveResults::DefiniteMinMax
         | SolveResults::RequiredRange
@@ -40,19 +41,20 @@ pub struct SolutionHistoryProps {
 pub fn solve_result_discriminant(index: usize, res: &SolveResults) -> usize {
     match res {
         SolveResults::UpdateImpossibles => 0,
-        SolveResults::Stranded => 1,
-        SolveResults::DefiniteMinMax => 2,
-        SolveResults::RequiredRange => 3,
-        SolveResults::Sets(_) => 4,
-        SolveResults::RequiredAndForbidden => 5,
-        SolveResults::Setti => 6,
-        SolveResults::SettiMinMax => 7,
-        SolveResults::Fish(_) => 8,
+        SolveResults::Singles => 1,
+        SolveResults::Stranded => 2,
+        SolveResults::DefiniteMinMax => 3,
+        SolveResults::RequiredRange => 4,
+        SolveResults::Sets(_) => 5,
+        SolveResults::RequiredAndForbidden => 6,
+        SolveResults::Setti => 7,
+        SolveResults::SettiMinMax => 8,
+        SolveResults::Fish(_) => 9,
         SolveResults::StartChain(_, _) => 1_000_000 + index,
         SolveResults::Chain(_, _, _, _) => 2_000_000 + index,
         SolveResults::EndChain(_) => 3_000_000 + index,
-        SolveResults::PuzzleSolved => 9,
-        SolveResults::OutOfBasicStrats => 10,
+        SolveResults::PuzzleSolved => 10,
+        SolveResults::OutOfBasicStrats => 11,
     }
 }
 

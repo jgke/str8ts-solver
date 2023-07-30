@@ -1,5 +1,17 @@
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
+use std::fmt;
+
+#[derive(Copy, Clone, PartialEq, Eq, Default)]
 pub struct BitSet(u32);
+
+impl fmt::Debug for BitSet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("BitSet")?;
+        f.debug_set()
+         .entries((1..32).filter(|n| self.contains(*n)))
+         .finish()
+    }
+}
+
 
 impl BitSet {
     pub fn new() -> BitSet {
