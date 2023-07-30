@@ -18,7 +18,7 @@ pub fn render_grid(props: &RenderGridProps) -> Html {
     let diffgrid = DiffGrid::new(props.grid.clone(), props.next_grid.clone());
 
     html! {
-        <div class="flex flex-col md:p-4 mb-4 md:bg-light-800 md:dark:bg-blue-200 md:border w-fit rounded leading-tight">
+        <div class="flex flex-col text-black md:p-4 mb-4 md:bg-light-800 md:dark:bg-blue-200 md:border w-fit rounded leading-tight">
             if props.show_extras {
                 <div class="flex w-fit">
                     <div class="w-1/12vw h-1/12vw md:w-14 md:h-14" />
