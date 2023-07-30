@@ -38,7 +38,7 @@ fn main() {
         #[arg(long, default_value_t = 5)]
         target_difficulty: usize,
         /// Should the puzzle be unsymmetric
-        #[arg(long, default_value_t = true)]
+        #[arg(long, default_value_t = false)]
         not_symmetric: bool,
     }
 

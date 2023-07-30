@@ -1,41 +1,49 @@
-# Yew Trunk Template
+# str8ts-solver
 
-This is a fairly minimal template for a Yew app that's built with [Trunk].
+This is a graphical str8ts solver. It can also be used to generate new puzzles from command line.
 
 ## Usage
 
-For a more thorough explanation of Trunk and its features, please head over to the [repository][trunk].
+You need Rust and Cargo installed.
 
-### Installation
+### Generating puzzles
 
-If you don't already have it installed, it's time to install Rust: <https://www.rust-lang.org/tools/install>.
-The rest of this guide assumes a typical Rust installation which contains both `rustup` and Cargo.
+```
+$ cargo run --release # this takes some time
+    Finished release [optimized + debuginfo] target(s) in 0.06s
+     Running `target/release/str8ts-solver`
+5216.....
+..#..85..
+..#8a.2..
+4....7.#2
+...#59...
+.a.2..6#.
+8.g....#.
+.##......
+......#i.
+```
 
-To compile Rust to WASM, we need to have the `wasm32-unknown-unknown` target installed.
-If you don't already have it, install it with the following command:
+See `cargo run --release -- --help` for more usage. Try `cargo run --release --
+--target-difficulty 7` for harder puzzles, and `cargo run --release --
+--target-difficulty 4` for easier ones. Note that the puzzles with difficulty >
+5 take more time to generate.
+
+Use `RUST_LOG=debug cargo run --release -- --target-difficulty 7` to see some progress.
+
+### Graphical solver
+
+The solver is implemented as a Yew app, and requires the `trunk` and the `wasm32` targets to be installed:
 
 ```bash
 rustup target add wasm32-unknown-unknown
-```
-
-Now that we have our basics covered, it's time to install the star of the show: [Trunk].
-Simply run the following command to install it:
-
-```bash
 cargo install trunk wasm-bindgen-cli
 ```
 
-That's it, we're done!
-
-### Running
+After those are installed, you can start the UI with
 
 ```bash
-trunk serve
+trunk serve --release
 ```
-
-Rebuilds the app whenever a change is detected and runs a local server to host it.
-
-There's also the `trunk watch` command which does the same thing but without hosting it.
 
 ### Release
 
@@ -44,28 +52,9 @@ trunk build --release
 ```
 
 This builds the app in release mode similar to `cargo build --release`.
-You can also pass the `--release` flag to `trunk serve` if you need to get every last drop of performance.
 
-Unless overwritten, the output will be located in the `dist` directory.
-
-## Using this template
-
-There are a few things you have to adjust when adopting this template.
-
-### Remove example code
-
-The code in [src/main.rs](src/main.rs) specific to the example is limited to only the `view` method.
-There is, however, a fair bit of Sass in [index.scss](index.scss) you can remove.
-
-### Update metadata
-
-Update the `name`, `version`, `description` and `repository` fields in the [Cargo.toml](Cargo.toml) file.
-The [index.html](index.html) file also contains a `<title>` tag that needs updating.
-
-Finally, you should update this very `README` file to be about your app.
+The output will be located in the `dist` directory.
 
 ### License
 
 AGPL, see LICENSE
-
-[trunk]: https://github.com/thedodd/trunk
