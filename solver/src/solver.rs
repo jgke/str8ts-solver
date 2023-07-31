@@ -109,7 +109,6 @@ pub enum ValidationResult {
         max_ranges: ((u8, u8), (u8, u8)),
     },
     OutOfStrats,
-    InvalidGridSize(usize, usize),
 }
 
 impl Display for ValidationResult {
@@ -137,7 +136,6 @@ impl Display for ValidationResult {
                 write!(f, "Compartment scan: {} compartment starting from ({}, {}) contains numbers {} and {}, but it's too small for them as it can either contain {} to {} or {} to {}",
                        if *vertical { "Vertical" } else { "Horizontal" }, x+1, y+1, a, b, min_a, max_a, min_b, max_b),
             OutOfStrats => write!(f, "Ran out of strategies!"),
-            InvalidGridSize(rows, cols) => write!(f, "The grid is invalid: It has {} white squares for rows and {} white squares for columns, but they should be equal", rows, cols)
         }
     }
 }

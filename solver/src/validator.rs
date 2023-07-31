@@ -5,33 +5,6 @@ use crate::solver::ValidationResult;
 use crate::solver::ValidationResult::*;
 use rustc_hash::FxHashMap;
 
-pub fn grid_size_is_valid(grid: &Grid) -> Result<(), ValidationResult> {
-    let mut whites_in_rows = 0;
-    let mut whites_in_cols = 0;
-    for (vertical, line) in grid.iter_by_rows_and_cols() {
-        for (_, cell) in line {
-            let n = match cell {
-                Requirement(_) => 1,
-                Solution(_) => 1,
-                Blocker(_) => 0,
-                Indeterminate(_) => 1,
-                Black => 0,
-            };
-            if vertical {
-                whites_in_cols += n;
-            } else {
-                whites_in_rows += n;
-            }
-        }
-    }
-
-    if whites_in_rows != whites_in_cols {
-        Err(InvalidGridSize(whites_in_rows, whites_in_cols))
-    } else {
-        Ok(())
-    }
-}
-
 pub fn cell_has_solutions(x: usize, y: usize, cell: &Cell) -> Result<(), ValidationResult> {
     match cell {
         Requirement(_) | Solution(_) | Blocker(_) | Black => {}
@@ -111,8 +84,6 @@ pub fn compartment_valid(compartment: &Compartment) -> Result<(), ValidationResu
 }
 
 pub fn validate(grid: &Grid) -> Result<(), ValidationResult> {
-    grid_size_is_valid(grid)?;
-
     for y in 0..grid.y {
         for x in 0..grid.x {
             cell_has_solutions(x, y, &grid.cells[y][x])?;
