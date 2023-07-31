@@ -93,6 +93,11 @@ pub fn fish(grid: &mut Grid) -> Option<usize> {
                             changes |= grid.set_impossible_in(*position, false, num, &positions);
                             changes |= grid.set_impossible_in(*position, true, num, &positions);
                         }
+
+                        for (x, y) in positions {
+                            grid.row_requirements[y].insert(num);
+                            grid.col_requirements[x].insert(num);
+                        }
                     }
                 }
             }
