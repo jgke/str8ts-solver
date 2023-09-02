@@ -17,9 +17,10 @@ fn border_for_solution(cell: &SolveResults) -> &'static str {
         | SolveResults::DefiniteMinMax
         | SolveResults::RequiredRange
         | SolveResults::Sets(_) => "",
-        SolveResults::RequiredAndForbidden | SolveResults::Setti | SolveResults::SettiMinMax => {
-            "border-t-8 border-t-blue-700"
-        }
+        SolveResults::RequiredAndForbidden
+        | SolveResults::RowColBrute
+        | SolveResults::Setti
+        | SolveResults::SettiMinMax => "border-t-8 border-t-blue-700",
         SolveResults::Fish(2 | 3) => "border-t-8 border-t-blue-700",
         SolveResults::Fish(_) => "border-t-8 border-t-blue-800",
         SolveResults::StartChain(_, _)
@@ -47,14 +48,15 @@ pub fn solve_result_discriminant(index: usize, res: &SolveResults) -> usize {
         SolveResults::RequiredRange => 4,
         SolveResults::Sets(_) => 5,
         SolveResults::RequiredAndForbidden => 6,
-        SolveResults::Setti => 7,
-        SolveResults::SettiMinMax => 8,
-        SolveResults::Fish(_) => 9,
+        SolveResults::RowColBrute => 7,
+        SolveResults::Setti => 8,
+        SolveResults::SettiMinMax => 9,
+        SolveResults::Fish(_) => 10,
         SolveResults::StartChain(_, _) => 1_000_000 + index,
         SolveResults::Chain(_, _, _, _) => 2_000_000 + index,
         SolveResults::EndChain(_) => 3_000_000 + index,
-        SolveResults::PuzzleSolved => 10,
-        SolveResults::OutOfBasicStrats => 11,
+        SolveResults::PuzzleSolved => 11,
+        SolveResults::OutOfBasicStrats => 12,
     }
 }
 

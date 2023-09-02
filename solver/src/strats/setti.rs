@@ -7,8 +7,8 @@ pub fn setti(grid: &mut Grid) -> bool {
     for n in 1..=grid.x as u8 {
         let mut row_min = 0;
         let mut row_max = 0;
-        for row in grid.iter_by_rows() {
-            if required_numbers(grid, &row).contains(n) {
+        for (row_n, row) in grid.iter_by_rows().into_iter().enumerate() {
+            if grid.row_requirements[row_n].contains(n) {
                 row_min += 1;
             }
             if possible_numbers(&row).contains(n) {
@@ -18,8 +18,8 @@ pub fn setti(grid: &mut Grid) -> bool {
 
         let mut col_min = 0;
         let mut col_max = 0;
-        for col in grid.iter_by_cols() {
-            if required_numbers(grid, &col).contains(n) {
+        for (col_n, col) in grid.iter_by_cols().into_iter().enumerate() {
+            if grid.col_requirements[col_n].contains(n) {
                 col_min += 1;
             }
             if possible_numbers(&col).contains(n) {

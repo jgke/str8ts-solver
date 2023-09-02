@@ -15,6 +15,7 @@ pub enum SolveResults {
     RequiredRange,
     Sets(usize),
     RequiredAndForbidden,
+    RowColBrute,
     Setti,
     SettiMinMax,
     Fish(usize),
@@ -35,6 +36,7 @@ impl SolveResults {
             RequiredRange => 3,
             Sets(_) => 3,
             RequiredAndForbidden => 5,
+            RowColBrute => 5,
             Setti => 5,
             SettiMinMax => 5,
             Fish(2) | Fish(3) => 5,
@@ -62,6 +64,10 @@ impl Display for SolveResults {
             ),
             Sets(n) => write!(f, "Find out sets of {} numbers", n),
             RequiredAndForbidden => write!(f, "List required numbers and blocked numbers"),
+            RowColBrute => write!(
+                f,
+                "Think very hard about possible combinations in rows and columns"
+            ),
             Setti => write!(f, "Calculate settis"),
             SettiMinMax => write!(
                 f,
@@ -199,6 +205,8 @@ pub fn solve_round(grid: &mut Grid, enable_chains: bool) -> Result<SolveResults,
                     Ok(Setti)
                 } else if strats::setti_min_max(grid) {
                     Ok(SettiMinMax)
+                } else if strats::row_col_brute(grid) {
+                    Ok(RowColBrute)
                 } else if let Some(n) = strats::fish(grid) {
                     Ok(Fish(n))
                 } else if enable_chains {
