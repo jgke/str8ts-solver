@@ -45,6 +45,15 @@ pub fn sets(grid: &mut Grid) -> Option<usize> {
                             &applies_to,
                         );
                     }
+
+                    if grid.has_requirements() {
+                        let sample_pos = applies_to.iter().copied().next().unwrap();
+                        if vertical {
+                            changes |= grid.col_requirements[sample_pos.0].append(try_set);
+                        } else {
+                            changes |= grid.row_requirements[sample_pos.1].append(try_set);
+                        }
+                    }
                     changes |= local_changes;
                     if local_changes {
                         break;
@@ -78,25 +87,25 @@ mod tests {
 ########
 ");
         grid.cells[1][1] = det([1, 2]);
-        grid.cells[2][1] = det([1, 2]);
-        grid.cells[1][2] = det([1, 2, 3]);
-        grid.cells[1][3] = det([1, 2, 3]);
+        grid.cells[1][2] = det([1, 2]);
+        grid.cells[2][1] = det([1, 2, 3]);
+        grid.cells[3][1] = det([1, 2, 3]);
 
         /* round 1: n=2 */
         assert_eq!(Some(2), sets(&mut grid));
 
         assert_eq!(grid.cells[1][1], det([1, 2]));
-        assert_eq!(grid.cells[2][1], det([1, 2]));
-        assert_eq!(grid.cells[1][2], det([1, 2, 3]));
-        assert_eq!(grid.cells[1][3], det([1, 2, 3]));
+        assert_eq!(grid.cells[1][2], det([1, 2]));
+        assert_eq!(grid.cells[2][1], det([1, 2, 3]));
+        assert_eq!(grid.cells[3][1], det([1, 2, 3]));
 
-        assert_eq!(grid.cells[5][1], det([3, 4, 5, 6, 7, 8]));
-        assert_eq!(grid.cells[6][1], det([3, 4, 5, 6, 7, 8]));
-        assert_eq!(grid.cells[6][2], det([1, 2, 3, 4, 5, 6, 7, 8]));
-
-        assert_eq!(grid.cells[1][5], det([1, 2, 3, 4, 5, 6, 7, 8]));
-        assert_eq!(grid.cells[1][6], det([1, 2, 3, 4, 5, 6, 7, 8]));
+        assert_eq!(grid.cells[1][5], det([3, 4, 5, 6, 7, 8]));
+        assert_eq!(grid.cells[1][6], det([3, 4, 5, 6, 7, 8]));
         assert_eq!(grid.cells[2][6], det([1, 2, 3, 4, 5, 6, 7, 8]));
+
+        assert_eq!(grid.cells[5][1], det([1, 2, 3, 4, 5, 6, 7, 8]));
+        assert_eq!(grid.cells[6][1], det([1, 2, 3, 4, 5, 6, 7, 8]));
+        assert_eq!(grid.cells[6][2], det([1, 2, 3, 4, 5, 6, 7, 8]));
 
         assert_eq!(grid.cells[6][5], det([1, 2, 3, 4, 5, 6, 7, 8]));
         assert_eq!(grid.cells[5][6], det([1, 2, 3, 4, 5, 6, 7, 8]));
@@ -106,20 +115,51 @@ mod tests {
         assert_eq!(Some(3), sets(&mut grid));
 
         assert_eq!(grid.cells[1][1], det([1, 2]));
-        assert_eq!(grid.cells[2][1], det([1, 2]));
-        assert_eq!(grid.cells[1][2], det([1, 2, 3]));
-        assert_eq!(grid.cells[1][3], det([1, 2, 3]));
+        assert_eq!(grid.cells[1][2], det([1, 2]));
+        assert_eq!(grid.cells[2][1], det([1, 2, 3]));
+        assert_eq!(grid.cells[3][1], det([1, 2, 3]));
 
-        assert_eq!(grid.cells[5][1], det([3, 4, 5, 6, 7, 8]));
-        assert_eq!(grid.cells[6][1], det([3, 4, 5, 6, 7, 8]));
-        assert_eq!(grid.cells[6][2], det([1, 2, 3, 4, 5, 6, 7, 8]));
-
-        assert_eq!(grid.cells[1][5], det([4, 5, 6, 7, 8]));
-        assert_eq!(grid.cells[1][6], det([4, 5, 6, 7, 8]));
+        assert_eq!(grid.cells[1][5], det([3, 4, 5, 6, 7, 8]));
+        assert_eq!(grid.cells[1][6], det([3, 4, 5, 6, 7, 8]));
         assert_eq!(grid.cells[2][6], det([1, 2, 3, 4, 5, 6, 7, 8]));
+
+        assert_eq!(grid.cells[5][1], det([4, 5, 6, 7, 8]));
+        assert_eq!(grid.cells[6][1], det([4, 5, 6, 7, 8]));
+        assert_eq!(grid.cells[6][2], det([1, 2, 3, 4, 5, 6, 7, 8]));
 
         assert_eq!(grid.cells[6][5], det([1, 2, 3, 4, 5, 6, 7, 8]));
         assert_eq!(grid.cells[5][6], det([1, 2, 3, 4, 5, 6, 7, 8]));
         assert_eq!(grid.cells[6][6], det([1, 2, 3, 4, 5, 6, 7, 8]));
+    }
+
+    #[test]
+    fn test_sets_requirements() {
+        let mut grid = g("
+########
+#..##..#
+#.####.#
+#.######
+########
+#.####.#
+#..##..#
+########
+");
+        grid.cells[1][1] = det([1, 2]);
+        grid.cells[1][2] = det([1, 2]);
+        grid.cells[2][1] = det([1, 2, 3]);
+        grid.cells[3][1] = det([1, 2, 3]);
+        grid.row_requirements[0].insert(1);
+
+        /* round 1: n=2 */
+        assert_eq!(Some(2), sets(&mut grid));
+
+        assert_eq!(grid.row_requirements[1], set([1, 2]));
+        assert_eq!(grid.col_requirements[1], set([]));
+
+        /* round 2: n=3 */
+        assert_eq!(Some(3), sets(&mut grid));
+
+        assert_eq!(grid.row_requirements[1], set([1, 2]));
+        assert_eq!(grid.col_requirements[1], set([1, 2, 3]));
     }
 }

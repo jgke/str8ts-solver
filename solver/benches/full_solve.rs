@@ -5,6 +5,7 @@ use solver::grid::Grid;
 use solver::solver::{solve_round, SolveResults};
 
 fn full_solve(mut grid: Grid, enable_chains: bool) -> usize {
+    let orig_grid = grid.clone();
     let mut loop_count = 0;
     loop {
         loop_count += 1;
@@ -14,7 +15,10 @@ fn full_solve(mut grid: Grid, enable_chains: bool) -> usize {
             }
             Ok(_) => {}
             Err(e) => {
-                panic!("Failed to solve grid: {}\n{}", e, grid);
+                panic!(
+                    "Failed to solve grid: {}\n{}\nOriginal grid:\n{}",
+                    e, grid, orig_grid
+                );
             }
         }
     }

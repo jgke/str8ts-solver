@@ -87,7 +87,7 @@ mod tests {
 .#...
 ");
 
-        while dbg!(run_basic(&mut grid)) != OutOfBasicStrats {
+        while run_basic(&mut grid) != OutOfBasicStrats {
             println!("{}\n", grid);
             println!("{:?}\n", grid);
         }

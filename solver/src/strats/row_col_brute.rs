@@ -2,7 +2,7 @@ use crate::bitset::BitSet;
 use crate::grid::{Cell, Compartment, Grid};
 use crate::validator::compartment_valid;
 
-pub fn solution_valid(compartments: &[Compartment]) -> bool {
+pub fn solution_valid(compartments: &[Compartment], requirements: BitSet) -> bool {
     let mut seen_numbers = BitSet::new();
     for compartment in compartments {
         for (_, cell) in &compartment.cells {
@@ -19,12 +19,19 @@ pub fn solution_valid(compartments: &[Compartment]) -> bool {
         }
     }
 
+    if !requirements.is_subset(seen_numbers) {
+        return false;
+    }
+
     compartments
         .iter()
         .all(|compartment| compartment_valid(compartment).is_ok())
 }
 
-pub fn compartment_solutions(compartments: &[Compartment]) -> Vec<Vec<Compartment>> {
+pub fn compartment_solutions(
+    compartments: &[Compartment],
+    requirements: BitSet,
+) -> Vec<Vec<Compartment>> {
     let mut available_solutions = Vec::new();
     let mut all_solved = true;
     'outer: for (index, compartment) in compartments.iter().enumerate() {
@@ -45,14 +52,15 @@ pub fn compartment_solutions(compartments: &[Compartment]) -> Vec<Vec<Compartmen
                         }
                     }
                     if compartment_valid(&with_solution[index]).is_ok() {
-                        available_solutions.append(&mut compartment_solutions(&with_solution))
+                        available_solutions
+                            .append(&mut compartment_solutions(&with_solution, requirements))
                     }
                 }
                 break 'outer;
             }
         }
     }
-    if all_solved && solution_valid(compartments) {
+    if all_solved && solution_valid(compartments, requirements) {
         available_solutions.push(compartments.to_vec());
     }
     available_solutions
@@ -80,7 +88,7 @@ pub fn row_col_brute(grid: &mut Grid) -> bool {
         if compartments.len() <= 1 {
             continue;
         }
-        let solutions = compartment_solutions(&compartments);
+        let solutions = compartment_solutions(&compartments, grid.row_requirements[index]);
         if solutions.is_empty() {
             unreachable!();
         }
@@ -104,7 +112,7 @@ pub fn row_col_brute(grid: &mut Grid) -> bool {
         if compartments.len() <= 1 {
             continue;
         }
-        let solutions = compartment_solutions(&compartments);
+        let solutions = compartment_solutions(&compartments, grid.col_requirements[index]);
         if solutions.is_empty() {
             unreachable!();
         }

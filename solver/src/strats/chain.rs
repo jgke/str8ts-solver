@@ -96,7 +96,7 @@ mod tests {
     use super::*;
     use crate::solver::run_basic;
     use crate::solver::SolveResults::OutOfBasicStrats;
-    use crate::strats::{setti, setti_min_max, update_required_and_forbidden};
+    use crate::strats::{definite_min_max, setti, update_required_and_forbidden};
     use crate::utils::*;
 
     #[test]
@@ -112,7 +112,7 @@ mod tests {
         while run_basic(&mut grid) != OutOfBasicStrats {}
         assert!(update_required_and_forbidden(&mut grid));
         assert!(setti(&mut grid));
-        assert!(setti_min_max(&mut grid));
+        assert!(definite_min_max(&mut grid));
         while run_basic(&mut grid) != OutOfBasicStrats {}
 
         let res = chain(&mut grid);

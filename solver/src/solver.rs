@@ -17,7 +17,6 @@ pub enum SolveResults {
     RequiredAndForbidden,
     RowColBrute,
     Setti,
-    SettiMinMax,
     Fish(usize),
     StartChain((usize, usize), u8),
     Chain((usize, usize), u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
@@ -38,7 +37,6 @@ impl SolveResults {
             RequiredAndForbidden => 5,
             RowColBrute => 5,
             Setti => 5,
-            SettiMinMax => 5,
             Fish(2) | Fish(3) => 5,
             Fish(_) => 6,
             StartChain(_, _) => 1,
@@ -69,10 +67,6 @@ impl Display for SolveResults {
                 "Think very hard about possible combinations in rows and columns"
             ),
             Setti => write!(f, "Calculate settis"),
-            SettiMinMax => write!(
-                f,
-                "Remove unreachable numbers from compartments using setti info"
-            ),
             Fish(2) => write!(f, "Calculate a X-wing"),
             Fish(3) => write!(f, "Calculate a Swordfish"),
             Fish(n) => write!(f, "Calculate a {}-fish", n),
@@ -203,8 +197,6 @@ pub fn solve_round(grid: &mut Grid, enable_chains: bool) -> Result<SolveResults,
                     Ok(RequiredAndForbidden)
                 } else if strats::setti(grid) {
                     Ok(Setti)
-                } else if strats::setti_min_max(grid) {
-                    Ok(SettiMinMax)
                 } else if strats::row_col_brute(grid) {
                     Ok(RowColBrute)
                 } else if let Some(n) = strats::fish(grid) {

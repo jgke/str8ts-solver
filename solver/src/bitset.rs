@@ -7,11 +7,10 @@ impl fmt::Debug for BitSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("BitSet")?;
         f.debug_set()
-         .entries((1..32).filter(|n| self.contains(*n)))
-         .finish()
+            .entries((1..32).filter(|n| self.contains(*n)))
+            .finish()
     }
 }
-
 
 impl BitSet {
     pub fn new() -> BitSet {
@@ -38,6 +37,16 @@ impl BitSet {
 
     pub fn len(&self) -> usize {
         self.0.count_ones() as usize
+    }
+
+    pub fn append(&mut self, other: BitSet) -> bool {
+        let retval = !other.is_subset(*self);
+        self.0 |= other.0;
+        retval
+    }
+
+    pub fn is_subset(&self, other: BitSet) -> bool {
+        self.0 | other.0 == other.0
     }
 
     pub fn difference(&self, other: BitSet) -> Self {
