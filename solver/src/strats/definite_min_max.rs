@@ -2,6 +2,7 @@ use crate::bitset::BitSet;
 use crate::grid::Cell::*;
 use crate::grid::Compartment;
 use crate::grid::Grid;
+use crate::solver::ValidationResult;
 use crate::strats::get_compartment_range;
 
 pub fn num_count_in_containers(grid: &Grid, current_compartment: &Compartment, num: u8) -> usize {
@@ -23,28 +24,25 @@ pub fn update_data(grid: &Grid, stale_compartment: Compartment) -> Compartment {
         cells: stale_compartment
             .cells
             .into_iter()
-            .map(|((x, y), _)| ((x, y), grid.cells[y][x].clone()))
+            .map(|((x, y), _)| ((x, y), grid.get_cell((x, y)).clone()))
             .collect(),
         vertical: stale_compartment.vertical,
     }
 }
 
-pub fn definite_min_max(grid: &mut Grid) -> bool {
+pub fn definite_min_max(grid: &mut Grid) -> Result<bool, ValidationResult> {
     let mut changes = false;
 
     for row in grid.iter_by_compartments() {
         for compartment in row {
-            if let Some((min, max)) = get_compartment_range(grid.x, &compartment, BitSet::default())
+            if let Some((min, max)) = get_compartment_range(grid.x, &compartment, None)
             {
                 for ((x, y), cell) in compartment.cells {
                     match cell {
                         Indeterminate(set) => {
                             let new_set: BitSet =
                                 set.into_iter().filter(|c| *c >= min && *c <= max).collect();
-                            if set.len() != new_set.len() {
-                                grid.cells[y][x] = Indeterminate(new_set);
-                                changes = true;
-                            }
+                            changes |= grid.remove_numbers((x, y), set.difference(new_set))?;
                         }
                         Requirement(_) | Solution(_) | Blocker(_) | Black => {}
                     }
@@ -68,7 +66,7 @@ pub fn definite_min_max(grid: &mut Grid) -> bool {
                         && num_count_in_containers(grid, &compartment, n) == 1
                     {
                         if let Some((min, max)) =
-                            get_compartment_range(grid.x, &compartment, [n].into_iter().collect())
+                            get_compartment_range(grid.x, &compartment, Some(n))
                         {
                             for ((x, y), cell) in &compartment.cells {
                                 match cell {
@@ -77,11 +75,8 @@ pub fn definite_min_max(grid: &mut Grid) -> bool {
                                             .into_iter()
                                             .filter(|c| *c >= min && *c <= max)
                                             .collect();
-                                        if set.len() != new_set.len() {
-                                            let new_val = Indeterminate(new_set);
-                                            grid.cells[*y][*x] = new_val;
-                                            changes = true;
-                                        }
+                                        changes |=
+                                            grid.remove_numbers((*x, *y), set.difference(new_set))?;
                                     }
                                     Requirement(_) | Solution(_) | Blocker(_) | Black => {}
                                 }
@@ -93,13 +88,13 @@ pub fn definite_min_max(grid: &mut Grid) -> bool {
         }
     }
 
-    changes
+    Ok(changes)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::solver::run_basic;
+    use crate::solver::solve_basic;
     use crate::solver::SolveResults::OutOfBasicStrats;
     use crate::strats;
     use crate::utils::*;
@@ -112,8 +107,8 @@ mod tests {
 #.##
 ####
 ");
-        assert!(strats::update_impossibles(&mut grid));
-        assert!(definite_min_max(&mut grid));
+        assert_eq!(strats::update_impossibles(&mut grid), Ok(true));
+        assert_eq!(definite_min_max(&mut grid), Ok(true));
         assert_eq!(grid.cells[1][1], Requirement(4));
         assert_eq!(grid.cells[2][1], det([3]));
         assert_eq!(grid.cells[1][2], det([3]));
@@ -129,15 +124,15 @@ mod tests {
 .....
 ");
 
-        while run_basic(&mut grid) != OutOfBasicStrats {}
+        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
 
-        assert!(strats::update_required_and_forbidden(&mut grid));
+        assert_eq!(strats::update_required_and_forbidden(&mut grid), Ok(true));
         assert_eq!(strats::setti(&mut grid), Some(set([5])));
 
         assert_eq!(grid.cells[3][2], det([3, 4, 5]));
         assert_eq!(grid.cells[4][2], det([3, 4, 5]));
 
-        assert!(definite_min_max(&mut grid));
+        assert_eq!(definite_min_max(&mut grid), Ok(true));
 
         assert_eq!(grid.cells[3][2], det([4, 5]));
         assert_eq!(grid.cells[4][2], det([4, 5]));
@@ -167,7 +162,7 @@ mod tests {
 
         grid.row_requirements[1].append(set([1, 2, 3, 4, 5, 6, 7]));
 
-        assert!(definite_min_max(&mut grid));
+        assert_eq!(definite_min_max(&mut grid), Ok(true));
 
         assert_eq!(grid.cells[1][0], det([1, 2]));
         assert_eq!(grid.cells[1][1], det([1, 2]));

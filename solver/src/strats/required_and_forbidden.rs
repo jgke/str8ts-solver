@@ -5,11 +5,10 @@ use crate::grid::{CellPair, Compartment, Grid};
 pub fn required_in_compartment_by_range(
     grid_size: usize,
     compartment: &Compartment,
-    must_contain: BitSet,
 ) -> BitSet {
     let mut required = BitSet::default();
     let compartment_size = compartment.cells.len();
-    if let Some((min, max)) = get_compartment_range(grid_size, compartment, must_contain) {
+    if let Some((min, max)) = get_compartment_range(grid_size, compartment, None) {
         let def_max = min - 1 + (compartment_size as u8);
         let def_min = max + 1 - (compartment_size as u8);
 
@@ -24,7 +23,7 @@ pub fn required_by_range(grid_size: usize, line: &[CellPair]) -> BitSet {
     Grid::line_to_compartments(false, line.to_vec())
         .into_iter()
         .flat_map(|compartment| {
-            required_in_compartment_by_range(grid_size, &compartment, BitSet::default()).into_iter()
+            required_in_compartment_by_range(grid_size, &compartment).into_iter()
         })
         .collect()
 }
@@ -91,7 +90,7 @@ pub fn possible_numbers(line: &[CellPair]) -> BitSet {
 pub fn get_compartment_range(
     grid_size: usize,
     compartment: &Compartment,
-    must_contain: BitSet,
+    must_contain: Option<u8>,
 ) -> Option<(u8, u8)> {
     let len = compartment.cells.len();
 
@@ -136,7 +135,7 @@ mod tests {
                     cells: vec![((0, 0), Requirement(1))],
                     vertical: false
                 },
-                BitSet::default()
+                None
             )
         );
         assert_eq!(
@@ -147,7 +146,7 @@ mod tests {
                     cells: vec![((0, 0), Requirement(1)), ((0, 0), Requirement(2)),],
                     vertical: false
                 },
-                BitSet::default()
+                None
             )
         );
         assert_eq!(
@@ -158,7 +157,7 @@ mod tests {
                     cells: vec![((0, 0), Requirement(1)), ((0, 0), Requirement(2)),],
                     vertical: false
                 },
-                BitSet::default()
+                None
             )
         );
         assert_eq!(
@@ -169,7 +168,7 @@ mod tests {
                     cells: vec![((0, 0), Requirement(2)), ((0, 0), Requirement(3)),],
                     vertical: false
                 },
-                BitSet::default()
+                None
             )
         );
         assert_eq!(
@@ -180,7 +179,7 @@ mod tests {
                     cells: vec![((0, 0), Requirement(3)), ((0, 0), Requirement(4)),],
                     vertical: false
                 },
-                BitSet::default()
+                None
             )
         );
     }
@@ -195,7 +194,7 @@ mod tests {
                     cells: vec![((0, 0), det([1]))],
                     vertical: false
                 },
-                BitSet::default()
+                None
             )
         );
     }
@@ -214,7 +213,7 @@ mod tests {
                     ],
                     vertical: false
                 },
-                [2].into_iter().collect()
+                Some(2)
             )
         );
     }

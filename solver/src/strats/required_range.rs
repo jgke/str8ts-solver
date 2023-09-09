@@ -1,9 +1,9 @@
-use crate::bitset::BitSet;
 use crate::grid::Grid;
+use crate::solver::ValidationResult;
 use crate::strats::required_in_compartment_by_range;
 use rustc_hash::FxHashSet;
 
-pub fn required_range(grid: &mut Grid) -> bool {
+pub fn required_range(grid: &mut Grid) -> Result<bool, ValidationResult> {
     let mut changes = false;
 
     for row in grid.iter_by_compartments() {
@@ -12,18 +12,18 @@ pub fn required_range(grid: &mut Grid) -> bool {
                 compartment.cells.iter().map(|(p, _)| *p).collect();
             let sample_pos = compartment.cells[0].0;
 
-            for num in required_in_compartment_by_range(grid.x, &compartment, BitSet::default()) {
+            for num in required_in_compartment_by_range(grid.x, &compartment) {
                 changes |= grid.set_impossible_in(
                     sample_pos,
                     compartment.vertical,
                     num,
                     &compartment_positions,
-                );
+                )?;
             }
         }
     }
 
-    changes
+    Ok(changes)
 }
 
 #[cfg(test)]
@@ -46,7 +46,7 @@ mod tests {
         grid.cells[1][1] = det([1, 2]);
         grid.cells[2][1] = det([1, 2]);
         grid.cells[1][2] = det([1, 2]);
-        assert!(required_range(&mut grid));
+        assert_eq!(required_range(&mut grid), Ok(true));
 
         assert_eq!(grid.cells[1][1], det([1, 2]));
         assert_eq!(grid.cells[2][1], det([1, 2]));

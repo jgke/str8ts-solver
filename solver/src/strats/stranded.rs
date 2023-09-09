@@ -1,8 +1,9 @@
 use crate::bitset::BitSet;
 use crate::grid::Cell::*;
 use crate::grid::Grid;
+use crate::solver::ValidationResult;
 
-pub fn stranded(grid: &mut Grid) -> bool {
+pub fn stranded(grid: &mut Grid) -> Result<bool, ValidationResult> {
     let mut changes = false;
 
     for row in grid.iter_by_compartments() {
@@ -40,16 +41,13 @@ pub fn stranded(grid: &mut Grid) -> bool {
                             to_remove.insert(start_num);
                         }
                     }
-                    if !to_remove.is_empty() {
-                        grid.cells[*y][*x] = Indeterminate(set.difference(to_remove));
-                        changes = true;
-                    }
+                    changes |= grid.remove_numbers((*x, *y), to_remove)?;
                 }
             }
         }
     }
 
-    changes
+    Ok(changes)
 }
 
 #[cfg(test)]
@@ -68,7 +66,7 @@ mod tests {
         grid.cells[1][1] = det([1, 2]);
         grid.cells[2][1] = det([1, 2, 4]);
         grid.cells[1][2] = det([1, 2, 4]);
-        assert!(stranded(&mut grid));
+        assert_eq!(stranded(&mut grid), Ok(true));
         assert_eq!(grid.cells[1][1], det([1, 2]));
         assert_eq!(grid.cells[2][1], det([1, 2]));
         assert_eq!(grid.cells[1][2], det([1, 2]));

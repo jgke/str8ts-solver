@@ -157,7 +157,7 @@ mod tests {
         grid.cells[2][0] = Cell::Indeterminate(set([1, 2, 3]));
         grid.cells[3][0] = Cell::Indeterminate(set([1, 2, 3]));
 
-        assert!(update_required_and_forbidden(&mut grid));
+        assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
 
         assert_eq!(grid.row_requirements[0].len(), 1);
         assert!(grid.row_requirements[0].contains(2));
@@ -165,7 +165,7 @@ mod tests {
         assert!(grid.col_requirements[0].contains(2));
         assert!(!grid.col_forbidden[0].contains(4));
 
-        assert!(row_col_brute(&mut grid));
+        assert_eq!(row_col_brute(&mut grid), true);
 
         assert!(grid.row_requirements[0].contains(1));
         assert!(grid.row_requirements[0].contains(2));

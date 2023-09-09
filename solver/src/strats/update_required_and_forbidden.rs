@@ -1,7 +1,8 @@
 use crate::grid::Grid;
+use crate::solver::ValidationResult;
 use crate::strats::{forbidden_numbers, required_numbers};
 
-pub fn update_required_and_forbidden(grid: &mut Grid) -> bool {
+pub fn update_required_and_forbidden(grid: &mut Grid) -> Result<bool, ValidationResult> {
     let mut changes = false;
 
     for n in 1..=grid.x as u8 {
@@ -23,5 +24,5 @@ pub fn update_required_and_forbidden(grid: &mut Grid) -> bool {
         }
     }
 
-    changes
+    Ok(changes)
 }

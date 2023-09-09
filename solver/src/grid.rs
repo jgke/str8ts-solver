@@ -2,6 +2,7 @@ use rustc_hash::FxHashSet;
 use std::fmt::{Display, Formatter};
 
 use crate::bitset::BitSet;
+use crate::solver::ValidationResult;
 use Cell::*;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -31,6 +32,13 @@ impl Compartment {
 }
 
 impl Cell {
+    pub fn to_req_or_sol(&self) -> Option<u8> {
+        match self {
+            Requirement(c) | Solution(c) => Some(*c),
+            Blocker(_) | Indeterminate(_) | Black => None,
+        }
+    }
+
     pub fn to_determinate(&self) -> Option<u8> {
         match self {
             Requirement(c) | Solution(c) | Blocker(c) => Some(*c),
@@ -73,6 +81,15 @@ impl Grid {
             row_forbidden: (0..size).map(|_| BitSet::default()).collect(),
             col_forbidden: (0..size).map(|_| BitSet::default()).collect(),
         })
+    }
+
+    pub fn get_cell(&self, pos: (usize, usize)) -> &Cell {
+        &self.cells[pos.1][pos.0]
+    }
+
+    pub fn set_cell(&mut self, pos: (usize, usize), cell: Cell) {
+        let (x, y) = pos;
+        self.cells[y][x] = cell;
     }
 
     pub fn is_solved(&self) -> bool {
@@ -190,17 +207,32 @@ impl Grid {
             .collect()
     }
 
-    pub fn set_impossible(&mut self, pos: (usize, usize), impossible: u8) -> bool {
-        let mut changes = false;
-        if let Indeterminate(set) = &self.cells[pos.1][pos.0] {
-            if set.contains(impossible) {
-                changes = true;
-                let mut new_set = *set;
-                new_set.remove(impossible);
-                self.cells[pos.1][pos.0] = Indeterminate(new_set);
+    pub fn set_impossible(
+        &mut self,
+        pos: (usize, usize),
+        num: u8,
+    ) -> Result<bool, ValidationResult> {
+        let (x, y) = pos;
+        if let Cell::Indeterminate(ref mut set) = self.cells[y][x] {
+            let ret = set.remove(num);
+            if set.is_empty() {
+                return Err(ValidationResult::EmptyCell { pos });
             }
+            return Ok(ret);
         }
-        changes
+        Ok(false)
+    }
+
+    pub fn remove_numbers(
+        &mut self,
+        pos: (usize, usize),
+        nums: BitSet,
+    ) -> Result<bool, ValidationResult> {
+        let mut retval = false;
+        for num in nums {
+            retval |= self.set_impossible(pos, num)?;
+        }
+        Ok(retval)
     }
 
     pub fn set_impossible_in(
@@ -209,24 +241,24 @@ impl Grid {
         vertical: bool,
         impossible: u8,
         except_in: &FxHashSet<(usize, usize)>,
-    ) -> bool {
+    ) -> Result<bool, ValidationResult> {
         let mut changes = false;
         if !vertical {
             let y = sample_pos.1;
             for x in 0..self.x {
                 if !except_in.contains(&(x, y)) {
-                    changes |= self.set_impossible((x, y), impossible);
+                    changes |= self.set_impossible((x, y), impossible)?;
                 }
             }
         } else {
             let x = sample_pos.0;
             for y in 0..self.y {
                 if !except_in.contains(&(x, y)) {
-                    changes |= self.set_impossible((x, y), impossible);
+                    changes |= self.set_impossible((x, y), impossible)?;
                 }
             }
         }
-        changes
+        Ok(changes)
     }
 
     pub fn has_requirements(&self) -> bool {
@@ -320,5 +352,72 @@ impl Display for Grid {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::grid::Cell;
+    use crate::utils::*;
+
+    #[test]
+    fn test_set_impossible() {
+        let mut grid = g("
+###
+###
+###
+");
+        grid.set_cell((0, 0), Cell::Black);
+        grid.set_cell((1, 0), Cell::Requirement(1));
+        grid.set_cell((2, 0), Cell::Solution(1));
+        grid.set_cell((0, 1), Cell::Blocker(1));
+        grid.set_cell((1, 1), Cell::Indeterminate(set([1, 2])));
+        grid.set_cell((2, 1), Cell::Indeterminate(set([1, 2])));
+
+        for y in 0..=1 {
+            for x in 0..=2 {
+                assert_eq!(grid.set_impossible((x, y), 1), Ok(x >= 1 && y == 1));
+            }
+        }
+
+        assert_eq!(grid.get_cell((0, 0)), &Cell::Black);
+        assert_eq!(grid.get_cell((1, 0)), &Cell::Requirement(1));
+        assert_eq!(grid.get_cell((2, 0)), &Cell::Solution(1));
+        assert_eq!(grid.get_cell((0, 1)), &Cell::Blocker(1));
+        assert_eq!(grid.get_cell((1, 1)), &Cell::Indeterminate(set([2])));
+        assert_eq!(grid.get_cell((2, 1)), &Cell::Indeterminate(set([2])));
+    }
+
+    #[test]
+    fn test_remove_numbers() {
+        let mut grid = g("
+###
+###
+###
+");
+        grid.set_cell((0, 0), Cell::Black);
+        grid.set_cell((1, 0), Cell::Requirement(1));
+        grid.set_cell((2, 0), Cell::Solution(1));
+        grid.set_cell((0, 1), Cell::Blocker(1));
+        grid.set_cell((1, 1), Cell::Indeterminate(set([1, 2, 3])));
+        grid.set_cell((2, 1), Cell::Indeterminate(set([1, 2, 4])));
+
+        let remove_set: BitSet = [1, 2].into_iter().collect();
+        for y in 0..=1 {
+            for x in 0..=2 {
+                assert_eq!(
+                    grid.remove_numbers((x, y), remove_set),
+                    Ok(x >= 1 && y == 1)
+                );
+            }
+        }
+
+        assert_eq!(grid.get_cell((0, 0)), &Cell::Black);
+        assert_eq!(grid.get_cell((1, 0)), &Cell::Requirement(1));
+        assert_eq!(grid.get_cell((2, 0)), &Cell::Solution(1));
+        assert_eq!(grid.get_cell((0, 1)), &Cell::Blocker(1));
+        assert_eq!(grid.get_cell((1, 1)), &Cell::Indeterminate(set([3])));
+        assert_eq!(grid.get_cell((2, 1)), &Cell::Indeterminate(set([4])));
     }
 }

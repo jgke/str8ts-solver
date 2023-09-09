@@ -1,8 +1,8 @@
 use crate::bitset::BitSet;
-use crate::grid::Cell::*;
 use crate::grid::Grid;
+use crate::solver::ValidationResult;
 
-pub fn update_impossibles(grid: &mut Grid) -> bool {
+pub fn update_impossibles(grid: &mut Grid) -> Result<bool, ValidationResult> {
     let mut row_impossibles: Vec<BitSet> = Vec::new();
     for (y, row) in grid.iter_by_rows().into_iter().enumerate() {
         row_impossibles.push(
@@ -24,41 +24,19 @@ pub fn update_impossibles(grid: &mut Grid) -> bool {
 
     let mut changes = false;
     for row in grid.iter_by_rows().into_iter() {
-        for ((x, y), cell) in row {
-            match cell {
-                Indeterminate(set) => {
-                    let new_set: BitSet = set.difference(row_impossibles[y]);
-                    if set.len() != new_set.len() {
-                        grid.cells[y][x] = Indeterminate(new_set);
-                        changes = true;
-                    }
-                }
-                Requirement(_) | Solution(_) | Blocker(_) | Black => {}
-            }
+        for ((x, y), _) in row {
+            changes |= grid.remove_numbers((x, y), row_impossibles[y])?;
+            changes |= grid.remove_numbers((x, y), col_impossibles[x])?;
         }
     }
 
-    for col in grid.iter_by_cols().into_iter() {
-        for ((x, y), cell) in col {
-            match cell {
-                Indeterminate(set) => {
-                    let new_set: BitSet = set.difference(col_impossibles[x]);
-                    if set.len() != new_set.len() {
-                        grid.cells[y][x] = Indeterminate(new_set);
-                        changes = true;
-                    }
-                }
-                Requirement(_) | Solution(_) | Blocker(_) | Black => {}
-            }
-        }
-    }
-
-    changes
+    Ok(changes)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::grid::Cell;
     use crate::utils::*;
     #[test]
     fn test_update_impossibles() {
@@ -68,8 +46,8 @@ mod tests {
 #.##
 ####
 ");
-        assert!(update_impossibles(&mut grid));
-        assert_eq!(grid.cells[1][1], Requirement(4));
+        assert_eq!(update_impossibles(&mut grid), Ok(true));
+        assert_eq!(grid.cells[1][1], Cell::Requirement(4));
         assert_eq!(grid.cells[2][1], det([1, 2, 3]));
         assert_eq!(grid.cells[1][2], det([1, 2, 3]));
     }

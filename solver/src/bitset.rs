@@ -27,8 +27,10 @@ impl BitSet {
         res
     }
 
-    pub fn remove(&mut self, num: u8) {
-        self.0 &= !(1 << num)
+    pub fn remove(&mut self, num: u8) -> bool {
+        let res = self.contains(num);
+        self.0 &= !(1 << num);
+        res
     }
 
     pub fn is_empty(&self) -> bool {
@@ -56,6 +58,10 @@ impl BitSet {
     pub fn union(&self, other: BitSet) -> Self {
         Self(self.0 | other.0)
     }
+
+    pub fn intersection(&self, other: BitSet) -> Self {
+        Self(self.0 & other.0)
+    }
 }
 
 impl FromIterator<u8> for BitSet {
@@ -75,5 +81,37 @@ impl IntoIterator for BitSet {
     fn into_iter(self) -> Self::IntoIter {
         let vec = (1..16).filter(|n| self.contains(*n)).collect::<Vec<_>>();
         vec.into_iter()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ops() {
+        let mut set = BitSet::new();
+        assert_eq!(set.0, 0);
+        assert!(set.is_empty());
+        assert!(!set.contains(1));
+        assert!(set.insert(1));
+        assert_eq!(set.0, 2);
+        assert!(set.contains(1));
+        assert!(!set.is_empty());
+        assert!(set.remove(1));
+        assert!(!set.contains(1));
+        assert_eq!(set.0, 0);
+        assert!(set.is_empty());
+    }
+
+    #[test]
+    fn test_multiple_inserts() {
+        let mut set = BitSet::new();
+        set.append([1, 2, 3, 4, 5].into_iter().collect());
+        assert_eq!(set.0, 0b111110);
+        assert!(set.contains(5));
+        assert!(set.remove(5));
+        assert!(!set.contains(5));
+        assert_eq!(set.0, 0b011110);
     }
 }

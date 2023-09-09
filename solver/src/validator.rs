@@ -83,10 +83,94 @@ pub fn compartment_valid(compartment: &Compartment) -> Result<(), ValidationResu
     Ok(())
 }
 
+pub fn has_requirement_conflicts(grid: &Grid) -> Result<(), ValidationResult> {
+    for index in 0..grid.x {
+        if let Some(number) = grid.col_forbidden[index]
+            .intersection(grid.col_requirements[index])
+            .into_iter()
+            .next()
+        {
+            return Err(RequirementBlockerConflict {
+                vertical: true,
+                index,
+                number,
+            });
+        }
+        if let Some(number) = grid.row_forbidden[index]
+            .intersection(grid.row_requirements[index])
+            .into_iter()
+            .next()
+        {
+            return Err(RequirementBlockerConflict {
+                vertical: false,
+                index,
+                number,
+            });
+        }
+    }
+
+    for index in 0..grid.x {
+        for number in grid.row_requirements[index] {
+            if grid
+                .get_row(index)
+                .into_iter()
+                .all(|(_, cell)| !cell.to_possibles().contains(number))
+            {
+                return Err(RequiredNumberMissing {
+                    vertical: false,
+                    index,
+                    number,
+                });
+            }
+        }
+        for number in grid.col_requirements[index] {
+            if grid
+                .get_col(index)
+                .into_iter()
+                .all(|(_, cell)| !cell.to_possibles().contains(number))
+            {
+                return Err(RequiredNumberMissing {
+                    vertical: true,
+                    index,
+                    number,
+                });
+            }
+        }
+        for number in grid.row_forbidden[index] {
+            if grid
+                .get_row(index)
+                .into_iter()
+                .any(|(_, cell)| cell.to_req_or_sol() == Some(number))
+            {
+                return Err(BlockedNumberPresent {
+                    vertical: false,
+                    index,
+                    number,
+                });
+            }
+        }
+        for number in grid.col_forbidden[index] {
+            if grid
+                .get_col(index)
+                .into_iter()
+                .any(|(_, cell)| cell.to_req_or_sol() == Some(number))
+            {
+                return Err(BlockedNumberPresent {
+                    vertical: true,
+                    index,
+                    number,
+                });
+            }
+        }
+    }
+
+    Ok(())
+}
+
 pub fn validate(grid: &Grid) -> Result<(), ValidationResult> {
     for y in 0..grid.y {
         for x in 0..grid.x {
-            cell_has_solutions(x, y, &grid.cells[y][x])?;
+            cell_has_solutions(x, y, grid.get_cell((x, y)))?;
         }
     }
 
@@ -96,6 +180,10 @@ pub fn validate(grid: &Grid) -> Result<(), ValidationResult> {
         for compartment in line {
             compartment_valid(&compartment)?;
         }
+    }
+
+    if grid.has_requirements() {
+        has_requirement_conflicts(grid)?;
     }
 
     Ok(())

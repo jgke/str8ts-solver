@@ -1,5 +1,6 @@
 use crate::grid::Cell::*;
 use crate::grid::{CellPair, Grid};
+use crate::solver::ValidationResult;
 use rustc_hash::FxHashSet;
 
 fn get_cells_with_indeterminate_num(line: &[CellPair], num: u8) -> Vec<(usize, usize)> {
@@ -19,7 +20,7 @@ fn get_cells_with_indeterminate_num(line: &[CellPair], num: u8) -> Vec<(usize, u
     cells
 }
 
-pub fn fish(grid: &mut Grid) -> Option<usize> {
+pub fn fish(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
     let mut changes = false;
 
     fn same_lane(vertical: bool, a: (usize, usize), b: (usize, usize)) -> bool {
@@ -79,7 +80,7 @@ pub fn fish(grid: &mut Grid) -> Option<usize> {
                             .copied()
                             .collect();
                         for position in &positions {
-                            changes |= grid.set_impossible(*position, num);
+                            changes |= grid.set_impossible(*position, num)?;
                         }
                         changes = true;
                     }
@@ -90,8 +91,8 @@ pub fn fish(grid: &mut Grid) -> Option<usize> {
                             .copied()
                             .collect();
                         for position in &positions {
-                            changes |= grid.set_impossible_in(*position, false, num, &positions);
-                            changes |= grid.set_impossible_in(*position, true, num, &positions);
+                            changes |= grid.set_impossible_in(*position, false, num, &positions)?;
+                            changes |= grid.set_impossible_in(*position, true, num, &positions)?;
                         }
 
                         for (x, y) in positions {
@@ -103,17 +104,17 @@ pub fn fish(grid: &mut Grid) -> Option<usize> {
             }
         }
         if changes {
-            return Some(fish_count);
+            return Ok(Some(fish_count));
         }
     }
 
-    None
+    Ok(None)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::solver::run_basic;
+    use crate::solver::solve_basic;
     use crate::solver::SolveResults::OutOfBasicStrats;
     use crate::strats::{setti, update_required_and_forbidden};
     use crate::utils::*;
@@ -128,10 +129,10 @@ mod tests {
 ##..2
 ");
 
-        while run_basic(&mut grid) != OutOfBasicStrats {}
-        assert!(update_required_and_forbidden(&mut grid));
-        assert_eq!(setti(&mut grid), Some(set([2, 5])));
-        while run_basic(&mut grid) != OutOfBasicStrats {}
+        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
+        assert_eq!(setti(&mut grid), Some(set([2])));
+        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
 
         assert_eq!(grid.cells[0][2], det([1, 2, 3, 4, 5]));
         assert_eq!(grid.cells[0][3], det([1, 2, 3, 4, 5]));
@@ -140,7 +141,7 @@ mod tests {
         assert_eq!(grid.cells[2][2], det([1, 2, 3, 4, 5]));
         assert_eq!(grid.cells[2][3], det([1, 2, 3, 4, 5]));
 
-        assert_eq!(Some(2), fish(&mut grid));
+        assert_eq!(Ok(Some(2)), fish(&mut grid));
 
         assert_eq!(grid.cells[0][2], det([1, 2, 4, 5]));
         assert_eq!(grid.cells[0][3], det([1, 2, 4, 5]));

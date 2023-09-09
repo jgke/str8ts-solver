@@ -84,8 +84,8 @@ pub fn recur<Rand: Rng + Send + Clone>(grid: Grid, rng: &mut Rand) -> Option<Gri
             .into_par_iter()
             .filter_map(|(num, rng)| {
                 let mut new_grid = grid.clone();
-                new_grid.cells[y][x] = Cell::Requirement(num);
-                while run_fast_basic(&mut new_grid) != OutOfBasicStrats {
+                new_grid.set_cell((x, y), Cell::Requirement(num));
+                while run_fast_basic(&mut new_grid) != Ok(OutOfBasicStrats) {
                     if validate(&new_grid).is_err() {
                         break;
                     }
@@ -127,7 +127,7 @@ pub fn remove_numbers<Rand: Rng + Send + Clone>(
 ) -> Option<Grid> {
     let mut queue: BinaryHeap<Task<(usize, usize), Rand>> = BinaryHeap::new();
     queue.push(Task((0, 0), rng.clone(), grid.clone()));
-    let size = grid.cells.len();
+    let size = grid.y;
 
     let diff = get_puzzle_difficulty(&grid, target_difficulty >= 6).unwrap();
     let best_difficulty = Arc::new(Mutex::new((diff.star_count, diff.move_count)));
@@ -185,16 +185,20 @@ pub fn remove_numbers<Rand: Rng + Send + Clone>(
                     .into_par_iter()
                     .filter_map(|((x, y), mut rng)| {
                         let mut grid = grid.clone();
-                        grid.cells[y][x] = Cell::Indeterminate((1..=size as u8).collect());
+                        grid.set_cell((x, y), Cell::Indeterminate((1..=size as u8).collect()));
                         if symmetric {
-                            grid.cells[size - y - 1][size - x - 1] =
-                                Cell::Indeterminate((1..=size as u8).collect());
+                            grid.set_cell(
+                                (size - x - 1, size - y - 1),
+                                Cell::Indeterminate((1..=size as u8).collect()),
+                            );
                         } else {
                             let nx = rng.gen_range(0..size);
                             let ny = rng.gen_range(0..size);
-                            if let Cell::Solution(_) = grid.cells[ny][nx] {
-                                grid.cells[size - y - 1][size - x - 1] =
-                                    Cell::Indeterminate((1..=size as u8).collect());
+                            if let Cell::Solution(_) = grid.get_cell((nx, ny)) {
+                                grid.set_cell(
+                                    (size - x - 1, size - y - 1),
+                                    Cell::Indeterminate((1..=size as u8).collect()),
+                                );
                             }
                         }
                         {
@@ -249,9 +253,9 @@ pub fn generate_puzzle<Rand: Rng + Send + Clone>(
         blocker_num_count /= 2;
     }
     for (x, y) in blockers.into_iter().take(blocker_count) {
-        grid.cells[y][x] = Cell::Black;
+        grid.set_cell((x, y), Cell::Black);
         if symmetric {
-            grid.cells[size - y - 1][size - x - 1] = Cell::Black;
+            grid.set_cell((size - x - 1, size - y - 1), Cell::Black);
         }
     }
 
@@ -270,10 +274,10 @@ pub fn generate_puzzle<Rand: Rng + Send + Clone>(
 
     for (x, y) in blocker_cells.into_iter().take(blocker_num_count) {
         let n = rng.gen_range(1..=size);
-        grid.cells[y][x] = Cell::Blocker(n as u8);
+        grid.set_cell((x, y), Cell::Blocker(n as u8));
         if symmetric {
             let n2 = rng.gen_range(1..=size);
-            grid.cells[size - y - 1][size - x - 1] = Cell::Blocker(n2 as u8);
+            grid.set_cell((size - x - 1, size - y - 1), Cell::Blocker(n2 as u8));
         }
     }
 
