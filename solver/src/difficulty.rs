@@ -8,6 +8,7 @@ pub struct Difficulty {
     pub basic_reductions: bool,
     pub min_max_reductions: bool,
     pub cross_compartment_ranges: bool,
+    pub maintain_reqs_and_blocks: bool,
     pub sets: bool,
     pub setti: bool,
     pub x_wing: bool,
@@ -42,7 +43,10 @@ pub fn puzzle_difficulty(history: &[&SolveResults]) -> Difficulty {
             .iter()
             .any(|e| matches!(e, SolveResults::RequiredRange)),
         sets: history.iter().any(|e| matches!(e, SolveResults::Sets(_))),
-        setti: history.iter().any(|e| matches!(e, SolveResults::Setti)),
+        maintain_reqs_and_blocks: history
+            .iter()
+            .any(|e| matches!(e, SolveResults::RequiredAndForbidden)),
+        setti: history.iter().any(|e| matches!(e, SolveResults::Setti(_))),
         x_wing: history.iter().any(|e| matches!(e, SolveResults::Fish(2))),
         swordfish: history.iter().any(|e| matches!(e, SolveResults::Fish(3))),
         medusa: history.iter().any(|e| matches!(e, SolveResults::Fish(4))),

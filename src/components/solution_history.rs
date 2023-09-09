@@ -17,7 +17,7 @@ fn border_for_solution(cell: &SolveResults) -> &'static str {
         | SolveResults::DefiniteMinMax
         | SolveResults::RequiredRange
         | SolveResults::Sets(_) => "",
-        SolveResults::RequiredAndForbidden | SolveResults::RowColBrute | SolveResults::Setti => {
+        SolveResults::RequiredAndForbidden | SolveResults::RowColBrute | SolveResults::Setti(_) => {
             "border-t-8 border-t-blue-700"
         }
         SolveResults::Fish(2 | 3) => "border-t-8 border-t-blue-700",
@@ -48,7 +48,7 @@ pub fn solve_result_discriminant(index: usize, res: &SolveResults) -> usize {
         SolveResults::Sets(_) => 5,
         SolveResults::RequiredAndForbidden => 6,
         SolveResults::RowColBrute => 7,
-        SolveResults::Setti => 8,
+        SolveResults::Setti(_) => 8,
         SolveResults::Fish(_) => 9,
         SolveResults::StartChain(_, _) => 1_000_000 + index,
         SolveResults::Chain(_, _, _, _) => 2_000_000 + index,

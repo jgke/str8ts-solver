@@ -18,6 +18,7 @@ pub fn render_puzzle_rating(props: &PuzzleRatingProps) -> Html {
         min_max_reductions,
         cross_compartment_ranges,
         sets,
+        maintain_reqs_and_blocks,
         setti,
         x_wing,
         swordfish,
@@ -54,6 +55,7 @@ pub fn render_puzzle_rating(props: &PuzzleRatingProps) -> Html {
                 <span class={if min_max_reductions { enabled_class } else { disabled_class }}>{"Intra-compartment range checks"}</span>
                 <span class={if cross_compartment_ranges { enabled_class } else { disabled_class }}>{"Cross-compartment range checks"}</span>
                 <span class={if sets { enabled_class } else { disabled_class }}>{"Naked and hidden sets"}</span>
+                <span class={if maintain_reqs_and_blocks { enabled_hard_class } else { hidden_class }}>{"Maintain lists of required and forbidden numbers "}</span>
                 <span class={if setti { enabled_hard_class } else { hidden_class }}>{"Setti"}</span>
                 <span class={if x_wing { enabled_hard_class } else { hidden_class }}>{"X-wing"}</span>
                 <span class={if swordfish { enabled_hard_class } else { hidden_class }}>{"Swordfish"}</span>

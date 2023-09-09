@@ -1,8 +1,9 @@
+use crate::bitset::BitSet;
 use crate::grid::Grid;
 use crate::strats::{possible_numbers, required_numbers};
 
-pub fn setti(grid: &mut Grid) -> bool {
-    let mut changes = false;
+pub fn setti(grid: &mut Grid) -> Option<BitSet> {
+    let mut changes = BitSet::new();
 
     for n in 1..=grid.x as u8 {
         let mut row_min = 0;
@@ -31,19 +32,20 @@ pub fn setti(grid: &mut Grid) -> bool {
 
         if res.len() == 1 {
             let setti_count = res[0];
+            let mut local_changes = false;
 
             if row_max == setti_count {
                 for (y, row) in grid.iter_by_rows().into_iter().enumerate() {
                     if !possible_numbers(&row).contains(n) {
-                        changes |= grid.row_forbidden[y].insert(n);
+                        local_changes |= grid.row_forbidden[y].insert(n);
                     } else {
-                        changes |= grid.row_requirements[y].insert(n);
+                        local_changes |= grid.row_requirements[y].insert(n);
                     }
                 }
             } else if row_min == setti_count {
                 for (y, row) in grid.iter_by_rows().into_iter().enumerate() {
                     if !required_numbers(grid, &row).contains(n) {
-                        changes |= grid.row_forbidden[y].insert(n);
+                        local_changes |= grid.row_forbidden[y].insert(n);
                     }
                 }
             }
@@ -51,22 +53,30 @@ pub fn setti(grid: &mut Grid) -> bool {
             if col_max == setti_count {
                 for (x, col) in grid.iter_by_cols().into_iter().enumerate() {
                     if !possible_numbers(&col).contains(n) {
-                        changes |= grid.col_forbidden[x].insert(n);
+                        local_changes |= grid.col_forbidden[x].insert(n);
                     } else {
-                        changes |= grid.col_requirements[x].insert(n);
+                        local_changes |= grid.col_requirements[x].insert(n);
                     }
                 }
             } else if col_min == setti_count {
                 for (x, col) in grid.iter_by_cols().into_iter().enumerate() {
                     if !required_numbers(grid, &col).contains(n) {
-                        changes |= grid.col_forbidden[x].insert(n);
+                        local_changes |= grid.col_forbidden[x].insert(n);
                     }
                 }
+            }
+
+            if local_changes {
+                changes.insert(n);
             }
         }
     }
 
-    changes
+    if changes.is_empty() {
+        None
+    } else {
+        Some(changes)
+    }
 }
 
 #[cfg(test)]
@@ -87,14 +97,11 @@ mod tests {
 .#...
 ");
 
-        while run_basic(&mut grid) != OutOfBasicStrats {
-            println!("{}\n", grid);
-            println!("{:?}\n", grid);
-        }
+        while run_basic(&mut grid) != OutOfBasicStrats {}
 
         assert!(update_required_and_forbidden(&mut grid));
 
-        assert!(setti(&mut grid));
+        assert_eq!(setti(&mut grid), Some(set([1, 2, 4, 5])));
 
         assert_eq!(grid.cells[4][0], det([1, 2, 4, 5]));
         assert_eq!(grid.cells[4][2], det([1, 2, 3, 4, 5]));

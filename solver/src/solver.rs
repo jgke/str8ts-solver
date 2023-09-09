@@ -1,8 +1,10 @@
+use crate::bitset::BitSet;
 use crate::grid::Grid;
 use crate::solver::SolveResults::*;
 use crate::solver::ValidationResult::*;
 use crate::strats;
 use crate::validator::validate;
+use itertools::intersperse;
 use std::fmt::{Display, Formatter};
 use std::rc::Rc;
 
@@ -16,7 +18,7 @@ pub enum SolveResults {
     Sets(usize),
     RequiredAndForbidden,
     RowColBrute,
-    Setti,
+    Setti(BitSet),
     Fish(usize),
     StartChain((usize, usize), u8),
     Chain((usize, usize), u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
@@ -36,7 +38,7 @@ impl SolveResults {
             Sets(_) => 3,
             RequiredAndForbidden => 5,
             RowColBrute => 5,
-            Setti => 5,
+            Setti(_) => 5,
             Fish(2) | Fish(3) => 5,
             Fish(_) => 6,
             StartChain(_, _) => 1,
@@ -45,6 +47,22 @@ impl SolveResults {
             EndChain(_) => 1,
             PuzzleSolved => 1,
             OutOfBasicStrats => 0,
+        }
+    }
+}
+
+fn english_list<T: ToString>(list: &[T]) -> String {
+    match list.len() {
+        0 => "".to_string(),
+        1 => list[0].to_string(),
+        _ => {
+            let (last, rest) = list.split_last().unwrap();
+            format!(
+                "{} and {}",
+                intersperse(rest.iter().map(|s| s.to_string()), ", ".to_string())
+                    .collect::<String>(),
+                last.to_string()
+            )
         }
     }
 }
@@ -66,7 +84,11 @@ impl Display for SolveResults {
                 f,
                 "Think very hard about possible combinations in rows and columns"
             ),
-            Setti => write!(f, "Calculate settis"),
+            Setti(set) => write!(
+                f,
+                "Calculate settis on {}",
+                english_list(&set.into_iter().collect::<Vec<_>>())
+            ),
             Fish(2) => write!(f, "Calculate a X-wing"),
             Fish(3) => write!(f, "Calculate a Swordfish"),
             Fish(n) => write!(f, "Calculate a {}-fish", n),
@@ -195,8 +217,8 @@ pub fn solve_round(grid: &mut Grid, enable_chains: bool) -> Result<SolveResults,
             let res = {
                 if strats::update_required_and_forbidden(grid) {
                     Ok(RequiredAndForbidden)
-                } else if strats::setti(grid) {
-                    Ok(Setti)
+                } else if let Some(set) = strats::setti(grid) {
+                    Ok(Setti(set))
                 } else if strats::row_col_brute(grid) {
                     Ok(RowColBrute)
                 } else if let Some(n) = strats::fish(grid) {

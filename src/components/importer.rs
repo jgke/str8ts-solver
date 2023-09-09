@@ -1,7 +1,7 @@
 use solver::grid::Grid;
 use wasm_bindgen::JsCast;
 use web_sys::{FormData, HtmlFormElement, SubmitEvent};
-use yew::{function_component, html, use_state, Callback, Html, Properties};
+use yew::{function_component, html, Callback, Html, Properties};
 
 #[derive(Properties, PartialEq)]
 pub struct ImporterProps {

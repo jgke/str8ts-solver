@@ -130,7 +130,7 @@ mod tests {
 
         while run_basic(&mut grid) != OutOfBasicStrats {}
         assert!(update_required_and_forbidden(&mut grid));
-        assert!(setti(&mut grid));
+        assert_eq!(setti(&mut grid), Some(set([2, 5])));
         while run_basic(&mut grid) != OutOfBasicStrats {}
 
         assert_eq!(grid.cells[0][2], det([1, 2, 3, 4, 5]));
