@@ -24,6 +24,7 @@ pub fn render_puzzle_rating(props: &PuzzleRatingProps) -> Html {
         swordfish,
         medusa,
         n_fish,
+        unique_requirement_count,
         short_chain_count,
         long_chain_count,
     } = puzzle_difficulty(&props.history.iter().map(|(_, s)| s).collect::<Vec<_>>());
@@ -61,6 +62,7 @@ pub fn render_puzzle_rating(props: &PuzzleRatingProps) -> Html {
                 <span class={if swordfish { enabled_hard_class } else { hidden_class }}>{"Swordfish"}</span>
                 <span class={if medusa { enabled_hard_class } else { hidden_class }}>{"Medusa"}</span>
                 <span class={if n_fish > 4 { enabled_hard_class } else { hidden_class }}>{format!("{}-fish", n_fish)}</span>
+                <span class={if unique_requirement_count > 0 { enabled_very_hard_class } else { hidden_class }}>{format!("Unique solution constraint x {}", unique_requirement_count)}</span>
                 <span class={if short_chain_count > 0 { enabled_very_hard_class } else { hidden_class }}>{format!("Short chain x {}", short_chain_count)}</span>
                 <span class={if long_chain_count > 0 { enabled_very_hard_class } else { hidden_class }}>{format!("Long chain x {}", long_chain_count)}</span>
             </div>

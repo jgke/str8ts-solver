@@ -2,10 +2,7 @@ use crate::bitset::BitSet;
 use crate::grid::Cell::*;
 use crate::grid::{CellPair, Compartment, Grid};
 
-pub fn required_in_compartment_by_range(
-    grid_size: usize,
-    compartment: &Compartment,
-) -> BitSet {
+pub fn required_in_compartment_by_range(grid_size: usize, compartment: &Compartment) -> BitSet {
     let mut required = BitSet::default();
     let compartment_size = compartment.cells.len();
     if let Some((min, max)) = get_compartment_range(grid_size, compartment, None) {

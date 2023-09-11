@@ -9,6 +9,7 @@ mod setti;
 mod singles;
 mod stranded;
 mod trivial;
+mod unique;
 mod update_impossibles;
 mod update_required_and_forbidden;
 
@@ -23,5 +24,6 @@ pub use setti::*;
 pub use singles::*;
 pub use stranded::*;
 pub use trivial::*;
+pub use unique::*;
 pub use update_impossibles::*;
 pub use update_required_and_forbidden::*;

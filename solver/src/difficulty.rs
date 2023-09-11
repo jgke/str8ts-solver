@@ -15,6 +15,7 @@ pub struct Difficulty {
     pub swordfish: bool,
     pub medusa: bool,
     pub n_fish: usize,
+    pub unique_requirement_count: usize,
     pub short_chain_count: usize,
     pub long_chain_count: usize,
 }
@@ -55,6 +56,10 @@ pub fn puzzle_difficulty(history: &[&SolveResults]) -> Difficulty {
             .map(|e| if let SolveResults::Fish(n) = e { *n } else { 0 })
             .max()
             .unwrap_or(0),
+        unique_requirement_count: history
+            .iter()
+            .filter(|e| matches!(e, SolveResults::UniqueRequirement(..)))
+            .count(),
         short_chain_count: history
             .iter()
             .filter(|e| matches!(e, SolveResults::Chain(_, _, steps, _) if steps.len() < 8))

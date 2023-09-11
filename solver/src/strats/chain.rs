@@ -2,14 +2,19 @@ use crate::bitset::BitSet;
 use crate::grid::Cell::*;
 use crate::grid::Grid;
 use crate::solver::SolveResults::*;
-use crate::solver::{run_basic, SolveResults};
+use crate::solver::{run_basic, SolveResults, ValidationResult};
 use crate::validator::validate;
 use itertools::Itertools;
 use std::collections::VecDeque;
 
 type ForcedNumber = ((usize, usize), u8);
 
-fn run_chain(candidates: Vec<(Grid, ForcedNumber)>, max_depth: usize) -> Option<ForcedNumber> {
+pub enum ChainResult {
+    Error(ForcedNumber),
+    NotUnique(ForcedNumber),
+}
+
+fn run_chain(candidates: Vec<(Grid, ForcedNumber)>, max_depth: usize) -> Option<ChainResult> {
     let mut candidates: VecDeque<((Grid, ForcedNumber), usize)> =
         candidates.into_iter().map(|c| (c, 0)).collect();
 
@@ -18,22 +23,29 @@ fn run_chain(candidates: Vec<(Grid, ForcedNumber)>, max_depth: usize) -> Option<
             continue;
         }
         match run_basic(&mut temp_grid) {
-            Ok(OutOfBasicStrats) => {}
+            Ok(OutOfBasicStrats) => {
+                if let Some(_) = crate::strats::is_ambiguous(&temp_grid) {
+                    return Some(ChainResult::NotUnique((pos, n)));
+                }
+            }
             Ok(PuzzleSolved) => {} // well...
             Ok(_) => {
                 if validate(&temp_grid).is_err() {
-                    return Some((pos, n));
+                    return Some(ChainResult::Error((pos, n)));
+                }
+                if let Some(_) = crate::strats::is_ambiguous(&temp_grid) {
+                    return Some(ChainResult::NotUnique((pos, n)));
                 }
                 candidates.push_back(((temp_grid, (pos, n)), count + 1));
             }
-            Err(_) => return Some((pos, n)),
+            Err(_) => return Some(ChainResult::Error((pos, n))),
         }
     }
 
     None
 }
 
-pub fn gather_and_run_chain<F>(grid: &Grid, filter: F, max_depth: usize) -> Option<ForcedNumber>
+pub fn gather_and_run_chain<F>(grid: &Grid, filter: F, max_depth: usize) -> Option<ChainResult>
 where
     F: Fn(BitSet) -> bool,
 {
@@ -56,12 +68,18 @@ where
     run_chain(candidates, max_depth)
 }
 
+type ChainRes = ((usize, usize), u8, Vec<(Grid, SolveResults)>, Grid);
+pub enum ChainSolveResult {
+    Error(ChainRes),
+    NotUnique(ChainRes),
+}
+
 #[allow(clippy::type_complexity)]
-pub fn chain(grid: &mut Grid) -> Option<((usize, usize), u8, Vec<(Grid, SolveResults)>, Grid)> {
+pub fn chain(grid: &mut Grid) -> Result<Option<ChainSolveResult>, ValidationResult> {
     let mut temp_grid = grid.clone();
     let num_count = grid.x;
 
-    if let Some(((x, y), n)) = {
+    if let Some(res) = {
         (2..=num_count)
             .filter_map(|set_size| gather_and_run_chain(grid, |set| set.len() == set_size, 8))
             .chain((2..=num_count).filter_map(|set_size| {
@@ -69,7 +87,11 @@ pub fn chain(grid: &mut Grid) -> Option<((usize, usize), u8, Vec<(Grid, SolveRes
             }))
             .next()
     } {
-        grid.set_impossible((x, y), n).unwrap();
+        let ((x, y), n) = match res {
+            ChainResult::Error(res) => res,
+            ChainResult::NotUnique(res) => res,
+        };
+        grid.set_impossible((x, y), n)?;
         let mut steps = vec![(temp_grid.clone(), StartChain((x, y), n))];
 
         temp_grid.set_cell((x, y), Solution(n));
@@ -77,23 +99,42 @@ pub fn chain(grid: &mut Grid) -> Option<((usize, usize), u8, Vec<(Grid, SolveRes
         loop {
             let prev_grid = temp_grid.clone();
             match run_basic(&mut temp_grid) {
-                Ok(OutOfBasicStrats) => unreachable!(),
+                Ok(OutOfBasicStrats) => {
+                    if let Some(_) = crate::strats::is_ambiguous(&temp_grid) {
+                        return Ok(Some(ChainSolveResult::NotUnique((
+                            (x, y),
+                            n,
+                            steps,
+                            temp_grid,
+                        ))));
+                    }
+                    unreachable!();
+                }
                 Ok(PuzzleSolved) => unreachable!(),
                 Ok(step) => {
                     steps.push((prev_grid, step));
                     if let Err(e) = validate(&temp_grid) {
                         steps.push((temp_grid.clone(), EndChain(e)));
-                        return Some(((x, y), n, steps, temp_grid));
+                        return Ok(Some(ChainSolveResult::Error(((x, y), n, steps, temp_grid))));
+                    }
+                    if let Some(_) = crate::strats::is_ambiguous(&temp_grid) {
+                        steps.push((temp_grid.clone(), EndChain(ValidationResult::Ambiguous)));
+                        return Ok(Some(ChainSolveResult::NotUnique((
+                            (x, y),
+                            n,
+                            steps,
+                            temp_grid,
+                        ))));
                     }
                 }
                 Err(e) => {
                     steps.push((temp_grid.clone(), EndChain(e)));
-                    return Some(((x, y), n, steps, temp_grid));
+                    return Ok(Some(ChainSolveResult::Error(((x, y), n, steps, temp_grid))));
                 }
             }
         }
     };
-    None
+    Ok(None)
 }
 
 #[cfg(test)]
@@ -120,8 +161,10 @@ mod tests {
         assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
 
         let res = chain(&mut grid);
-        assert!(res.is_some());
-        let (pos, n, _, _) = res.unwrap();
+        let (pos, n, _, _) = match res {
+            Ok(Some(crate::strats::ChainSolveResult::Error(res))) => res,
+            _ => unreachable!(),
+        };
         assert_eq!((1, 0), pos);
         assert_eq!(4, n);
 

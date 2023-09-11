@@ -79,7 +79,7 @@ mod tests {
     use super::*;
     use crate::solver::solve_basic;
     use crate::solver::SolveResults::OutOfBasicStrats;
-    use crate::strats::{update_required_and_forbidden};
+    use crate::strats::update_required_and_forbidden;
     use crate::utils::*;
 
     #[test]

@@ -20,6 +20,8 @@ pub enum SolveResults {
     RowColBrute,
     Setti(BitSet),
     Fish(usize),
+    UniqueFreeNums((usize, usize), BitSet),
+    UniqueRequirement((usize, usize), u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
     StartChain((usize, usize), u8),
     Chain((usize, usize), u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
     EndChain(ValidationResult),
@@ -41,6 +43,8 @@ impl SolveResults {
             Setti(_) => 5,
             Fish(2) | Fish(3) => 5,
             Fish(_) => 6,
+            UniqueFreeNums(_, _) => 7,
+            UniqueRequirement(..) => 7,
             StartChain(_, _) => 1,
             Chain(_, _, steps, _) if steps.len() < 8 => 6,
             Chain(_, _, _, _) => 7,
@@ -92,6 +96,25 @@ impl Display for SolveResults {
             Fish(2) => write!(f, "Calculate a X-wing"),
             Fish(3) => write!(f, "Calculate a Swordfish"),
             Fish(n) => write!(f, "Calculate a {}-fish", n),
+            UniqueFreeNums((x, y), set) => {
+                write!(
+                    f,
+                    "Cell at {},{} has free numbers {} which means it can't be any of those to preserve puzzle uniqueness",
+                    x + 1,
+                    y + 1,
+                    english_list(&set.into_iter().collect::<Vec<_>>())
+                )
+            }
+            UniqueRequirement((x, y), n, steps, _) => {
+                write!(
+                    f,
+                    "({}, {}) cannot be {}, as it causes a unique requirement conflict in {} steps",
+                    x + 1,
+                    y + 1,
+                    n,
+                    steps.len(),
+                )
+            }
             StartChain((x, y), n) => write!(f, "Start chain with ({}, {}) = {}", x + 1, y + 1, n),
             Chain((x, y), n, steps, _) => write!(
                 f,
@@ -145,6 +168,7 @@ pub enum ValidationResult {
         index: usize,
         number: u8,
     },
+    Ambiguous,
     OutOfStrats,
 }
 
@@ -184,6 +208,7 @@ impl Display for ValidationResult {
                 write!(f, "The number {} is forbidden in {} {} but is a solution or a requirement",
                        number, if *vertical {"column"} else {"row"}, index + 1
                        ),
+            Ambiguous => write!(f, "Grid is ambiguous, and cannot be solved"),
             OutOfStrats => write!(f, "Ran out of strategies!"),
         }
     }
@@ -251,8 +276,23 @@ pub fn solve_round(grid: &mut Grid, enable_chains: bool) -> Result<SolveResults,
                 } else if let Some(n) = strats::fish(grid)? {
                     Ok(Fish(n))
                 } else if enable_chains {
-                    if let Some(((x, y), n, steps, error_grid)) = strats::chain(grid) {
-                        Ok(Chain((x, y), n, Rc::new(steps), error_grid))
+                    if let Some(res) = strats::unique(grid)? {
+                        Ok(res)
+                    } else if let Some(res) = strats::chain(grid)? {
+                        match res {
+                            crate::strats::ChainSolveResult::NotUnique((
+                                (x, y),
+                                n,
+                                steps,
+                                error_grid,
+                            )) => Ok(UniqueRequirement((x, y), n, Rc::new(steps), error_grid)),
+                            crate::strats::ChainSolveResult::Error((
+                                (x, y),
+                                n,
+                                steps,
+                                error_grid,
+                            )) => Ok(Chain((x, y), n, Rc::new(steps), error_grid)),
+                        }
                     } else {
                         return Err(OutOfStrats);
                     }

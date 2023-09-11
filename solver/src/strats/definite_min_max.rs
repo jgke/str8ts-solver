@@ -35,8 +35,7 @@ pub fn definite_min_max(grid: &mut Grid) -> Result<bool, ValidationResult> {
 
     for row in grid.iter_by_compartments() {
         for compartment in row {
-            if let Some((min, max)) = get_compartment_range(grid.x, &compartment, None)
-            {
+            if let Some((min, max)) = get_compartment_range(grid.x, &compartment, None) {
                 for ((x, y), cell) in compartment.cells {
                     match cell {
                         Indeterminate(set) => {

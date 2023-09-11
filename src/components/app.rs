@@ -47,7 +47,10 @@ fn get_focus_state(
                 .map(|(g, _)| g.clone()),
         ),
         Some((&index, Some(&sub_index))) => {
-            if let SolveResults::Chain(_, _, list, error_grid) = &(*history_state)[index].1 {
+            if let SolveResults::Chain(_, _, list, error_grid)
+            | SolveResults::UniqueRequirement(_, _, list, error_grid) =
+                &(*history_state)[index].1
+            {
                 final_index = same_disc_length_at(sub_index, list);
                 if final_idx.is_some() {
                     final_index = 0;

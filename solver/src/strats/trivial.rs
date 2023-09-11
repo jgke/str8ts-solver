@@ -1,6 +1,6 @@
+use crate::bitset::BitSet;
 use crate::grid::Cell::*;
 use crate::grid::Grid;
-use crate::bitset::BitSet;
 
 pub fn trivial(grid: &mut Grid) -> bool {
     let mut changes = false;
@@ -23,7 +23,11 @@ pub fn trivial(grid: &mut Grid) -> bool {
             let mut missing_numbers: BitSet = (1..=grid.x as u8).collect();
             for (_, cell) in row {
                 match cell {
-                    Indeterminate(set) => {for n in set { missing_numbers.remove(n); } }
+                    Indeterminate(set) => {
+                        for n in set {
+                            missing_numbers.remove(n);
+                        }
+                    }
                     Requirement(n) | Solution(n) => {
                         missing_numbers.remove(n);
                         changes |= grid.row_requirements[y].insert(n);
@@ -40,7 +44,11 @@ pub fn trivial(grid: &mut Grid) -> bool {
             let mut missing_numbers: BitSet = (1..=grid.x as u8).collect();
             for (_, cell) in col {
                 match cell {
-                    Indeterminate(set) => {for n in set { missing_numbers.remove(n); } }
+                    Indeterminate(set) => {
+                        for n in set {
+                            missing_numbers.remove(n);
+                        }
+                    }
                     Requirement(n) | Solution(n) => {
                         missing_numbers.remove(n);
                         changes |= grid.col_requirements[x].insert(n);
