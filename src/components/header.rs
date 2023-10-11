@@ -7,6 +7,7 @@ pub struct HeaderProps {
     pub is_solved: bool,
     pub on_step: Callback<MouseEvent>,
     pub on_hint: Callback<MouseEvent>,
+    pub on_partial_solve: Callback<MouseEvent>,
     pub on_solve: Callback<MouseEvent>,
 
     pub set_edit_mode: Callback<bool>,
@@ -20,6 +21,7 @@ pub fn header(props: &HeaderProps) -> Html {
         is_solved,
         on_step,
         on_hint,
+        on_partial_solve,
         on_solve,
         set_edit_mode,
         edit_mode,
@@ -58,6 +60,15 @@ pub fn header(props: &HeaderProps) -> Html {
         let hamburger_open = hamburger_open.clone();
         Callback::from(move |_: MouseEvent| {
             open_importer.emit(());
+            hamburger_open.set(false);
+        })
+    };
+
+    let on_partial_solve_click = {
+        let on_partial_solve = on_partial_solve.clone();
+        let hamburger_open = hamburger_open.clone();
+        Callback::from(move |e: MouseEvent| {
+            on_partial_solve.emit(e);
             hamburger_open.set(false);
         })
     };
@@ -125,6 +136,13 @@ pub fn header(props: &HeaderProps) -> Html {
                             onclick={on_importer_click}
                         >
                             {"Import puzzle"}
+                        </button>
+                        <button
+                            disabled={*is_solved}
+                            class={classes!(button_classes, "p-2", "mb-2")}
+                            onclick={on_partial_solve_click}
+                        >
+                            {"Solve without chains"}
                         </button>
                         <button
                             disabled={*is_solved}

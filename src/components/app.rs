@@ -4,7 +4,7 @@ use crate::components::importer::Importer;
 use crate::components::puzzle_rating::PuzzleRating;
 use crate::components::solution_history::{solve_result_discriminant, SolutionHistory};
 use solver::grid::{Cell, Grid};
-use solver::solver::{solve_round, SolveResults};
+use solver::solver::{solve_round, SolveResults, ValidationResult};
 use std::rc::Rc;
 use yew::prelude::*;
 
@@ -162,6 +162,37 @@ pub fn app() -> Html {
         })
     };
 
+    let on_partial_solve = {
+        let grid_state = grid_state.clone();
+        let error_state = error_state.clone();
+        let history_state = history_state.clone();
+        Callback::from(move |_| {
+            let mut new_grid = (*grid_state).clone();
+            let mut prev_grid = new_grid.clone();
+            let mut new_history = (**history_state).clone();
+            loop {
+                match solve_round(&mut new_grid, false) {
+                    Ok(str) => {
+                        new_history.push((prev_grid, str.clone()));
+                        prev_grid = new_grid.clone();
+                        if str == SolveResults::PuzzleSolved {
+                            break;
+                        }
+                    }
+                    Err(ValidationResult::OutOfStrats) => {
+                        break;
+                    }
+                    Err(e) => {
+                        error_state.set(Some(e.to_string()));
+                        break;
+                    }
+                }
+            }
+            history_state.set(Rc::new(new_history));
+            grid_state.set(new_grid);
+        })
+    };
+
     let onclick_all = {
         let grid_state = grid_state.clone();
         let error_state = error_state.clone();
@@ -251,6 +282,7 @@ pub fn app() -> Html {
                         is_solved={grid_state.is_solved()}
                         on_step={onclick}
                         {on_hint}
+                        on_partial_solve={on_partial_solve}
                         on_solve={onclick_all}
                         edit_mode={*edit_mode}
                         {set_edit_mode}
