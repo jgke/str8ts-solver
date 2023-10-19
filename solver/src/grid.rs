@@ -53,6 +53,14 @@ impl Cell {
             Blocker(_) | Black => BitSet::default(),
         }
     }
+
+    pub fn to_maybe_possibles(&self) -> Option<BitSet> {
+        match self {
+            Requirement(c) | Solution(c) => Some([*c].into_iter().collect()),
+            Indeterminate(set) => Some(*set),
+            Blocker(_) | Black => None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -104,6 +112,19 @@ impl Grid {
             .iter()
             .enumerate()
             .map(move |(x, cell)| ((x, y), cell.clone()))
+            .collect()
+    }
+
+    pub fn iter_by_indeterminates(&self) -> Vec<((usize, usize), BitSet)> {
+        self.iter_by_cells()
+            .into_iter()
+            .filter_map(|(pos, cell)| {
+                if let Indeterminate(set) = cell {
+                    Some((pos, set))
+                } else {
+                    None
+                }
+            })
             .collect()
     }
 
@@ -184,6 +205,17 @@ impl Grid {
         }
 
         containers
+    }
+
+    pub fn compartments_containing(&self, pos: (usize, usize)) -> (Compartment, Compartment) {
+        let compartments = self
+            .iter_by_compartments()
+            .into_iter()
+            .flat_map(|row| row.into_iter())
+            .filter(|compartment| compartment.cells.iter().any(|(cpos, _)| *cpos == pos))
+            .collect::<Vec<_>>();
+        assert!(compartments.len() == 2);
+        (compartments[0].clone(), compartments[1].clone())
     }
 
     pub fn iter_by_row_compartments(&self) -> Vec<Vec<Compartment>> {
