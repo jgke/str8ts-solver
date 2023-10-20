@@ -18,7 +18,7 @@ fn num_implications(
 
     if !requirements.contains(num) {
         for (pos, cell) in &compartment.cells {
-            if let Some(_) = cell.to_maybe_possibles() {
+            if cell.to_maybe_possibles().is_some() {
                 implicating_cells.insert(pos);
             }
         }
@@ -115,6 +115,22 @@ pub fn solution_count(mut grid: Grid, mut set: FxHashSet<(usize, usize)>) -> usi
     }
 }
 
+pub fn gather_implicator_set(grid: &Grid, pos: (usize, usize)) -> FxHashSet<(usize, usize)> {
+    let mut implicator_set = FxHashSet::default();
+    let mut queue = VecDeque::new();
+    queue.push_back(pos);
+    while let Some(pos) = queue.pop_front() {
+        if implicator_set.contains(&pos) {
+            continue;
+        }
+        implicator_set.insert(pos);
+        for pos in cell_implicators(grid, pos) {
+            queue.push_back(pos);
+        }
+    }
+    implicator_set
+}
+
 pub fn is_ambiguous(grid: &Grid) -> Option<(usize, usize)> {
     let mut visited_cells = FxHashSet::default();
     for (pos, _set) in grid.iter_by_indeterminates() {
@@ -122,18 +138,7 @@ pub fn is_ambiguous(grid: &Grid) -> Option<(usize, usize)> {
             continue;
         }
 
-        let mut implicator_set = FxHashSet::default();
-        let mut queue = VecDeque::new();
-        queue.push_back(pos);
-        while let Some(pos) = queue.pop_front() {
-            if implicator_set.contains(&pos) {
-                continue;
-            }
-            implicator_set.insert(pos);
-            for pos in cell_implicators(grid, pos) {
-                queue.push_back(pos);
-            }
-        }
+        let implicator_set = gather_implicator_set(grid, pos);
         for pos in &implicator_set {
             visited_cells.insert(*pos);
         }

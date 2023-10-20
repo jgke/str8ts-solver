@@ -1,6 +1,7 @@
 use crate::components::cell::RenderCell;
 use crate::components::requirements::RenderRequirementsCell;
 use crate::diffgrid::DiffGrid;
+use rustc_hash::FxHashSet;
 use solver::grid::{Cell, Grid};
 use yew::{function_component, html, Callback, Html, Properties};
 
@@ -11,11 +12,17 @@ pub struct RenderGridProps {
     pub show_extras: bool,
     pub on_change: Callback<((usize, usize), Cell)>,
     pub edit_mode: bool,
+    pub hl_list: Option<Vec<(usize, usize)>>,
 }
 
 #[function_component(RenderGrid)]
 pub fn render_grid(props: &RenderGridProps) -> Html {
     let diffgrid = DiffGrid::new(props.grid.clone(), props.next_grid.clone());
+    let hl_set: FxHashSet<_> = props
+        .hl_list
+        .as_ref()
+        .map(|list| list.iter().copied().collect())
+        .unwrap_or_else(|| FxHashSet::default());
 
     html! {
         <div class="flex flex-col text-black md:p-4 mb-4 md:bg-light-800 md:dark:bg-blue-200 md:border w-fit rounded leading-tight">
@@ -53,7 +60,7 @@ pub fn render_grid(props: &RenderGridProps) -> Html {
                                     });
 
                                     html! {
-                                        <RenderCell cell={cell.clone()} next_cell={next_cell.clone()} {on_change} edit_mode={props.edit_mode} sidebar_shown={props.show_extras} />
+                                        <RenderCell cell={cell.clone()} next_cell={next_cell.clone()} {on_change} edit_mode={props.edit_mode} sidebar_shown={props.show_extras} hl={hl_set.contains(&(x, y))} />
                                     }
                                  }).collect::<Html>()
                              }

@@ -8,7 +8,7 @@ use solver::solver::{solve_round, SolveResults, ValidationResult};
 use std::rc::Rc;
 use yew::prelude::*;
 
-pub type HistoryFocusState = (Rc<Vec<usize>>, Option<usize>);
+pub type HistoryFocusState = (Rc<Vec<usize>>, Option<usize>, Option<Vec<(usize, usize)>>);
 pub type HistoryState = Rc<Vec<(Grid, SolveResults)>>;
 
 fn same_disc_length_at(idx: usize, slice: &[(Grid, SolveResults)]) -> usize {
@@ -92,13 +92,13 @@ pub fn app() -> Html {
     let error_state: UseStateHandle<Option<String>> = use_state(|| None);
     let history_state: UseStateHandle<HistoryState> = use_state(|| Rc::new(Vec::new()));
     let history_focus_state: UseStateHandle<HistoryFocusState> =
-        use_state(|| (Rc::new(vec![]), None));
+        use_state(|| (Rc::new(vec![]), None, None));
     let history_focus_locked: UseStateHandle<Option<HistoryFocusState>> = use_state(|| None);
     let edit_mode: UseStateHandle<bool> = use_state(|| false);
     let importer_open: UseStateHandle<bool> = use_state(|| true);
     let latest_hint: UseStateHandle<Option<SolveResults>> = use_state(|| None);
 
-    let (focus_state, sub_index) = if let Some(locked) = &*history_focus_locked {
+    let (focus_state, sub_index, hl_list) = if let Some(locked) = &*history_focus_locked {
         locked.clone()
     } else {
         (*history_focus_state).clone()
@@ -266,7 +266,7 @@ pub fn app() -> Html {
                 grid_state.set(new_grid);
                 error_state.set(None);
                 history_state.set(Rc::new(Vec::new()));
-                history_focus_state.set((Rc::new(vec![]), None));
+                history_focus_state.set((Rc::new(vec![]), None, None));
                 history_focus_locked.set(None);
                 edit_mode.set(false);
                 importer_open.set(false);
@@ -307,7 +307,8 @@ pub fn app() -> Html {
                         next_grid={next_grid}
                         show_extras={grid_state.has_requirements()}
                         on_change={on_cell_update}
-                        edit_mode={*edit_mode}/>
+                        edit_mode={*edit_mode}
+                        hl_list={hl_list.clone()}/>
                     if let Some(s) = &*error_state {
                         <div class="my-4 bg-error p-4 max-w-[600px]">{s}</div>
                     }
@@ -322,7 +323,7 @@ pub fn app() -> Html {
                 <div class="overflow-y-scroll">
                     <SolutionHistory
                         history_state={(*history_state).clone()}
-                        focus_state={(focus_state, sub_index)}
+                        focus_state={(focus_state, sub_index, hl_list)}
                         focus_chain={vec![]}
                         {on_focus_change}
                         {on_focus_click}

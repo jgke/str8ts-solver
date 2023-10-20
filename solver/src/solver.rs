@@ -168,7 +168,9 @@ pub enum ValidationResult {
         index: usize,
         number: u8,
     },
-    Ambiguous,
+    Ambiguous {
+        cells: Vec<(usize, usize)>,
+    },
     OutOfStrats,
 }
 
@@ -208,7 +210,7 @@ impl Display for ValidationResult {
                 write!(f, "The number {} is forbidden in {} {} but is a solution or a requirement",
                        number, if *vertical {"column"} else {"row"}, index + 1
                        ),
-            Ambiguous => write!(f, "Grid is ambiguous, and cannot be solved"),
+            Ambiguous { .. } => write!(f, "Grid is ambiguous, and cannot be solved"),
             OutOfStrats => write!(f, "Ran out of strategies!"),
         }
     }

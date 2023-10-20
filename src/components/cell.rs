@@ -18,6 +18,7 @@ pub struct RenderCellProps {
     pub on_change: Callback<Cell>,
     pub edit_mode: bool,
     pub sidebar_shown: bool,
+    pub hl: bool,
 }
 
 #[function_component(RenderCell)]
@@ -152,6 +153,12 @@ pub fn render_cell(props: &RenderCellProps) -> Html {
                         {"\u{2205}"}
                     </span>
                 }
+            } else if props.hl {
+                html! {
+                    <div {onmouseup} class="flex justify-evenly w-full h-full bg-error flex-col text-[2vw] md:text-xs p-1">
+                        <IntermediateCellContent options={*options} next_options={*next_options} />
+                    </div>
+                }
             } else {
                 html! {
                     <div {onmouseup} class="flex justify-evenly w-full h-full bg-white flex-col text-[2vw] md:text-xs p-1">
@@ -166,6 +173,12 @@ pub fn render_cell(props: &RenderCellProps) -> Html {
                     <span {onmouseup} class={classes!(content_base, "bg-error")}>
                         {"\u{2205}"}
                     </span>
+                }
+            } else if props.hl {
+                html! {
+                    <div {onmouseup} class="flex justify-evenly w-full h-full bg-error flex-col text-[2vw] md:text-xs p-1">
+                        <IntermediateCellContent options={*options} next_options={*options} />
+                    </div>
                 }
             } else {
                 html! {

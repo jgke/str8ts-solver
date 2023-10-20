@@ -1,7 +1,7 @@
 use crate::components::app::HistoryFocusState;
 use itertools::Itertools;
 use solver::grid::Grid;
-use solver::solver::SolveResults;
+use solver::solver::{SolveResults, ValidationResult};
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
 use web_sys::{EventTarget, HtmlElement, MouseEvent};
@@ -63,6 +63,32 @@ pub fn solve_result_discriminant(index: usize, res: &SolveResults) -> usize {
     }
 }
 
+fn get_hl_list(s: &SolveResults) -> String {
+    match s {
+        SolveResults::EndChain(ValidationResult::Ambiguous { cells }) => format!("{:?}", cells),
+        _ => "".to_string(),
+    }
+}
+fn parse_hl(s: String) -> Option<Vec<(usize, usize)>> {
+    let content = s.split("[").skip(1).next()?.split("]").next()?;
+    Some(
+        content
+            .split("),")
+            .filter_map(|pair| {
+                let nums = pair
+                    .trim()
+                    .split("(")
+                    .skip(1)
+                    .next()?
+                    .split(", ")
+                    .filter_map(|s| s.trim_end_matches(')').parse().ok())
+                    .collect::<Vec<usize>>();
+                Some((*nums.get(0)?, *nums.get(1)?))
+            })
+            .collect(),
+    )
+}
+
 #[function_component]
 pub fn SolutionHistory(props: &SolutionHistoryProps) -> Html {
     let on_mouse = {
@@ -71,20 +97,21 @@ pub fn SolutionHistory(props: &SolutionHistoryProps) -> Html {
         Callback::from(move |e: MouseEvent| {
             e.prevent_default();
             e.stop_propagation();
-            let val: Option<(usize, Option<usize>)> = (|| {
+            let val: Option<(usize, Option<usize>, Option<Vec<(usize, usize)>>)> = (|| {
                 let target: EventTarget = e.target()?;
                 let elem = target.dyn_into::<HtmlElement>().ok()?;
                 let val: String = elem.get_attribute("data-id")?;
                 let val2: Option<usize> = elem
                     .get_attribute("data-sub-id")
                     .and_then(|a| a.parse::<usize>().ok());
-                Some((val.parse::<usize>().ok()?, val2))
+                let hl_list = elem.get_attribute("data-hl-list").and_then(|s| parse_hl(s));
+                Some((val.parse::<usize>().ok()?, val2, hl_list))
             })();
-            if let Some((val, sub_val)) = val {
+            if let Some((val, sub_val, hl_list)) = val {
                 on_focus_change.emit({
                     let mut vec = focus_chain.clone();
                     vec.push(val);
-                    (Rc::new(vec), sub_val)
+                    (Rc::new(vec), sub_val, hl_list)
                 });
             }
         })
@@ -94,7 +121,7 @@ pub fn SolutionHistory(props: &SolutionHistoryProps) -> Html {
         let on_focus_change = props.on_focus_change.clone();
         let focus_chain = Rc::new(props.focus_chain.clone());
         Callback::from(move |_e: MouseEvent| {
-            on_focus_change.emit((focus_chain.clone(), None));
+            on_focus_change.emit((focus_chain.clone(), None, None));
         })
     };
 
@@ -132,7 +159,8 @@ pub fn SolutionHistory(props: &SolutionHistoryProps) -> Html {
                             <div class={classes!(border_for_solution(s), "p-2", "rounded", "cursor-pointer")}
                                   onmouseover={on_mouse.clone()}
                                   onclick={on_click.clone()}
-                                  data-id={index.to_string()}>
+                                  data-id={index.to_string()}
+                                  data-hl-list={get_hl_list(&s)}>
                                 { format!("{}", s) }
                                 if let SolveResults::Chain(_, _, list, _)|SolveResults::UniqueRequirement(_, _, list, _)=s {
                                     <SolutionHistory
