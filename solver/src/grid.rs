@@ -32,6 +32,13 @@ impl Compartment {
 }
 
 impl Cell {
+    pub fn is_compartment_cell(&self) -> bool {
+        match self {
+            Requirement(_) | Solution(_) | Indeterminate(_) => true,
+            Blocker(_) | Black => false,
+        }
+    }
+
     pub fn to_req_or_sol(&self) -> Option<u8> {
         match self {
             Requirement(c) | Solution(c) => Some(*c),
@@ -207,15 +214,32 @@ impl Grid {
         containers
     }
 
+    pub fn horizontal_compartment_containing(&self, pos: (usize, usize)) -> Compartment {
+        let mut minx = pos.0;
+        let mut maxx = pos.0;
+        while minx > 0 && self.get_cell((minx-1, pos.1)).is_compartment_cell() { minx -= 1; }
+        while maxx < self.x-1 && self.get_cell((maxx+1, pos.1)).is_compartment_cell() { maxx += 1; }
+        let mut cells = Vec::new();
+        for x in minx..=maxx {
+            cells.push(((x, pos.1), self.get_cell((x, pos.1)).clone()));
+        }
+        Compartment { cells, vertical: false }
+    }
+
+    pub fn vertical_compartment_containing(&self, pos: (usize, usize)) -> Compartment {
+        let mut miny = pos.1;
+        let mut maxy = pos.1;
+        while miny > 0 && self.get_cell((pos.0, miny-1)).is_compartment_cell() { miny -= 1; }
+        while maxy < self.y-1 && self.get_cell((pos.0, maxy+1)).is_compartment_cell() { maxy += 1; }
+        let mut cells = Vec::new();
+        for y in miny..=maxy {
+            cells.push(((pos.0, y), self.get_cell((pos.0, y)).clone()));
+        }
+        Compartment { cells, vertical: true }
+    }
+
     pub fn compartments_containing(&self, pos: (usize, usize)) -> (Compartment, Compartment) {
-        let compartments = self
-            .iter_by_compartments()
-            .into_iter()
-            .flat_map(|row| row.into_iter())
-            .filter(|compartment| compartment.cells.iter().any(|(cpos, _)| *cpos == pos))
-            .collect::<Vec<_>>();
-        assert!(compartments.len() == 2);
-        (compartments[0].clone(), compartments[1].clone())
+        (self.horizontal_compartment_containing(pos), self.vertical_compartment_containing(pos))
     }
 
     pub fn iter_by_row_compartments(&self) -> Vec<Vec<Compartment>> {

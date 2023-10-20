@@ -131,6 +131,14 @@ pub fn gather_implicator_set(grid: &Grid, pos: (usize, usize)) -> FxHashSet<(usi
     implicator_set
 }
 
+fn implicator_difficulty(grid: &Grid, set: &FxHashSet<(usize, usize)>) -> usize {
+    let mut diff = 1;
+    for pos in set {
+        diff *= grid.get_cell(*pos).to_maybe_possibles().map(|set| set.len()).unwrap_or(1);
+    }
+    diff
+}
+
 pub fn is_ambiguous(grid: &Grid) -> Option<(usize, usize)> {
     let mut visited_cells = FxHashSet::default();
     for (pos, _set) in grid.iter_by_indeterminates() {
@@ -143,7 +151,7 @@ pub fn is_ambiguous(grid: &Grid) -> Option<(usize, usize)> {
             visited_cells.insert(*pos);
         }
 
-        if implicator_set.len() > 8 {
+        if implicator_difficulty(grid, &implicator_set) > 100 {
             continue;
         }
 
