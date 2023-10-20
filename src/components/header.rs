@@ -83,7 +83,7 @@ pub fn header(props: &HeaderProps) -> Html {
     };
 
     let button_classes =
-        "flex-grow-0 border font-bold mr-2 bg-light-800 text-black dark:border-blue-400 dark:bg-blue-300 dark:text-white rounded disabled:border-transparent disabled:text-light-300";
+        "flex-grow-0 border font-bold mr-2 bg-light-800 text-black dark:border-blue-400 dark:bg-blue-300 dark:text-white rounded disabled:border-transparent disabled:text-light-300 dark:disabled:text-light-300";
 
     let label_classes =
         "my-2 mr-2 rounded inline-block peer-checked:font-bold w-32 flex justify-center cursor-pointer";

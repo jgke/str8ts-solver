@@ -33,7 +33,7 @@ pub fn header(props: &ImporterProps) -> Html {
                 <span class="block dark:text-white">{"Enter the puzzle. You can either paste a link to the 'default' solver or enter a grid of numbers 1-9, letters a-i, # and . to denote solutions, blockers, walls and holes."}</span>
                 <textarea class="mt-4 font-mono tracking-[1em] max-w-[90vw] text-black" rows={10} name="data" />
             </label>
-            <button class="p-2 mt-4 flex-grow-0 border font-bold bg-light-800 text-black dark:border-blue-400 dark:bg-blue-300 dark:text-white rounded disabled:border-transparent disabled:text-light-300" type="submit">{"Parse"}</button>
+            <button class="p-2 mt-4 flex-grow-0 border font-bold bg-light-800 text-black dark:border-blue-400 dark:bg-blue-300 dark:text-white rounded disabled:border-transparent disabled:text-light-300 dark:disabled:text-light-300" type="submit">{"Parse"}</button>
         </form>
     }
 }

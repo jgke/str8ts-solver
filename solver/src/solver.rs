@@ -278,9 +278,7 @@ pub fn solve_round(grid: &mut Grid, enable_chains: bool) -> Result<SolveResults,
                 } else if let Some(n) = strats::fish(grid)? {
                     Ok(Fish(n))
                 } else if enable_chains {
-                    if let Some(res) = strats::unique(grid)? {
-                        Ok(res)
-                    } else if let Some(res) = strats::chain(grid)? {
+                    if let Some(res) = strats::chain(grid)? {
                         match res {
                             crate::strats::ChainSolveResult::NotUnique((
                                 (x, y),
