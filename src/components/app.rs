@@ -77,15 +77,15 @@ fn get_focus_state(
 pub fn app() -> Html {
     let grid_state = use_state(move || {
         let base = vec![
-            ".........".to_string(),
-            ".........".to_string(),
-            ".........".to_string(),
-            ".........".to_string(),
-            ".........".to_string(),
-            ".........".to_string(),
-            ".........".to_string(),
-            ".........".to_string(),
-            ".........".to_string(),
+            "#########".to_string(),
+            "#########".to_string(),
+            "#########".to_string(),
+            "#########".to_string(),
+            "#########".to_string(),
+            "#########".to_string(),
+            "#########".to_string(),
+            "#########".to_string(),
+            "#########".to_string(),
         ];
         Grid::parse(base).unwrap()
     });
