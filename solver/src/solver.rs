@@ -20,7 +20,6 @@ pub enum SolveResults {
     RowColBrute,
     Setti(BitSet),
     Fish(usize),
-    UniqueFreeNums((usize, usize), BitSet),
     UniqueRequirement((usize, usize), u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
     StartChain((usize, usize), u8),
     Chain((usize, usize), u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
@@ -43,7 +42,6 @@ impl SolveResults {
             Setti(_) => 5,
             Fish(2) | Fish(3) => 5,
             Fish(_) => 6,
-            UniqueFreeNums(_, _) => 7,
             UniqueRequirement(..) => 7,
             StartChain(_, _) => 1,
             Chain(_, _, steps, _) if steps.len() < 8 => 6,
@@ -96,15 +94,6 @@ impl Display for SolveResults {
             Fish(2) => write!(f, "Calculate a X-wing"),
             Fish(3) => write!(f, "Calculate a Swordfish"),
             Fish(n) => write!(f, "Calculate a {}-fish", n),
-            UniqueFreeNums((x, y), set) => {
-                write!(
-                    f,
-                    "Cell at {},{} has free numbers {} which means it can't be any of those to preserve puzzle uniqueness",
-                    x + 1,
-                    y + 1,
-                    english_list(&set.into_iter().collect::<Vec<_>>())
-                )
-            }
             UniqueRequirement((x, y), n, steps, _) => {
                 write!(
                     f,

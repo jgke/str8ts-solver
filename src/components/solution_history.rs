@@ -22,7 +22,7 @@ fn border_for_solution(cell: &SolveResults) -> &'static str {
         }
         SolveResults::Fish(2 | 3) => "border-t-8 border-t-blue-700",
         SolveResults::Fish(_) => "border-t-8 border-t-blue-800",
-        SolveResults::UniqueFreeNums(..) | SolveResults::UniqueRequirement(..) => {
+        SolveResults::UniqueRequirement(..) => {
             "border-t-8 border-t-blue-800"
         }
         SolveResults::StartChain(_, _)
@@ -53,13 +53,12 @@ pub fn solve_result_discriminant(index: usize, res: &SolveResults) -> usize {
         SolveResults::RowColBrute => 7,
         SolveResults::Setti(_) => 8,
         SolveResults::Fish(_) => 9,
-        SolveResults::UniqueFreeNums(..) => 10,
-        SolveResults::UniqueRequirement(..) => 11,
+        SolveResults::UniqueRequirement(..) => 10,
         SolveResults::StartChain(_, _) => 1_000_000 + index,
         SolveResults::Chain(_, _, _, _) => 2_000_000 + index,
         SolveResults::EndChain(_) => 3_000_000 + index,
-        SolveResults::PuzzleSolved => 12,
-        SolveResults::OutOfBasicStrats => 13,
+        SolveResults::PuzzleSolved => 11,
+        SolveResults::OutOfBasicStrats => 12,
     }
 }
 
