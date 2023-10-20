@@ -2,7 +2,7 @@ use crate::bitset::BitSet;
 use crate::grid::Cell::*;
 use crate::grid::Grid;
 use crate::solver::SolveResults::*;
-use crate::solver::{run_basic, SolveResults, ValidationResult};
+use crate::solver::{solve_round, SolveResults, ValidationResult};
 use crate::strats::gather_implicator_set;
 use crate::validator::validate;
 use itertools::Itertools;
@@ -23,8 +23,8 @@ fn run_chain(candidates: Vec<(Grid, ForcedNumber)>, max_depth: usize) -> Option<
         if count > max_depth {
             continue;
         }
-        match run_basic(&mut temp_grid) {
-            Ok(OutOfBasicStrats) => {
+        match solve_round(&mut temp_grid, false) {
+            Err(ValidationResult::OutOfStrats) => {
                 if crate::strats::is_ambiguous(&temp_grid).is_some() {
                     return Some(ChainResult::NotUnique((pos, n)));
                 }
@@ -81,8 +81,8 @@ pub fn chain(grid: &mut Grid) -> Result<Option<ChainSolveResult>, ValidationResu
     let num_count = grid.x;
 
     if let Some(res) = {
-        (2..=num_count)
-            .filter_map(|set_size| gather_and_run_chain(grid, |set| set.len() == set_size, 8))
+        (2..=3)
+            .filter_map(|set_size| gather_and_run_chain(grid, |set| set.len() == set_size, 25))
             .chain((2..=num_count).filter_map(|set_size| {
                 gather_and_run_chain(grid, |set| set.len() == set_size, usize::MAX)
             }))
@@ -99,8 +99,8 @@ pub fn chain(grid: &mut Grid) -> Result<Option<ChainSolveResult>, ValidationResu
 
         loop {
             let prev_grid = temp_grid.clone();
-            match run_basic(&mut temp_grid) {
-                Ok(OutOfBasicStrats) => {
+            match solve_round(&mut temp_grid, false) {
+                Err(ValidationResult::OutOfStrats) => {
                     if let Some(pos) = crate::strats::is_ambiguous(&temp_grid) {
                         steps.push((
                             temp_grid.clone(),
@@ -159,7 +159,6 @@ pub fn chain(grid: &mut Grid) -> Result<Option<ChainSolveResult>, ValidationResu
 mod tests {
     use super::*;
     use crate::solver::solve_basic;
-    use crate::solver::SolveResults::OutOfBasicStrats;
     use crate::strats::{setti, update_required_and_forbidden};
     use crate::utils::*;
 

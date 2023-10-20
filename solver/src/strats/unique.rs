@@ -105,9 +105,10 @@ pub fn gather_implicator_set(grid: &Grid, pos: (usize, usize)) -> FxHashSet<(usi
 }
 
 fn implicator_difficulty(grid: &Grid, set: &FxHashSet<(usize, usize)>) -> usize {
-    let mut diff = 1;
+    let mut diff: usize = 1;
     for pos in set {
-        diff *= grid.get_cell(*pos).to_maybe_possibles().map(|set| set.len()).unwrap_or(1);
+        let mul: usize = grid.get_cell(*pos).to_maybe_possibles().map(|set| set.len()).unwrap_or(1);
+        diff = diff.saturating_mul(mul);
     }
     diff
 }
