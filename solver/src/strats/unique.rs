@@ -62,23 +62,26 @@ fn cell_implicators(grid: &Grid, pos: (usize, usize)) -> FxHashSet<(usize, usize
     implicating_cells
 }
 
-pub fn solution_count(mut grid: Grid, mut set: FxHashSet<(usize, usize)>) -> usize {
+pub fn solution_count(mut grid: Grid, mut set: Vec<(usize, usize)>) -> usize {
     while run_fast_basic(&mut grid) != Ok(SolveResults::OutOfBasicStrats) {
         if validate(&grid).is_err() {
             return 0;
         }
     }
-    if let Some(pos) = set.iter().sorted().cloned().next() {
-        set.remove(&pos);
+    if let Some(pos) = set.pop() {
         match grid.get_cell(pos) {
-            Cell::Indeterminate(nums) => nums
-                .into_iter()
-                .map(|num| {
+            Cell::Indeterminate(nums) => {
+                let mut count = 0;
+                for num in *nums {
+                    if count > 1 {
+                        return count;
+                    }
                     let mut subgrid = grid.clone();
                     subgrid.set_cell(pos, Cell::Solution(num));
-                    solution_count(subgrid, set.clone())
-                })
-                .sum(),
+                    count += solution_count(subgrid, set.clone());
+                }
+                count
+            }
             _ => solution_count(grid, set),
         }
     } else if validate(&grid).is_ok() {
@@ -107,7 +110,11 @@ pub fn gather_implicator_set(grid: &Grid, pos: (usize, usize)) -> FxHashSet<(usi
 fn implicator_difficulty(grid: &Grid, set: &FxHashSet<(usize, usize)>) -> usize {
     let mut diff: usize = 1;
     for pos in set {
-        let mul: usize = grid.get_cell(*pos).to_maybe_possibles().map(|set| set.len()).unwrap_or(1);
+        let mul: usize = grid
+            .get_cell(*pos)
+            .to_maybe_possibles()
+            .map(|set| set.len())
+            .unwrap_or(1);
         diff = diff.saturating_mul(mul);
     }
     diff
@@ -129,7 +136,11 @@ pub fn is_ambiguous(grid: &Grid) -> Option<(usize, usize)> {
             continue;
         }
 
-        if solution_count(grid.clone(), implicator_set) > 1 {
+        let implicator_queue: Vec<_> = implicator_set
+            .into_iter()
+            .sorted_by_key(|pos| -(grid.get_cell(*pos).to_possibles().len() as isize))
+            .collect();
+        if solution_count(grid.clone(), implicator_queue) > 1 {
             return Some(pos);
         }
     }
