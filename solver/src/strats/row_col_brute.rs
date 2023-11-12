@@ -1,5 +1,6 @@
 use crate::bitset::BitSet;
 use crate::grid::{Cell, Compartment, Grid};
+use crate::solver::ValidationResult;
 use crate::validator::compartment_valid;
 
 pub fn solution_valid(compartments: &[Compartment], requirements: BitSet) -> bool {
@@ -81,7 +82,7 @@ fn compartments_contains_number(compartments: &[Compartment], num: u8) -> bool {
         .any(|comp| compartment_contains_number(comp, num))
 }
 
-pub fn row_col_brute(grid: &mut Grid) -> bool {
+pub fn row_col_brute(grid: &mut Grid) -> Result<bool, ValidationResult> {
     let mut changes = false;
 
     for (index, compartments) in grid.iter_by_row_compartments().into_iter().enumerate() {
@@ -104,6 +105,30 @@ pub fn row_col_brute(grid: &mut Grid) -> bool {
                 .all(|comps| !compartments_contains_number(comps, i))
             {
                 changes |= grid.row_forbidden[index].insert(i);
+            }
+        }
+
+        let mut sample_pos = None;
+        let mut new_cells = std::iter::repeat(BitSet::new())
+            .take(grid.x)
+            .collect::<Vec<_>>();
+        for solution in solutions {
+            for compartment in solution {
+                for (pos, cell) in compartment.cells {
+                    if let Cell::Solution(n) = cell {
+                        sample_pos = Some(pos);
+                        new_cells[pos.0].insert(n);
+                    }
+                }
+            }
+        }
+        if let Some((_, y)) = sample_pos {
+            for (x, cell) in new_cells.into_iter().enumerate() {
+                for i in 1..9 {
+                    if !cell.contains(i) {
+                        grid.set_impossible((x, y), i)?;
+                    }
+                }
             }
         }
     }
@@ -130,9 +155,33 @@ pub fn row_col_brute(grid: &mut Grid) -> bool {
                 changes |= grid.col_forbidden[index].insert(i);
             }
         }
+
+        let mut sample_pos = None;
+        let mut new_cells = std::iter::repeat(BitSet::new())
+            .take(grid.y)
+            .collect::<Vec<_>>();
+        for solution in solutions {
+            for compartment in solution {
+                for (pos, cell) in compartment.cells {
+                    if let Cell::Solution(n) = cell {
+                        sample_pos = Some(pos);
+                        new_cells[pos.1].insert(n);
+                    }
+                }
+            }
+        }
+        if let Some((x, _)) = sample_pos {
+            for (y, cell) in new_cells.into_iter().enumerate() {
+                for i in 1..9 {
+                    if !cell.contains(i) {
+                        grid.set_impossible((x, y), i)?;
+                    }
+                }
+            }
+        }
     }
 
-    changes
+    Ok(changes)
 }
 
 #[cfg(test)]
@@ -165,7 +214,7 @@ mod tests {
         assert!(grid.col_requirements[0].contains(2));
         assert!(!grid.col_forbidden[0].contains(4));
 
-        assert_eq!(row_col_brute(&mut grid), true);
+        assert_eq!(row_col_brute(&mut grid), Ok(true));
 
         assert!(grid.row_requirements[0].contains(1));
         assert!(grid.row_requirements[0].contains(2));
@@ -175,5 +224,44 @@ mod tests {
         assert!(grid.col_requirements[0].contains(2));
         assert!(grid.col_requirements[0].contains(3));
         assert!(grid.col_forbidden[0].contains(4));
+    }
+
+    #[test]
+    fn test_partial_row_brute() {
+        let mut grid = g("
+.#....#..
+#########
+.########
+.########
+.########
+.########
+#########
+.########
+.########
+");
+
+        grid.cells[0][0] = Cell::Indeterminate(set([1, 2, 3, 4]));
+
+        grid.cells[0][2] = Cell::Indeterminate(set([2, 3, 4, 5, 6, 8]));
+        grid.cells[0][3] = Cell::Indeterminate(set([3, 4, 5, 7]));
+        grid.cells[0][4] = Cell::Indeterminate(set([3, 4, 5, 6]));
+        grid.cells[0][5] = Cell::Indeterminate(set([2, 3, 4, 5, 6]));
+
+        grid.cells[0][7] = Cell::Indeterminate(set([7, 8, 9]));
+        grid.cells[0][8] = Cell::Indeterminate(set([6, 8, 9]));
+
+        grid.cells[2][0] = Cell::Indeterminate(set([2, 3, 4, 5, 6, 8]));
+        grid.cells[3][0] = Cell::Indeterminate(set([3, 4, 5, 7]));
+        grid.cells[4][0] = Cell::Indeterminate(set([3, 4, 5, 6]));
+        grid.cells[5][0] = Cell::Indeterminate(set([2, 3, 4, 5, 6]));
+
+        grid.cells[7][0] = Cell::Indeterminate(set([7, 8, 9]));
+        grid.cells[8][0] = Cell::Indeterminate(set([6, 8, 9]));
+
+        assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
+        assert_eq!(row_col_brute(&mut grid), Ok(true));
+
+        assert_eq!(grid.cells[0][2], Cell::Indeterminate(set([2, 3, 4, 5, 6])));
+        assert_eq!(grid.cells[2][0], Cell::Indeterminate(set([2, 3, 4, 5, 6])));
     }
 }

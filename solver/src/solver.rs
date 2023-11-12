@@ -262,7 +262,7 @@ pub fn solve_round(grid: &mut Grid, enable_chains: bool) -> Result<SolveResults,
                     Ok(RequiredAndForbidden)
                 } else if let Some(set) = strats::setti(grid) {
                     Ok(Setti(set))
-                } else if strats::row_col_brute(grid) {
+                } else if strats::row_col_brute(grid)? {
                     Ok(RowColBrute)
                 } else if let Some(n) = strats::fish(grid)? {
                     Ok(Fish(n))

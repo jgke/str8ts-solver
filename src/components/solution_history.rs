@@ -22,9 +22,7 @@ fn border_for_solution(cell: &SolveResults) -> &'static str {
         }
         SolveResults::Fish(2 | 3) => "border-t-8 border-t-blue-700",
         SolveResults::Fish(_) => "border-t-8 border-t-blue-800",
-        SolveResults::UniqueRequirement(..) => {
-            "border-t-8 border-t-blue-800"
-        }
+        SolveResults::UniqueRequirement(..) => "border-t-8 border-t-blue-800",
         SolveResults::StartChain(_, _)
         | SolveResults::Chain(_, _, _, _)
         | SolveResults::EndChain(_) => "border-t-8 border-t-blue-800",
