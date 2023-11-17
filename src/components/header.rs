@@ -1,3 +1,5 @@
+use solver::generator;
+use solver::grid::Grid;
 use wasm_bindgen::JsCast;
 use web_sys::{Event, HtmlInputElement, MouseEvent};
 use yew::{classes, function_component, html, use_state, Callback, Html, Properties};
@@ -9,6 +11,7 @@ pub struct HeaderProps {
     pub on_hint: Callback<MouseEvent>,
     pub on_partial_solve: Callback<MouseEvent>,
     pub on_solve: Callback<MouseEvent>,
+    pub on_generate: Callback<Grid>,
 
     pub set_edit_mode: Callback<bool>,
     pub edit_mode: bool,
@@ -23,6 +26,7 @@ pub fn header(props: &HeaderProps) -> Html {
         on_hint,
         on_partial_solve,
         on_solve,
+        on_generate,
         set_edit_mode,
         edit_mode,
         open_importer,
@@ -78,6 +82,16 @@ pub fn header(props: &HeaderProps) -> Html {
         let hamburger_open = hamburger_open.clone();
         Callback::from(move |e: MouseEvent| {
             on_solve.emit(e);
+            hamburger_open.set(false);
+        })
+    };
+
+    let on_generate_click = {
+        let on_generate = on_generate.clone();
+        let hamburger_open = hamburger_open.clone();
+        Callback::from(move |_: MouseEvent| {
+            let grid = generator::generator(9, 15, 5, 1, true);
+            on_generate.emit(grid);
             hamburger_open.set(false);
         })
     };
@@ -150,6 +164,12 @@ pub fn header(props: &HeaderProps) -> Html {
                             onclick={on_solve_click}
                         >
                             {"Solve"}
+                        </button>
+                        <button
+                            class={classes!(button_classes, "p-2")}
+                            onclick={on_generate_click}
+                        >
+                            {"Generate"}
                         </button>
                     </div>
                 </div>

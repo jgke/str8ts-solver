@@ -277,6 +277,12 @@ pub fn app() -> Html {
         })
     };
 
+    let on_generate = {
+        let on_import = on_import.clone();
+
+        Callback::from(move |new_grid| on_import.emit(Ok(new_grid)))
+    };
+
     html! {
         <main class="dark:bg-blue-100 flex flex-col xl:flex-row justify-center items-center xl:items-stretch p-3">
             <div class="flex">
@@ -287,6 +293,7 @@ pub fn app() -> Html {
                         {on_hint}
                         on_partial_solve={on_partial_solve}
                         on_solve={onclick_all}
+                        on_generate={on_generate}
                         edit_mode={*edit_mode}
                         {set_edit_mode}
                         {open_importer} />
