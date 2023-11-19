@@ -1,3 +1,4 @@
+use crate::components::generator::Generator;
 use crate::components::grid::RenderGrid;
 use crate::components::header::Header;
 use crate::components::importer::Importer;
@@ -96,6 +97,7 @@ pub fn app() -> Html {
     let history_focus_locked: UseStateHandle<Option<HistoryFocusState>> = use_state(|| None);
     let edit_mode: UseStateHandle<bool> = use_state(|| false);
     let importer_open: UseStateHandle<bool> = use_state(|| true);
+    let generator_open: UseStateHandle<bool> = use_state(|| false);
     let latest_hint: UseStateHandle<Option<SolveResults>> = use_state(|| None);
 
     let (focus_state, sub_index, hl_list) = if let Some(locked) = &*history_focus_locked {
@@ -248,8 +250,19 @@ pub fn app() -> Html {
 
     let open_importer = {
         let importer_open = importer_open.clone();
+        let generator_open = generator_open.clone();
         Callback::from(move |_| {
             importer_open.set(true);
+            generator_open.set(false);
+        })
+    };
+
+    let open_generator = {
+        let importer_open = importer_open.clone();
+        let generator_open = generator_open.clone();
+        Callback::from(move |_| {
+            importer_open.set(false);
+            generator_open.set(true);
         })
     };
 
@@ -293,13 +306,16 @@ pub fn app() -> Html {
                         {on_hint}
                         on_partial_solve={on_partial_solve}
                         on_solve={onclick_all}
-                        on_generate={on_generate}
                         edit_mode={*edit_mode}
                         {set_edit_mode}
-                        {open_importer} />
+                        {open_importer}
+                        {open_generator} />
 
                     if *importer_open {
                         <Importer {on_import} />
+                    }
+                    if *generator_open {
+                        <Generator {on_generate} />
                     }
 
                     if let Some(hint) = &*latest_hint {

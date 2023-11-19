@@ -8,7 +8,7 @@ mod diffgrid;
 
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 fn main() {
-    console_log::init_with_level(log::Level::Debug);
+    let _ = console_log::init_with_level(log::Level::Debug);
     log::info!("Initialized console logging");
     let root = gloo::utils::document().get_element_by_id("wasm-render-target");
     if let Some(root) = root {

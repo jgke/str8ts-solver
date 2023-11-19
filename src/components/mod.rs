@@ -1,5 +1,6 @@
 pub mod app;
 mod cell;
+mod generator;
 mod grid;
 pub mod header;
 mod importer;
