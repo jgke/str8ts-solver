@@ -5,6 +5,8 @@ mod utils;
 mod components;
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 mod diffgrid;
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+mod worker;
 
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 fn main() {

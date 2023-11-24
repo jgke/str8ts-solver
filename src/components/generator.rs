@@ -1,8 +1,12 @@
+use crate::worker::codec::TransferrableCodec;
+use crate::worker::{HashInput, HashWorker};
+use gloo_worker::Spawnable;
 use solver::generator;
 use solver::grid::Grid;
+use std::ops::Deref;
 use wasm_bindgen::JsCast;
 use web_sys::{FormData, HtmlFormElement, SubmitEvent};
-use yew::{function_component, html, Callback, Html, Properties};
+use yew::{function_component, html, use_memo, use_state, Callback, Html, Properties};
 
 #[derive(Properties, PartialEq)]
 pub struct GeneratorProps {
@@ -12,9 +16,29 @@ pub struct GeneratorProps {
 #[function_component(Generator)]
 pub fn header(props: &GeneratorProps) -> Html {
     let GeneratorProps { on_generate } = props;
+    let calculating = use_state(|| false);
+
+    let worker = {
+        let calculating = calculating.clone();
+        let on_generate = on_generate.clone();
+
+        use_memo(
+            move |_| {
+                HashWorker::spawner()
+                    .callback(move |o| {
+                        calculating.set(false);
+                        on_generate.emit(Grid::parse(vec![o.puzzle]).expect("unreachable"));
+                    })
+                    .encoding::<TransferrableCodec>()
+                    .spawn_with_loader("/example_file_hash_worker_loader.js")
+            },
+            (),
+        )
+    };
 
     let onsubmit = {
         let on_generate = on_generate.clone();
+        let calculating = calculating.clone();
         Callback::from(move |e: SubmitEvent| {
             e.prevent_default();
             e.stop_propagation();
@@ -43,14 +67,15 @@ pub fn header(props: &GeneratorProps) -> Html {
                 .parse()
                 .unwrap_or(4);
             let symmetric = data.get("symmetric").as_string() == Some("on".to_string());
-            let grid = generator::generator(
+            calculating.set(true);
+            let input = HashInput {
                 size,
-                blocker_count + blocker_num_count,
+                blocker_count,
                 blocker_num_count,
                 target_difficulty,
                 symmetric,
-            );
-            on_generate.emit(grid);
+            };
+            worker.send(input);
         })
     };
 
@@ -85,6 +110,9 @@ pub fn header(props: &GeneratorProps) -> Html {
                 <input type="checkbox" class="mt-4 text-black" name="symmetric" checked=true />
             </label>
             <button class="p-2 mt-4 flex-grow-0 border font-bold bg-light-800 text-black dark:border-blue-400 dark:bg-blue-300 dark:text-white rounded disabled:border-transparent disabled:text-light-300 dark:disabled:text-light-300" type="submit">{"Parse"}</button>
+            if *calculating {
+                <p><h4>{"Calculating..."}</h4></p>
+            }
         </form>
     }
 }

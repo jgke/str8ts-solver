@@ -6,5 +6,9 @@
     <title>Str8ts solver</title>
     <link data-trunk rel="sass" href="index.scss" />
     <link data-trunk rel="tailwind-css" href="tailwind.css" />
+
+    <link data-trunk rel="rust" data-type="worker" data-wasm-opt="z" data-bin="example_file_hash_worker" data-weak-refs data-loader-shim />
+    <link data-trunk rel="rust" data-wasm-opt="z" data-bin="str8ts-solver" />
+
   </head>
 </html>
