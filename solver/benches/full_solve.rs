@@ -64,11 +64,63 @@ fn slow_solver_benchmark(c: &mut Criterion) {
 }
 
 fn generator_benchmark(c: &mut Criterion) {
-    c.bench_function("generator", |b| {
+    c.bench_function("generator diff=1", |b| {
+        let rng = rand_chacha::ChaCha8Rng::seed_from_u64(40);
+        b.iter(|| {
+            generate_puzzle(
+                black_box(1),
+                black_box(15),
+                black_box(5),
+                black_box(5),
+                black_box(true),
+                &mut (rng.clone()),
+            )
+        })
+    });
+    c.bench_function("generator diff=2", |b| {
+        let rng = rand_chacha::ChaCha8Rng::seed_from_u64(41);
+        b.iter(|| {
+            generate_puzzle(
+                black_box(2),
+                black_box(15),
+                black_box(5),
+                black_box(5),
+                black_box(true),
+                &mut (rng.clone()),
+            )
+        })
+    });
+    c.bench_function("generator diff=3", |b| {
+        let rng = rand_chacha::ChaCha8Rng::seed_from_u64(42);
+        b.iter(|| {
+            generate_puzzle(
+                black_box(3),
+                black_box(15),
+                black_box(5),
+                black_box(5),
+                black_box(true),
+                &mut (rng.clone()),
+            )
+        })
+    });
+    c.bench_function("generator diff=4", |b| {
+        let rng = rand_chacha::ChaCha8Rng::seed_from_u64(43);
+        b.iter(|| {
+            generate_puzzle(
+                black_box(4),
+                black_box(15),
+                black_box(5),
+                black_box(5),
+                black_box(true),
+                &mut (rng.clone()),
+            )
+        })
+    });
+    c.bench_function("generator diff=5", |b| {
         let rng = rand_chacha::ChaCha8Rng::seed_from_u64(33);
         b.iter(|| {
             generate_puzzle(
-                black_box(9),
+                black_box(5),
                 black_box(15),
                 black_box(5),
                 black_box(5),
