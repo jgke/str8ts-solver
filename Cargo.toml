@@ -13,7 +13,7 @@ default-run = "str8ts-solver"
 [dependencies]
 itertools = "0.11.0"
 wasm-bindgen = "0.2.87"
-yew = { version="0.20", features=["csr"] }
+yew = { version="0.21", features=["csr"] }
 solver = { path = "solver" }
 rustc-hash = "1.1.0"
 gloo = "0.8.1"

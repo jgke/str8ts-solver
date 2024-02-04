@@ -108,7 +108,7 @@ pub fn app() -> Html {
 
     {
         let latest_hint = latest_hint.clone();
-        use_effect_with_deps(move |_| latest_hint.set(None), grid_state.clone());
+        use_effect_with(grid_state.clone(), move |_| latest_hint.set(None));
     }
 
     let onclick = {
