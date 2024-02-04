@@ -25,8 +25,8 @@ $ cargo run --release # this takes some time
 
 See `cargo run --release -- --help` for more usage. Try `cargo run --release --
 --target-difficulty 7` for harder puzzles, and `cargo run --release --
---target-difficulty 4` for easier ones. Note that the puzzles with difficulty >
-5 take more time to generate.
+--target-difficulty 4` for easier ones. Note that the puzzles with difficulty 6
+and 7 take significantly more time to generate.
 
 Use `RUST_LOG=debug cargo run --release -- --target-difficulty 7` to see some progress.
 
@@ -54,6 +54,23 @@ trunk build --release
 This builds the app in release mode similar to `cargo build --release`.
 
 The output will be located in the `dist` directory.
+
+### Running tests
+
+Run tests for the solver:
+```
+$ cargo test --all
+```
+
+Run e2e tests:
+
+```
+$ trunk serve --release
+# ... in other terminal:
+$ cd endtoend-tests
+$ npm install
+$ npx playwright test
+```
 
 ### License
 
