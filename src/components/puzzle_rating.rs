@@ -46,7 +46,7 @@ pub fn render_puzzle_rating(props: &PuzzleRatingProps) -> Html {
     html! {
         <div class="flex flex-col">
             <h2 class="dark:text-white font-bold text-2xl my-2">{"Puzzle difficulty rating"}</h2>
-            <div class="flex h-16 text-star">
+            <div id="puzzle-rating-stars" class="flex h-16 text-star">
                  { (1..=star_count).map(|_| star.clone()).collect::<Html>() }
             </div>
             <h2 class="dark:text-white font-bold text-xl my-2">{"Required tactics"}</h2>
