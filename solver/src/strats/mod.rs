@@ -10,6 +10,7 @@ mod singles;
 mod stranded;
 mod trivial;
 mod unique;
+mod unique_requirement;
 mod update_impossibles;
 mod update_required_and_forbidden;
 
@@ -25,5 +26,6 @@ pub use singles::*;
 pub use stranded::*;
 pub use trivial::*;
 pub use unique::*;
+pub use unique_requirement::*;
 pub use update_impossibles::*;
 pub use update_required_and_forbidden::*;

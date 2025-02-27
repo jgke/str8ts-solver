@@ -29,6 +29,9 @@ impl Compartment {
             Blocker(_) | Black => false,
         })
     }
+    pub fn contains_pos(&self, pos: (usize, usize)) -> bool {
+        self.cells.iter().any(|(p, _)| *p == pos)
+    }
 }
 
 impl Cell {
@@ -422,6 +425,39 @@ impl Display for Grid {
                     Black => write!(f, "#")?,
                 }
             }
+        }
+
+        Ok(())
+    }
+}
+
+pub struct DebugGrid(pub Grid);
+impl Display for DebugGrid {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut first = true;
+
+        for row in &self.0.cells {
+            for y in 0..=2 {
+                if !first {
+                    writeln!(f)?;
+                }
+                first = false;
+                for cell in row {
+                    for x in 0..=2 {
+                        let num = y * 3 + x;
+                        match *cell {
+                            Requirement(n) if n == num => write!(f, "{}", n)?,
+                            Solution(n) if n == num => write!(f, "{}", n)?,
+                            Blocker(n) if n == num => write!(f, "{}", (n - 1 + b'a') as char)?,
+                            Indeterminate(set) if set.contains(num) => write!(f, "{}", num)?,
+                            Black => write!(f, "#")?,
+                            _ => write!(f, " ")?,
+                        }
+                    }
+                    write!(f, " ")?;
+                }
+            }
+            writeln!(f)?;
         }
 
         Ok(())

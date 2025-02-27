@@ -1,5 +1,5 @@
 use crate::bitset::BitSet;
-use crate::grid::Grid;
+use crate::grid::{DebugGrid, Grid};
 use crate::solver::SolveResults::*;
 use crate::solver::ValidationResult::*;
 use crate::strats;
@@ -20,6 +20,7 @@ pub enum SolveResults {
     RowColBrute,
     Setti(BitSet),
     Fish(usize),
+    UniqueRequirementSingleCell((usize, usize), bool, u8),
     UniqueRequirement((usize, usize), u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
     StartChain((usize, usize), u8),
     Chain((usize, usize), u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
@@ -42,6 +43,7 @@ impl SolveResults {
             Setti(_) => 5,
             Fish(2) | Fish(3) => 5,
             Fish(_) => 6,
+            UniqueRequirementSingleCell(..) => 6,
             UniqueRequirement(..) => 7,
             StartChain(_, _) => 1,
             Chain(_, _, steps, _) if steps.len() < 8 => 6,
@@ -94,6 +96,25 @@ impl Display for SolveResults {
             Fish(2) => write!(f, "Calculate a X-wing"),
             Fish(3) => write!(f, "Calculate a Swordfish"),
             Fish(n) => write!(f, "Calculate a {}-fish", n),
+            UniqueRequirementSingleCell((x, y), b, n) => {
+                if *b {
+                    write!(
+                        f,
+                        "({}, {}) must be {}, as other solutions would be ambiguous",
+                        x + 1,
+                        y + 1,
+                        n,
+                    )
+                } else {
+                    write!(
+                        f,
+                        "({}, {}) cannot be {}, as it would cause ambiguous solutions",
+                        x + 1,
+                        y + 1,
+                        n,
+                    )
+                }
+            }
             UniqueRequirement((x, y), n, steps, _) => {
                 write!(
                     f,
@@ -246,6 +267,7 @@ pub fn run_basic(grid: &mut Grid) -> Result<SolveResults, ValidationResult> {
     };
 
     strats::trivial(grid);
+
     Ok(res)
 }
 
@@ -266,6 +288,8 @@ pub fn solve_round(grid: &mut Grid, enable_chains: bool) -> Result<SolveResults,
                     Ok(RowColBrute)
                 } else if let Some(n) = strats::fish(grid)? {
                     Ok(Fish(n))
+                } else if let Some((pos, b, n)) = strats::unique_requirement(grid)? {
+                    Ok(UniqueRequirementSingleCell(pos, b, n))
                 } else if enable_chains {
                     if let Some(res) = strats::chain(grid)? {
                         match res {

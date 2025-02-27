@@ -7,8 +7,8 @@ use std::rc::Rc;
 use wasm_bindgen::JsCast;
 use web_sys::{EventTarget, FocusEvent, HtmlElement, HtmlTextAreaElement, MouseEvent};
 use yew::{
-    classes, function_component, html, use_effect_with, use_node_ref, use_state, Callback,
-    Html, Properties,
+    classes, function_component, html, use_effect_with, use_node_ref, use_state, Callback, Html,
+    Properties,
 };
 
 #[derive(Properties, PartialEq)]
@@ -103,14 +103,11 @@ pub fn render_cell(props: &RenderCellProps) -> Html {
     let input_ref = use_node_ref();
     {
         let input_ref = input_ref.clone();
-        use_effect_with(
-            (input_ref, *editing),
-            |(input_ref, _)| {
-                if let Some(input) = input_ref.cast::<HtmlElement>() {
-                    _ = input.focus();
-                }
-            },
-        );
+        use_effect_with((input_ref, *editing), |(input_ref, _)| {
+            if let Some(input) = input_ref.cast::<HtmlElement>() {
+                _ = input.focus();
+            }
+        });
     }
 
     let onfocus = {

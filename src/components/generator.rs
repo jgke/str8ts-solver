@@ -22,18 +22,15 @@ pub fn header(props: &GeneratorProps) -> Html {
         let calculating = calculating.clone();
         let on_generate = on_generate.clone();
 
-        use_memo(
-            (),
-            move |_| {
-                HashWorker::spawner()
-                    .callback(move |o| {
-                        calculating.set(false);
-                        on_generate.emit(Grid::parse(vec![o.puzzle]).expect("unreachable"));
-                    })
-                    .encoding::<TransferrableCodec>()
-                    .spawn_with_loader("/example_file_hash_worker_loader.js")
-            },
-        )
+        use_memo((), move |_| {
+            HashWorker::spawner()
+                .callback(move |o| {
+                    calculating.set(false);
+                    on_generate.emit(Grid::parse(vec![o.puzzle]).expect("unreachable"));
+                })
+                .encoding::<TransferrableCodec>()
+                .spawn_with_loader("./example_file_hash_worker_loader.js")
+        })
     };
 
     let onsubmit = {
