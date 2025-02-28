@@ -365,6 +365,22 @@ impl Grid {
             .any(|s| !s.is_empty())
     }
 
+    pub fn requirements(&mut self, vertical: bool, pos: (usize, usize)) -> &mut BitSet {
+        if vertical {
+            &mut self.col_requirements[pos.0]
+        } else {
+            &mut self.row_requirements[pos.1]
+        }
+    }
+
+    pub fn forbidden(&mut self, vertical: bool, pos: (usize, usize)) -> &mut BitSet {
+        if vertical {
+            &mut self.col_forbidden[pos.0]
+        } else {
+            &mut self.row_forbidden[pos.1]
+        }
+    }
+
     pub fn parse(puzzle: Vec<String>) -> Result<Grid, String> {
         let puzzle = puzzle
             .join("\n")
