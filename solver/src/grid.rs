@@ -35,6 +35,15 @@ impl Compartment {
     pub fn sample_pos(&self) -> (usize, usize) {
         self.cells[0].0
     }
+    pub fn to_unresolved(&self) -> Vec<((usize, usize), BitSet)> {
+        self.cells
+            .iter()
+            .filter_map(|(p, cell)| match cell {
+                Indeterminate(set) => Some((*p, *set)),
+                _ => None,
+            })
+            .collect()
+    }
 }
 
 impl Cell {
@@ -77,8 +86,8 @@ impl Cell {
 
     pub fn to_unresolved(&self) -> BitSet {
         match self {
-            Requirement(_) | Solution(_) | Blocker(_) | Black => BitSet::new(),
             Indeterminate(set) => *set,
+            _ => BitSet::new(),
         }
     }
 }

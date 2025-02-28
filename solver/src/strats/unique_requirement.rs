@@ -2,6 +2,7 @@ use crate::bitset::BitSet;
 use crate::grid::{Cell, Grid};
 use crate::solver::ValidationResult;
 use crate::strats::get_compartment_range;
+use itertools::Itertools;
 
 /* If a cell is implied only by other compartments, and those compartments don't refer to a
  * candidate the cell has, the cell has to be that candidate as otherwise it would cause the puzzle
@@ -17,19 +18,7 @@ fn single_cell_cross_compartment_unique(
 ) -> Result<Option<UrResult>, ValidationResult> {
     let mut free_set = set;
     let (row, col) = grid.compartments_containing((x, y));
-    if row
-        .cells
-        .into_iter()
-        .filter(|(_, cell)| matches!(cell, Cell::Indeterminate(_)))
-        .count()
-        == 1
-        && col
-            .cells
-            .into_iter()
-            .filter(|(_, cell)| matches!(cell, Cell::Indeterminate(_)))
-            .count()
-            == 1
-    {
+    if row.to_unresolved().len() == 1 && col.to_unresolved().len() == 1 {
         for (p, c) in grid.get_row(y) {
             if p != (x, y) {
                 free_set = free_set.difference(c.to_possibles());
@@ -282,6 +271,52 @@ fn two_compartments_would_have_closed_set(
     Ok(None)
 }
 
+/* If a compartment has a cell with no other implicators than the rest of the compartment, it has
+ * to be uniquely identifiable based on the other cells:
+ *
+ * [123]
+ * [123] [123]
+ *
+ * The [123] at (0, 1) cannot be 2, as the cell in (0, 0) could be either 1 or 3.
+ */
+fn single_cell_would_become_free(
+    grid: &mut Grid,
+    x: usize,
+    y: usize,
+    set: BitSet,
+) -> Result<Option<UrResult>, ValidationResult> {
+    let (row, col) = grid.compartments_containing((x, y));
+    let base_set = set;
+    if base_set.len() != 3 {
+        return Ok(None);
+    }
+
+    for t in [row, col]
+        .into_iter()
+        .map(|c| c.to_unresolved())
+        .filter(|c| c.len() == 2)
+    {
+        let (p, other_set) = t.iter().cloned().find(|(p, _c)| *p != (x, y)).unwrap();
+        if base_set == other_set {
+            /* implied that sets are continuous here */
+            for (pos, cell) in [grid.get_row(y), grid.get_col(x)].into_iter().flatten() {
+                if pos == (x, y) || pos == p {
+                    continue;
+                }
+                if !base_set.intersection(cell.to_unresolved()).is_empty() {
+                    return Ok(None);
+                }
+            }
+            let numbers = base_set.into_iter().sorted().collect::<Vec<_>>();
+            let middle = numbers[1];
+            grid.set_impossible(p, middle)?;
+            return Ok(Some((p, false, middle)));
+        }
+    }
+
+    Ok(None)
+}
+
 pub type UrResult = ((usize, usize), bool, u8);
 pub fn unique_requirement(grid: &mut Grid) -> Result<Option<UrResult>, ValidationResult> {
     for ((x, y), cell) in grid.iter_by_cells() {
@@ -290,6 +325,9 @@ pub fn unique_requirement(grid: &mut Grid) -> Result<Option<UrResult>, Validatio
                 return Ok(Some(res));
             }
             if let Some(res) = single_cell_intra_compartment_unique(grid, x, y, set)? {
+                return Ok(Some(res));
+            }
+            if let Some(res) = single_cell_would_become_free(grid, x, y, set)? {
                 return Ok(Some(res));
             }
         }
@@ -399,5 +437,28 @@ mod tests {
         assert_eq!(unique_requirement(&mut grid), Ok(Some(((2, 3), false, 3))));
 
         assert_eq!(grid.cells[3][2], det([1, 2]));
+    }
+
+    #[test]
+    fn compartment_would_have_free_cell() {
+        let mut grid = g("
+#######
+#.#####
+#.....#
+##....#
+##....#
+##....#
+#######
+");
+        set_range(&mut grid, (1, 1), (2, 2), [1, 2, 3]);
+        grid.cells[1][2] = Cell::Black;
+
+        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
+        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+
+        assert_eq!(unique_requirement(&mut grid), Ok(Some(((1, 2), false, 2))));
+
+        assert_eq!(grid.cells[2][1], det([1, 3]));
     }
 }
