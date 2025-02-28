@@ -25,63 +25,10 @@ pub fn required_by_range(grid_size: usize, line: &[CellPair]) -> BitSet {
         .collect()
 }
 
-pub fn required_by_certain(line: &[CellPair]) -> BitSet {
-    let mut required = BitSet::default();
-
-    for compartment in Grid::line_to_compartments(false, line.to_vec()) {
-        for (_, cell) in compartment.cells {
-            match cell {
-                Requirement(n) => {
-                    required.insert(n);
-                }
-                Solution(n) => {
-                    required.insert(n);
-                }
-                Blocker(_) => {}
-                Indeterminate(_) => {}
-                Black => {}
-            }
-        }
-    }
-
-    required
-}
-
-pub fn required_numbers(grid: &Grid, line: &[CellPair]) -> BitSet {
-    required_by_certain(line)
-        .into_iter()
-        .chain(required_by_range(grid.x, line))
-        .collect()
-}
-
-pub fn forbidden_by_certain(line: &[CellPair]) -> BitSet {
-    let mut required = BitSet::default();
-
-    for (_, cell) in line {
-        if let Blocker(n) = cell {
-            required.insert(*n);
-        }
-    }
-
-    required
-}
-
-pub fn forbidden_numbers(_grid: &Grid, line: &[CellPair]) -> BitSet {
-    forbidden_by_certain(line)
-}
-
 pub fn possible_numbers(line: &[CellPair]) -> BitSet {
     line.iter()
-        .flat_map(|(_, cell)| {
-            let iter: Box<dyn Iterator<Item = _>> = match cell {
-                Requirement(n) | Solution(n) => Box::new([*n].into_iter()),
-                Blocker(_) => Box::new(std::iter::empty()),
-                Indeterminate(set) => Box::new(set.into_iter()),
-                Black => Box::new(std::iter::empty()),
-            };
-            iter
-        })
-        .collect()
+        .map(|(_, cell)| cell.to_possibles())
+        .fold(BitSet::new(), |a, b| a.union(b))
 }
 
 pub fn get_compartment_range(
