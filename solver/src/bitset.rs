@@ -62,6 +62,10 @@ impl BitSet {
     pub fn intersection(&self, other: BitSet) -> Self {
         Self(self.0 & other.0)
     }
+
+    pub fn symmetric_difference(&self, other: BitSet) -> Self {
+        self.union(other).difference(self.intersection(other))
+    }
 }
 
 impl FromIterator<u8> for BitSet {

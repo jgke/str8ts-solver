@@ -50,7 +50,7 @@ pub fn required_by_certain(line: &[CellPair]) -> BitSet {
 pub fn required_numbers(grid: &Grid, line: &[CellPair]) -> BitSet {
     required_by_certain(line)
         .into_iter()
-        .chain(required_by_range(grid.x, line).into_iter())
+        .chain(required_by_range(grid.x, line))
         .collect()
 }
 

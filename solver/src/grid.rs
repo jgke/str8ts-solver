@@ -32,6 +32,9 @@ impl Compartment {
     pub fn contains_pos(&self, pos: (usize, usize)) -> bool {
         self.cells.iter().any(|(p, _)| *p == pos)
     }
+    pub fn sample_pos(&self) -> (usize, usize) {
+        self.cells[0].0
+    }
 }
 
 impl Cell {
@@ -69,6 +72,13 @@ impl Cell {
             Requirement(c) | Solution(c) => Some([*c].into_iter().collect()),
             Indeterminate(set) => Some(*set),
             Blocker(_) | Black => None,
+        }
+    }
+
+    pub fn to_unresolved(&self) -> BitSet {
+        match self {
+            Requirement(_) | Solution(_) | Blocker(_) | Black => BitSet::new(),
+            Indeterminate(set) => *set,
         }
     }
 }

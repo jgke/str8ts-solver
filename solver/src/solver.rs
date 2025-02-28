@@ -1,5 +1,5 @@
 use crate::bitset::BitSet;
-use crate::grid::{DebugGrid, Grid};
+use crate::grid::Grid;
 use crate::solver::SolveResults::*;
 use crate::solver::ValidationResult::*;
 use crate::strats;
@@ -288,10 +288,10 @@ pub fn solve_round(grid: &mut Grid, enable_chains: bool) -> Result<SolveResults,
                     Ok(RowColBrute)
                 } else if let Some(n) = strats::fish(grid)? {
                     Ok(Fish(n))
-                } else if let Some((pos, b, n)) = strats::unique_requirement(grid)? {
-                    Ok(UniqueRequirementSingleCell(pos, b, n))
                 } else if enable_chains {
-                    if let Some(res) = strats::chain(grid)? {
+                    if let Some((pos, b, n)) = strats::unique_requirement(grid)? {
+                        Ok(UniqueRequirementSingleCell(pos, b, n))
+                    } else if let Some(res) = strats::chain(grid)? {
                         match res {
                             crate::strats::ChainSolveResult::NotUnique((
                                 (x, y),
