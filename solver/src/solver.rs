@@ -271,6 +271,48 @@ pub fn run_basic(grid: &mut Grid) -> Result<SolveResults, ValidationResult> {
     Ok(res)
 }
 
+pub fn run_advanced(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
+    Ok(Some(if strats::update_required_and_forbidden(grid)? {
+        RequiredAndForbidden
+    } else if let Some(set) = strats::setti(grid) {
+        Setti(set)
+    } else if strats::row_col_brute(grid)? {
+        RowColBrute
+    } else if let Some(n) = strats::fish(grid)? {
+        Fish(n)
+    } else {
+        return Ok(None);
+    }))
+}
+
+pub fn run_unique(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
+    Ok(
+        if let Some((pos, b, n)) = strats::unique_requirement(grid)? {
+            Some(UniqueRequirementSingleCell(pos, b, n))
+        } else {
+            None
+        },
+    )
+}
+
+pub fn run_chain(
+    grid: &mut Grid,
+    enable_chains: bool,
+) -> Result<Option<SolveResults>, ValidationResult> {
+    if !enable_chains {
+        return Ok(None);
+    }
+    Ok(match strats::chain(grid)? {
+        Some(crate::strats::ChainSolveResult::NotUnique(((x, y), n, steps, error_grid))) => {
+            Some(UniqueRequirement((x, y), n, Rc::new(steps), error_grid))
+        }
+        Some(crate::strats::ChainSolveResult::Error(((x, y), n, steps, error_grid))) => {
+            Some(Chain((x, y), n, Rc::new(steps), error_grid))
+        }
+        None => None,
+    })
+}
+
 pub fn solve_round(grid: &mut Grid, enable_chains: bool) -> Result<SolveResults, ValidationResult> {
     validate(grid)?;
     if grid.is_solved() {
@@ -279,39 +321,14 @@ pub fn solve_round(grid: &mut Grid, enable_chains: bool) -> Result<SolveResults,
     match run_basic(grid)? {
         OutOfBasicStrats => {
             validate(grid)?;
-            let res = {
-                if strats::update_required_and_forbidden(grid)? {
-                    Ok(RequiredAndForbidden)
-                } else if let Some(set) = strats::setti(grid) {
-                    Ok(Setti(set))
-                } else if strats::row_col_brute(grid)? {
-                    Ok(RowColBrute)
-                } else if let Some(n) = strats::fish(grid)? {
-                    Ok(Fish(n))
-                } else if enable_chains {
-                    if let Some((pos, b, n)) = strats::unique_requirement(grid)? {
-                        Ok(UniqueRequirementSingleCell(pos, b, n))
-                    } else if let Some(res) = strats::chain(grid)? {
-                        match res {
-                            crate::strats::ChainSolveResult::NotUnique((
-                                (x, y),
-                                n,
-                                steps,
-                                error_grid,
-                            )) => Ok(UniqueRequirement((x, y), n, Rc::new(steps), error_grid)),
-                            crate::strats::ChainSolveResult::Error((
-                                (x, y),
-                                n,
-                                steps,
-                                error_grid,
-                            )) => Ok(Chain((x, y), n, Rc::new(steps), error_grid)),
-                        }
-                    } else {
-                        return Err(OutOfStrats);
-                    }
-                } else {
-                    return Err(OutOfStrats);
-                }
+            let res = if let Some(res) = run_advanced(grid)? {
+                Ok(res)
+            } else if let Some(res) = run_unique(grid)? {
+                Ok(res)
+            } else if let Some(res) = run_chain(grid, enable_chains)? {
+                Ok(res)
+            } else {
+                Err(OutOfStrats)
             };
             strats::trivial(grid);
             validate(grid)?;
