@@ -176,10 +176,8 @@ pub fn validate(grid: &Grid) -> Result<(), ValidationResult> {
 
     grid_has_conflicts(grid)?;
 
-    for line in grid.iter_by_compartments() {
-        for compartment in line {
-            compartment_valid(&compartment)?;
-        }
+    for compartment in grid.iter_by_compartments() {
+        compartment_valid(&compartment)?;
     }
 
     if grid.has_requirements() {

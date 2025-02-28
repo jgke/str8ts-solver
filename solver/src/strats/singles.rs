@@ -6,7 +6,7 @@ use crate::strats::required_in_compartment_by_range;
 pub fn singles(grid: &mut Grid) -> Result<bool, ValidationResult> {
     let mut changes = false;
 
-    for compartment in grid.iter_by_compartments().into_iter().flatten() {
+    for compartment in grid.iter_by_compartments() {
         for num in required_in_compartment_by_range(grid.x, &compartment) {
             let mut count = 0;
             let mut sample = None;

@@ -295,10 +295,11 @@ impl Grid {
             .collect()
     }
 
-    pub fn iter_by_compartments(&self) -> Vec<Vec<Compartment>> {
+    pub fn iter_by_compartments(&self) -> Vec<Compartment> {
         self.iter_by_row_compartments()
             .into_iter()
             .chain(self.iter_by_col_compartments())
+            .flatten()
             .collect()
     }
 

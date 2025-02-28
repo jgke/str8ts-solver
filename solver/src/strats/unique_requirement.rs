@@ -122,24 +122,59 @@ fn two_compartments_would_have_closed_set(
         a.union(b)
     }
 
-    for compartments in grid.iter_by_compartments() {
-        for compartment in compartments {
-            let vertical = compartment.vertical;
-            let top_left = compartment.sample_pos();
-            let base_set = compartment
+    for compartment in grid.iter_by_compartments() {
+        let vertical = compartment.vertical;
+        let top_left = compartment.sample_pos();
+        let base_set = compartment
+            .cells
+            .iter()
+            .map(|(_, cell)| cell.to_unresolved())
+            .fold(BitSet::new(), |left, right| left.union(right));
+
+        if base_set.len() != 2 && base_set.len() != 3 {
+            continue;
+        }
+
+        // todo: also implement compartments with multiple disjoint sets
+
+        let get_coord = |vertical, pos: (usize, usize)| if vertical { pos.1 } else { pos.0 };
+        let unresolved_pos = compartment
+            .cells
+            .iter()
+            .filter_map(|(pos, cell)| {
+                if matches!(cell, Cell::Indeterminate(_)) {
+                    Some(*pos)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        if unresolved_pos.len() != 2 {
+            continue;
+        }
+
+        for other in grid.iter_by_compartments() {
+            if vertical != other.vertical {
+                continue;
+            }
+            if (!vertical && other.sample_pos().1 <= top_left.1)
+                || (vertical && other.sample_pos().0 <= top_left.0)
+            {
+                continue;
+            }
+
+            let other_set = other
                 .cells
                 .iter()
                 .map(|(_, cell)| cell.to_unresolved())
                 .fold(BitSet::new(), |left, right| left.union(right));
 
-            if base_set.len() != 2 && base_set.len() != 3 {
+            if base_set.union(other_set).len() != 3 {
                 continue;
             }
 
-            // todo: also implement compartments with multiple disjoint sets
-
-            let get_coord = |vertical, pos: (usize, usize)| if vertical { pos.1 } else { pos.0 };
-            let unresolved_pos = compartment
+            let other_pos = other
                 .cells
                 .iter()
                 .filter_map(|(pos, cell)| {
@@ -151,119 +186,82 @@ fn two_compartments_would_have_closed_set(
                 })
                 .collect::<Vec<_>>();
 
-            if unresolved_pos.len() != 2 {
+            if other_pos.len() != 2 {
                 continue;
             }
 
-            for other in grid.iter_by_compartments().into_iter().flatten() {
-                if vertical != other.vertical {
-                    continue;
-                }
-                if (!vertical && other.sample_pos().1 <= top_left.1)
-                    || (vertical && other.sample_pos().0 <= top_left.0)
-                {
-                    continue;
-                }
+            let cross_set_1 = get_set(grid, unresolved_pos[0], other_pos[0]);
+            let cross_set_2 = get_set(grid, unresolved_pos[1], other_pos[1]);
 
-                let other_set = other
-                    .cells
-                    .iter()
-                    .map(|(_, cell)| cell.to_unresolved())
-                    .fold(BitSet::new(), |left, right| left.union(right));
-
-                if base_set.union(other_set).len() != 3 {
-                    continue;
-                }
-
-                let other_pos = other
-                    .cells
-                    .iter()
-                    .filter_map(|(pos, cell)| {
-                        if matches!(cell, Cell::Indeterminate(_)) {
-                            Some(*pos)
-                        } else {
-                            None
-                        }
-                    })
-                    .collect::<Vec<_>>();
-
-                if other_pos.len() != 2 {
-                    continue;
-                }
-
-                let cross_set_1 = get_set(grid, unresolved_pos[0], other_pos[0]);
-                let cross_set_2 = get_set(grid, unresolved_pos[1], other_pos[1]);
-
-                if unresolved_pos
+            if unresolved_pos
+                .iter()
+                .map(|p| get_coord(vertical, *p))
+                .collect::<Vec<_>>()
+                != other_pos
                     .iter()
                     .map(|p| get_coord(vertical, *p))
                     .collect::<Vec<_>>()
-                    != other_pos
-                        .iter()
-                        .map(|p| get_coord(vertical, *p))
-                        .collect::<Vec<_>>()
-                {
-                    continue;
-                }
+            {
+                continue;
+            }
 
-                if base_set == other_set && base_set == cross_set_1 && base_set == cross_set_2 {
-                    continue;
-                }
+            if base_set == other_set && base_set == cross_set_1 && base_set == cross_set_2 {
+                continue;
+            }
 
-                if !pair_set_candidate(grid, unresolved_pos[0], unresolved_pos[1])
-                    && !pair_set_candidate(grid, other_pos[0], other_pos[1])
-                    && !pair_set_candidate(grid, unresolved_pos[0], other_pos[0])
-                    && !pair_set_candidate(grid, unresolved_pos[1], other_pos[1])
-                {
-                    continue;
-                }
+            if !pair_set_candidate(grid, unresolved_pos[0], unresolved_pos[1])
+                && !pair_set_candidate(grid, other_pos[0], other_pos[1])
+                && !pair_set_candidate(grid, unresolved_pos[0], other_pos[0])
+                && !pair_set_candidate(grid, unresolved_pos[1], other_pos[1])
+            {
+                continue;
+            }
 
-                let impossible = base_set
-                    .symmetric_difference(other_set)
+            let impossible = base_set
+                .symmetric_difference(other_set)
+                .into_iter()
+                .next()
+                .or(cross_set_1
+                    .symmetric_difference(cross_set_2)
                     .into_iter()
-                    .next()
-                    .or(cross_set_1
-                        .symmetric_difference(cross_set_2)
-                        .into_iter()
-                        .next())
-                    .unwrap();
+                    .next())
+                .unwrap();
 
-                let mut changes = false;
-                if pair_set_candidate(grid, unresolved_pos[0], unresolved_pos[1]) {
-                    changes |= grid.set_impossible_in(
-                        other_pos[0],
-                        vertical,
-                        impossible,
-                        &other_pos.iter().copied().collect(),
-                    )?;
-                }
-                if pair_set_candidate(grid, other_pos[0], other_pos[1]) {
-                    changes |= grid.set_impossible_in(
-                        unresolved_pos[0],
-                        vertical,
-                        impossible,
-                        &unresolved_pos.iter().copied().collect(),
-                    )?;
-                }
-                if pair_set_candidate(grid, unresolved_pos[0], other_pos[0]) {
-                    changes |= grid.set_impossible_in(
-                        unresolved_pos[1],
-                        !vertical,
-                        impossible,
-                        &[unresolved_pos[1], other_pos[1]].into_iter().collect(),
-                    )?;
-                }
-                if pair_set_candidate(grid, unresolved_pos[1], other_pos[1]) {
-                    changes |= grid.set_impossible_in(
-                        unresolved_pos[0],
-                        !vertical,
-                        impossible,
-                        &[unresolved_pos[0], other_pos[0]].into_iter().collect(),
-                    )?;
-                }
-                if changes {
-                    return Ok(Some(((2, 3), false, impossible)));
-                }
+            let mut changes = false;
+            if pair_set_candidate(grid, unresolved_pos[0], unresolved_pos[1]) {
+                changes |= grid.set_impossible_in(
+                    other_pos[0],
+                    vertical,
+                    impossible,
+                    &other_pos.iter().copied().collect(),
+                )?;
+            }
+            if pair_set_candidate(grid, other_pos[0], other_pos[1]) {
+                changes |= grid.set_impossible_in(
+                    unresolved_pos[0],
+                    vertical,
+                    impossible,
+                    &unresolved_pos.iter().copied().collect(),
+                )?;
+            }
+            if pair_set_candidate(grid, unresolved_pos[0], other_pos[0]) {
+                changes |= grid.set_impossible_in(
+                    unresolved_pos[1],
+                    !vertical,
+                    impossible,
+                    &[unresolved_pos[1], other_pos[1]].into_iter().collect(),
+                )?;
+            }
+            if pair_set_candidate(grid, unresolved_pos[1], other_pos[1]) {
+                changes |= grid.set_impossible_in(
+                    unresolved_pos[0],
+                    !vertical,
+                    impossible,
+                    &[unresolved_pos[0], other_pos[0]].into_iter().collect(),
+                )?;
+            }
+            if changes {
+                return Ok(Some(((2, 3), false, impossible)));
             }
         }
     }

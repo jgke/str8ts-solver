@@ -33,52 +33,44 @@ pub fn update_data(grid: &Grid, stale_compartment: Compartment) -> Compartment {
 pub fn definite_min_max(grid: &mut Grid) -> Result<bool, ValidationResult> {
     let mut changes = false;
 
-    for row in grid.iter_by_compartments() {
-        for compartment in row {
-            if let Some((min, max)) = get_compartment_range(grid.x, &compartment, None) {
-                for ((x, y), cell) in compartment.cells {
-                    match cell {
-                        Indeterminate(set) => {
-                            let new_set: BitSet =
-                                set.into_iter().filter(|c| *c >= min && *c <= max).collect();
-                            changes |= grid.remove_numbers((x, y), set.difference(new_set))?;
-                        }
-                        Requirement(_) | Solution(_) | Blocker(_) | Black => {}
+    for compartment in grid.iter_by_compartments() {
+        if let Some((min, max)) = get_compartment_range(grid.x, &compartment, None) {
+            for ((x, y), cell) in compartment.cells {
+                match cell {
+                    Indeterminate(set) => {
+                        let new_set: BitSet =
+                            set.into_iter().filter(|c| *c >= min && *c <= max).collect();
+                        changes |= grid.remove_numbers((x, y), set.difference(new_set))?;
                     }
+                    Requirement(_) | Solution(_) | Blocker(_) | Black => {}
                 }
             }
         }
     }
 
     if grid.has_requirements() {
-        for line in grid.iter_by_compartments().into_iter() {
-            for compartment in line {
-                let (pos, _) = compartment.cells[0];
-                let reqs = if compartment.vertical {
-                    grid.col_requirements[pos.0]
-                } else {
-                    grid.row_requirements[pos.1]
-                };
-                for n in reqs {
-                    let compartment = update_data(grid, compartment.clone());
-                    if compartment.contains(n)
-                        && num_count_in_containers(grid, &compartment, n) == 1
-                    {
-                        if let Some((min, max)) =
-                            get_compartment_range(grid.x, &compartment, Some(n))
-                        {
-                            for ((x, y), cell) in &compartment.cells {
-                                match cell {
-                                    Indeterminate(set) => {
-                                        let new_set: BitSet = set
-                                            .into_iter()
-                                            .filter(|c| *c >= min && *c <= max)
-                                            .collect();
-                                        changes |=
-                                            grid.remove_numbers((*x, *y), set.difference(new_set))?;
-                                    }
-                                    Requirement(_) | Solution(_) | Blocker(_) | Black => {}
+        for compartment in grid.iter_by_compartments() {
+            let (pos, _) = compartment.cells[0];
+            let reqs = if compartment.vertical {
+                grid.col_requirements[pos.0]
+            } else {
+                grid.row_requirements[pos.1]
+            };
+            for n in reqs {
+                let compartment = update_data(grid, compartment.clone());
+                if compartment.contains(n) && num_count_in_containers(grid, &compartment, n) == 1 {
+                    if let Some((min, max)) = get_compartment_range(grid.x, &compartment, Some(n)) {
+                        for ((x, y), cell) in &compartment.cells {
+                            match cell {
+                                Indeterminate(set) => {
+                                    let new_set: BitSet = set
+                                        .into_iter()
+                                        .filter(|c| *c >= min && *c <= max)
+                                        .collect();
+                                    changes |=
+                                        grid.remove_numbers((*x, *y), set.difference(new_set))?;
                                 }
+                                Requirement(_) | Solution(_) | Blocker(_) | Black => {}
                             }
                         }
                     }

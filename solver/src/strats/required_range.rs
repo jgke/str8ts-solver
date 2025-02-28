@@ -6,20 +6,18 @@ use rustc_hash::FxHashSet;
 pub fn required_range(grid: &mut Grid) -> Result<bool, ValidationResult> {
     let mut changes = false;
 
-    for row in grid.iter_by_compartments() {
-        for compartment in row {
-            let compartment_positions: FxHashSet<(usize, usize)> =
-                compartment.cells.iter().map(|(p, _)| *p).collect();
-            let sample_pos = compartment.cells[0].0;
+    for compartment in grid.iter_by_compartments() {
+        let compartment_positions: FxHashSet<(usize, usize)> =
+            compartment.cells.iter().map(|(p, _)| *p).collect();
+        let sample_pos = compartment.cells[0].0;
 
-            for num in required_in_compartment_by_range(grid.x, &compartment) {
-                changes |= grid.set_impossible_in(
-                    sample_pos,
-                    compartment.vertical,
-                    num,
-                    &compartment_positions,
-                )?;
-            }
+        for num in required_in_compartment_by_range(grid.x, &compartment) {
+            changes |= grid.set_impossible_in(
+                sample_pos,
+                compartment.vertical,
+                num,
+                &compartment_positions,
+            )?;
         }
     }
 
