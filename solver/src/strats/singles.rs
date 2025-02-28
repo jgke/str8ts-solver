@@ -6,25 +6,21 @@ use crate::strats::required_in_compartment_by_range;
 pub fn singles(grid: &mut Grid) -> Result<bool, ValidationResult> {
     let mut changes = false;
 
-    for row in grid.iter_by_compartments() {
-        for compartment in row {
-            for num in required_in_compartment_by_range(grid.x, &compartment) {
-                let mut count = 0;
-                let mut sample = None;
-                for ((x, y), cell) in &compartment.cells {
-                    if let Indeterminate(set) = cell {
-                        if set.contains(num) {
-                            count += 1;
-                            sample = Some((*x, *y));
-                        }
-                    }
+    for compartment in grid.iter_by_compartments().into_iter().flatten() {
+        for num in required_in_compartment_by_range(grid.x, &compartment) {
+            let mut count = 0;
+            let mut sample = None;
+            for ((x, y), cell) in &compartment.cells {
+                if cell.to_unresolved().contains(num) {
+                    count += 1;
+                    sample = Some((*x, *y));
                 }
+            }
 
-                if count == 1 {
-                    let (x, y) = sample.unwrap();
-                    grid.set_cell((x, y), Solution(num));
-                    changes = true;
-                }
+            if count == 1 {
+                let (x, y) = sample.unwrap();
+                grid.set_cell((x, y), Solution(num));
+                changes = true;
             }
         }
     }
