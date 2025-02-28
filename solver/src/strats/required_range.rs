@@ -9,7 +9,7 @@ pub fn required_range(grid: &mut Grid) -> Result<bool, ValidationResult> {
     for compartment in grid.iter_by_compartments() {
         let compartment_positions: FxHashSet<(usize, usize)> =
             compartment.cells.iter().map(|(p, _)| *p).collect();
-        let sample_pos = compartment.cells[0].0;
+        let sample_pos = compartment.sample_pos();
 
         for num in required_in_compartment_by_range(grid.x, &compartment) {
             changes |= grid.set_impossible_in(
