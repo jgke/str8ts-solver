@@ -1,4 +1,3 @@
-use crate::grid::Cell::*;
 use crate::grid::{CellPair, Grid};
 use crate::solver::ValidationResult;
 use rustc_hash::FxHashSet;
@@ -6,15 +5,10 @@ use rustc_hash::FxHashSet;
 fn get_cells_with_indeterminate_num(line: &[CellPair], num: u8) -> Vec<(usize, usize)> {
     let cells: Vec<(usize, usize)> = line
         .iter()
-        .filter_map(|(pos, cell)| match cell {
-            Indeterminate(set) => {
-                if set.contains(num) {
-                    Some(*pos)
-                } else {
-                    None
-                }
-            }
-            Requirement(_) | Solution(_) | Blocker(_) | Black => None,
+        .filter_map(|(pos, cell)| if cell.to_unresolved().contains(num) {
+            Some(*pos)
+        } else {
+            None
         })
         .collect();
     cells
