@@ -1,5 +1,4 @@
 use crate::bitset::BitSet;
-use crate::grid::Cell::*;
 use crate::grid::Compartment;
 use crate::grid::Grid;
 use crate::solver::ValidationResult;
@@ -30,19 +29,20 @@ pub fn update_data(grid: &Grid, stale_compartment: Compartment) -> Compartment {
     }
 }
 
+pub fn set_range(set: BitSet, min: u8, max: u8) -> BitSet {
+    set.into_iter().filter(|c| *c >= min && *c <= max).collect()
+}
+
 pub fn definite_min_max(grid: &mut Grid) -> Result<bool, ValidationResult> {
     let mut changes = false;
 
     for compartment in grid.iter_by_compartments() {
         if let Some((min, max)) = get_compartment_range(grid.x, &compartment, None) {
             for ((x, y), cell) in compartment.cells {
-                match cell {
-                    Indeterminate(set) => {
-                        let new_set: BitSet =
-                            set.into_iter().filter(|c| *c >= min && *c <= max).collect();
-                        changes |= grid.remove_numbers((x, y), set.difference(new_set))?;
-                    }
-                    Requirement(_) | Solution(_) | Blocker(_) | Black => {}
+                let set = cell.to_unresolved();
+                if !set.is_empty() {
+                    let new_set = set_range(set, min, max);
+                    changes |= grid.remove_numbers((x, y), set.difference(new_set))?;
                 }
             }
         }
@@ -50,27 +50,18 @@ pub fn definite_min_max(grid: &mut Grid) -> Result<bool, ValidationResult> {
 
     if grid.has_requirements() {
         for compartment in grid.iter_by_compartments() {
-            let (pos, _) = compartment.cells[0];
-            let reqs = if compartment.vertical {
-                grid.col_requirements[pos.0]
-            } else {
-                grid.row_requirements[pos.1]
-            };
+            let pos = compartment.sample_pos();
+            let reqs = *grid.requirements(compartment.vertical, pos);
             for n in reqs {
                 let compartment = update_data(grid, compartment.clone());
                 if compartment.contains(n) && num_count_in_containers(grid, &compartment, n) == 1 {
                     if let Some((min, max)) = get_compartment_range(grid.x, &compartment, Some(n)) {
                         for ((x, y), cell) in &compartment.cells {
-                            match cell {
-                                Indeterminate(set) => {
-                                    let new_set: BitSet = set
-                                        .into_iter()
-                                        .filter(|c| *c >= min && *c <= max)
-                                        .collect();
-                                    changes |=
-                                        grid.remove_numbers((*x, *y), set.difference(new_set))?;
-                                }
-                                Requirement(_) | Solution(_) | Blocker(_) | Black => {}
+                            let set = cell.to_unresolved();
+                            if !set.is_empty() {
+                                let new_set = set_range(set, min, max);
+                                changes |=
+                                    grid.remove_numbers((*x, *y), set.difference(new_set))?;
                             }
                         }
                     }
@@ -85,6 +76,7 @@ pub fn definite_min_max(grid: &mut Grid) -> Result<bool, ValidationResult> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::grid::Cell;
     use crate::solver::solve_basic;
     use crate::solver::SolveResults::OutOfBasicStrats;
     use crate::strats;
@@ -100,7 +92,7 @@ mod tests {
 ");
         assert_eq!(strats::update_impossibles(&mut grid), Ok(true));
         assert_eq!(definite_min_max(&mut grid), Ok(true));
-        assert_eq!(grid.cells[1][1], Requirement(4));
+        assert_eq!(grid.cells[1][1], Cell::Requirement(4));
         assert_eq!(grid.cells[2][1], det([3]));
         assert_eq!(grid.cells[1][2], det([3]));
     }
