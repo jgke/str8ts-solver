@@ -1,5 +1,4 @@
 use crate::bitset::BitSet;
-use crate::grid::Cell::*;
 use crate::grid::Grid;
 use crate::solver::ValidationResult;
 use itertools::Itertools;
@@ -12,13 +11,8 @@ pub fn sets(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
         for (vertical, line) in grid.iter_by_rows_and_cols() {
             let sets: Vec<((usize, usize), BitSet)> = line
                 .into_iter()
-                .filter_map(|(p, c)| {
-                    if let Indeterminate(set) = c {
-                        Some((p, set))
-                    } else {
-                        None
-                    }
-                })
+                .map(|(p, c)| (p, c.to_unresolved()))
+                .filter(|(_, c)| !c.is_empty())
                 .collect();
             let used_nums: BitSet = sets.iter().flat_map(|(_, set)| set.into_iter()).collect();
 
@@ -49,11 +43,7 @@ pub fn sets(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
 
                     if grid.has_requirements() {
                         let sample_pos = applies_to.iter().copied().next().unwrap();
-                        if vertical {
-                            changes |= grid.col_requirements[sample_pos.0].append(try_set);
-                        } else {
-                            changes |= grid.row_requirements[sample_pos.1].append(try_set);
-                        }
+                        changes |= grid.requirements(vertical, sample_pos).append(try_set);
                     }
                     changes |= local_changes;
                     if local_changes {
