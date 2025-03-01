@@ -1,5 +1,5 @@
 use crate::bitset::BitSet;
-use crate::grid::{Cell, Grid};
+use crate::grid::{Cell, Grid, Compartment};
 use crate::solver::ValidationResult;
 use crate::strats::get_compartment_range;
 use itertools::Itertools;
@@ -99,29 +99,8 @@ fn single_cell_intra_compartment_unique(
     Ok(None)
 }
 
-/* If two compartments form a closed set except for one number, that one number must be contained
- * in the two containers, as otherwise there will be at least two solutions to the puzzle, eg.:
- *
- * [123]
- * [123] [12]
- * [123] [12]
- *
- * The [123] at (0, 0) cannot be 3, as the two other containers would form a closed set.
- */
-fn two_compartments_would_have_closed_set(
-    grid: &mut Grid,
-) -> Result<Option<UrResult>, ValidationResult> {
-    fn pair_set_candidate(grid: &Grid, a: (usize, usize), b: (usize, usize)) -> bool {
-        let a = grid.get_cell(a).to_unresolved();
-        let b = grid.get_cell(b).to_unresolved();
-        a.len() == 2 && a == b
-    }
-    fn get_set(grid: &Grid, a: (usize, usize), b: (usize, usize)) -> BitSet {
-        let a = grid.get_cell(a).to_unresolved();
-        let b = grid.get_cell(b).to_unresolved();
-        a.union(b)
-    }
-
+fn compartment_pairs(grid: &Grid) -> Vec<((Compartment, BitSet, Vec<(usize, usize)>), (Compartment, BitSet, Vec<(usize, usize)>))> {
+    let mut res = Vec::new();
     for compartment in grid.iter_by_compartments() {
         let vertical = compartment.vertical;
         let top_left = compartment.sample_pos();
@@ -137,7 +116,6 @@ fn two_compartments_would_have_closed_set(
 
         // todo: also implement compartments with multiple disjoint sets
 
-        let get_coord = |vertical, pos: (usize, usize)| if vertical { pos.1 } else { pos.0 };
         let unresolved_pos = compartment
             .cells
             .iter()
@@ -190,79 +168,112 @@ fn two_compartments_would_have_closed_set(
                 continue;
             }
 
-            let cross_set_1 = get_set(grid, unresolved_pos[0], other_pos[0]);
-            let cross_set_2 = get_set(grid, unresolved_pos[1], other_pos[1]);
+            res.push(((compartment.clone(), base_set, unresolved_pos.clone()), (other, other_set, other_pos)))
+        }
+    }
+    res
+}
 
-            if unresolved_pos
-                .iter()
+/* If two compartments form a closed set except for one number, that one number must be contained
+ * in the two containers, as otherwise there will be at least two solutions to the puzzle, eg.:
+ *
+ * [123]
+ * [123] [12]
+ * [123] [12]
+ *
+ * The [123] at (0, 0) cannot be 3, as the two other containers would form a closed set.
+ */
+fn two_compartments_would_have_closed_set(
+    grid: &mut Grid,
+) -> Result<Option<UrResult>, ValidationResult> {
+    fn pair_set_candidate(grid: &Grid, a: (usize, usize), b: (usize, usize)) -> bool {
+        let a = grid.get_cell(a).to_unresolved();
+        let b = grid.get_cell(b).to_unresolved();
+        a.len() == 2 && a == b
+    }
+    fn get_set(grid: &Grid, a: (usize, usize), b: (usize, usize)) -> BitSet {
+        let a = grid.get_cell(a).to_unresolved();
+        let b = grid.get_cell(b).to_unresolved();
+        a.union(b)
+    }
+    fn get_coord(vertical: bool, pos: (usize, usize)) -> usize {
+        if vertical { pos.1 } else { pos.0 }
+    }
+
+    for ((compartment, base_set, unresolved_pos), (_other, other_set, other_pos))  in compartment_pairs(grid) {
+        let vertical = compartment.vertical;
+        let cross_set_1 = get_set(grid, unresolved_pos[0], other_pos[0]);
+        let cross_set_2 = get_set(grid, unresolved_pos[1], other_pos[1]);
+
+        if unresolved_pos
+            .iter()
                 .map(|p| get_coord(vertical, *p))
                 .collect::<Vec<_>>()
                 != other_pos
-                    .iter()
-                    .map(|p| get_coord(vertical, *p))
-                    .collect::<Vec<_>>()
-            {
-                continue;
-            }
+                .iter()
+                .map(|p| get_coord(vertical, *p))
+                .collect::<Vec<_>>()
+        {
+            continue;
+        }
 
-            if base_set == other_set && base_set == cross_set_1 && base_set == cross_set_2 {
-                continue;
-            }
+        if base_set == other_set && base_set == cross_set_1 && base_set == cross_set_2 {
+            continue;
+        }
 
-            if !pair_set_candidate(grid, unresolved_pos[0], unresolved_pos[1])
-                && !pair_set_candidate(grid, other_pos[0], other_pos[1])
+        if !pair_set_candidate(grid, unresolved_pos[0], unresolved_pos[1])
+            && !pair_set_candidate(grid, other_pos[0], other_pos[1])
                 && !pair_set_candidate(grid, unresolved_pos[0], other_pos[0])
                 && !pair_set_candidate(grid, unresolved_pos[1], other_pos[1])
-            {
-                continue;
-            }
+        {
+            continue;
+        }
 
-            let impossible = base_set
-                .symmetric_difference(other_set)
+        let impossible = base_set
+            .symmetric_difference(other_set)
+            .into_iter()
+            .next()
+            .or(cross_set_1
+                .symmetric_difference(cross_set_2)
                 .into_iter()
-                .next()
-                .or(cross_set_1
-                    .symmetric_difference(cross_set_2)
-                    .into_iter()
-                    .next())
-                .unwrap();
+                .next())
+            .unwrap();
 
-            let mut changes = false;
-            if pair_set_candidate(grid, unresolved_pos[0], unresolved_pos[1]) {
-                changes |= grid.set_impossible_in(
-                    other_pos[0],
-                    vertical,
-                    impossible,
-                    &other_pos.iter().copied().collect(),
-                )?;
-            }
-            if pair_set_candidate(grid, other_pos[0], other_pos[1]) {
-                changes |= grid.set_impossible_in(
-                    unresolved_pos[0],
-                    vertical,
-                    impossible,
-                    &unresolved_pos.iter().copied().collect(),
-                )?;
-            }
-            if pair_set_candidate(grid, unresolved_pos[0], other_pos[0]) {
-                changes |= grid.set_impossible_in(
-                    unresolved_pos[1],
-                    !vertical,
-                    impossible,
-                    &[unresolved_pos[1], other_pos[1]].into_iter().collect(),
-                )?;
-            }
-            if pair_set_candidate(grid, unresolved_pos[1], other_pos[1]) {
-                changes |= grid.set_impossible_in(
-                    unresolved_pos[0],
-                    !vertical,
-                    impossible,
-                    &[unresolved_pos[0], other_pos[0]].into_iter().collect(),
-                )?;
-            }
-            if changes {
-                return Ok(Some(((2, 3), false, impossible)));
-            }
+        let mut changes = false;
+        if pair_set_candidate(grid, unresolved_pos[0], unresolved_pos[1]) {
+            changes |= grid.set_impossible_in(
+                other_pos[0],
+                vertical,
+                impossible,
+                &other_pos.iter().copied().collect(),
+            )?;
+        }
+        if pair_set_candidate(grid, other_pos[0], other_pos[1]) {
+            changes |= grid.set_impossible_in(
+                unresolved_pos[0],
+                vertical,
+                impossible,
+                &unresolved_pos.iter().copied().collect(),
+            )?;
+        }
+        if pair_set_candidate(grid, unresolved_pos[0], other_pos[0]) {
+            changes |= grid.set_impossible_in(
+                unresolved_pos[1],
+                !vertical,
+                impossible,
+                &[unresolved_pos[1], other_pos[1]].into_iter().collect(),
+            )?;
+        }
+        if pair_set_candidate(grid, unresolved_pos[1], other_pos[1]) {
+            changes |= grid.set_impossible_in(
+                unresolved_pos[0],
+                !vertical,
+                impossible,
+                &[unresolved_pos[0], other_pos[0]].into_iter().collect(),
+            )?;
+        }
+        if changes {
+            return Ok(Some(((2, 3), false, impossible)));
         }
     }
 
