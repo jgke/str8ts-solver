@@ -1,5 +1,5 @@
 use crate::bitset::BitSet;
-use crate::grid::{Cell, Compartment, Grid};
+use crate::grid::{Cell, Compartment, Grid, Point};
 use crate::solver::ValidationResult;
 use crate::strats::get_compartment_range;
 use itertools::Itertools;
@@ -10,6 +10,7 @@ pub enum UrResult {
     IntraCompartmentUnique((usize, usize), u8),
     ClosedSetCompartment(Vec<(usize, usize)>, u8),
     SingleCellWouldBecomeFree((usize, usize), u8),
+    UrSetti(Vec<(usize, usize)>, bool, u8),
 }
 
 /* If a cell is implied only by other compartments, and those compartments don't refer to a
@@ -107,21 +108,13 @@ fn single_cell_intra_compartment_unique(
     Ok(None)
 }
 
-fn compartment_pairs(
-    grid: &Grid,
-) -> Vec<(
-    (Compartment, BitSet, Vec<(usize, usize)>),
-    (Compartment, BitSet, Vec<(usize, usize)>),
-)> {
+type CPair = (Compartment, BitSet, Vec<Point>);
+fn compartment_pairs(grid: &Grid) -> Vec<(CPair, CPair)> {
     let mut res = Vec::new();
     for compartment in grid.iter_by_compartments() {
         let vertical = compartment.vertical;
         let top_left = compartment.sample_pos();
-        let base_set = compartment
-            .cells
-            .iter()
-            .map(|(_, cell)| cell.to_unresolved())
-            .fold(BitSet::new(), |left, right| left.union(right));
+        let base_set = compartment.combined_unresolved();
 
         if base_set.len() != 2 && base_set.len() != 3 {
             continue;
@@ -155,11 +148,7 @@ fn compartment_pairs(
                 continue;
             }
 
-            let other_set = other
-                .cells
-                .iter()
-                .map(|(_, cell)| cell.to_unresolved())
-                .fold(BitSet::new(), |left, right| left.union(right));
+            let other_set = other.combined_unresolved();
 
             if base_set.union(other_set).len() != 3 {
                 continue;
@@ -348,6 +337,87 @@ fn single_cell_would_become_free(
     Ok(None)
 }
 
+/* If two pairwise compartments would become ambiguous by removing a number from both,
+ * that number has to exist in exactly one of them; and it must be also present in the
+ * same row as the other container as otherwise the two compartments could be swapped, eg.:
+ * [123] [123] # [3456] [3456]
+ * [123] [123] # [3456] [3456]
+ * [123456]
+ * ...
+ * The [123] containers must contain exactly one [12] and one [23] run. If the rows contain
+ * only one 3 in total (in the containers), then the two compartments could be swapped.
+ * This means we can add 3 to row requirements for both rows.
+ */
+fn two_compartment_setti(grid: &mut Grid) -> Result<Option<UrResult>, ValidationResult> {
+    for ((compartment, base_set, unresolved_pos), (other, other_set, other_pos)) in
+        compartment_pairs(grid)
+    {
+        let vertical = compartment.vertical;
+        let cross_set_1 = get_set(grid, unresolved_pos[0], other_pos[0]);
+        let cross_set_2 = get_set(grid, unresolved_pos[1], other_pos[1]);
+        if base_set != other_set || base_set != cross_set_1 || base_set != cross_set_2 {
+            continue;
+        }
+
+        let sample_pos = compartment.sample_pos();
+        let other_sample_pos = other.sample_pos();
+
+        let min = base_set.into_iter().min().unwrap();
+        let max = base_set.into_iter().max().unwrap();
+
+        let line_1 = if vertical {
+            grid.get_col(sample_pos.0)
+        } else {
+            grid.get_row(sample_pos.1)
+        };
+        let line_2 = if vertical {
+            grid.get_col(other_sample_pos.0)
+        } else {
+            grid.get_row(other_sample_pos.1)
+        };
+        let compartments = [line_1, line_2];
+
+        let mut contains_min = false;
+        let mut contains_max = false;
+        for other in compartments
+            .into_iter()
+            .flat_map(|c| Grid::line_to_compartments(vertical, c).into_iter())
+        {
+            if other.contains_pos(sample_pos) || other.contains_pos(other_sample_pos) {
+                continue;
+            }
+
+            contains_min |= other.combined_unresolved().contains(min);
+            contains_max |= other.combined_unresolved().contains(max);
+        }
+
+        let to_add = if contains_min && !contains_max {
+            min
+        } else if !contains_min && contains_max {
+            max
+        } else {
+            continue;
+        };
+
+        let mut changes = false;
+        changes |= grid.requirements(vertical, sample_pos).insert(max);
+        changes |= grid.requirements(vertical, other_sample_pos).insert(max);
+
+        if changes {
+            return Ok(Some(UrResult::UrSetti(
+                unresolved_pos
+                    .into_iter()
+                    .chain(other_pos.into_iter())
+                    .collect(),
+                vertical,
+                to_add,
+            )));
+        }
+    }
+
+    Ok(None)
+}
+
 pub fn unique_requirement(grid: &mut Grid) -> Result<Option<UrResult>, ValidationResult> {
     for ((x, y), cell) in grid.iter_by_cells() {
         if let Cell::Indeterminate(set) = cell {
@@ -364,6 +434,10 @@ pub fn unique_requirement(grid: &mut Grid) -> Result<Option<UrResult>, Validatio
     }
 
     if let Some(res) = two_compartments_would_have_closed_set(grid)? {
+        return Ok(Some(res));
+    }
+
+    if let Some(res) = two_compartment_setti(grid)? {
         return Ok(Some(res));
     }
 
@@ -502,5 +576,39 @@ mod tests {
         );
 
         assert_eq!(grid.cells[2][1], det([1, 3]));
+    }
+
+    #[test]
+    fn two_compartment_setti() {
+        let mut grid = g("
+#######
+#..#..#
+#..#..#
+#.....#
+#.....#
+#.....#
+#######
+    ");
+        set_range(&mut grid, (1, 1), (2, 2), [1, 2, 3]);
+        set_range(&mut grid, (4, 1), (6, 2), [3, 4, 5, 6, 7]);
+
+        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
+        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+
+        assert!(!grid.row_requirements[1].contains(3));
+        assert!(!grid.row_requirements[2].contains(3));
+
+        assert_eq!(
+            unique_requirement(&mut grid),
+            Ok(Some(UrResult::UrSetti(
+                vec![(1, 1), (2, 1), (1, 2), (2, 2)],
+                false,
+                3
+            )))
+        );
+
+        assert!(grid.row_requirements[1].contains(3));
+        assert!(grid.row_requirements[2].contains(3));
     }
 }

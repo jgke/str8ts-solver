@@ -132,6 +132,15 @@ impl Display for SolveResults {
                     n,
                 )
             }
+            SimpleUniqueRequirement(UrResult::UrSetti(list, vertical, n)) => {
+                write!(
+                    f,
+                    "The {} containing points {:?} must contain {}, or the puzzle becomes ambiguous",
+                    if *vertical { "columns" } else { "rows" },
+                    list.iter().map(|(x, y)| (x + 1, y + 1)).collect::<Vec<_>>(),
+                    n,
+                )
+            }
             UniqueRequirement((x, y), n, steps, _) => {
                 write!(
                     f,
@@ -303,11 +312,7 @@ pub fn run_advanced(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationR
 }
 
 pub fn run_unique(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
-    Ok(if let Some(res) = strats::unique_requirement(grid)? {
-        Some(SimpleUniqueRequirement(res))
-    } else {
-        None
-    })
+    Ok(strats::unique_requirement(grid)?.map(SimpleUniqueRequirement))
 }
 
 pub fn run_chain(

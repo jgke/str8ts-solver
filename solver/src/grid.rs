@@ -14,7 +14,8 @@ pub enum Cell {
     Black,
 }
 
-pub type CellPair = ((usize, usize), Cell);
+pub type Point = (usize, usize);
+pub type CellPair = (Point, Cell);
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Compartment {
     pub cells: Vec<CellPair>,
@@ -43,6 +44,12 @@ impl Compartment {
                 _ => None,
             })
             .collect()
+    }
+    pub fn combined_unresolved(&self) -> BitSet {
+        self.cells
+            .iter()
+            .map(|(_, cell)| cell.to_unresolved())
+            .fold(BitSet::new(), |left, right| left.union(right))
     }
 }
 
