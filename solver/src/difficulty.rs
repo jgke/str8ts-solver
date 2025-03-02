@@ -59,7 +59,7 @@ pub fn puzzle_difficulty(history: &[&SolveResults]) -> Difficulty {
             .unwrap_or(0),
         unique_requirement_single: history
             .iter()
-            .any(|e| matches!(e, SolveResults::UniqueRequirementSingleCell(..))),
+            .any(|e| matches!(e, SolveResults::SimpleUniqueRequirement(..))),
         unique_requirement_count: history
             .iter()
             .filter(|e| matches!(e, SolveResults::UniqueRequirement(..)))

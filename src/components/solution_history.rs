@@ -2,6 +2,7 @@ use crate::components::app::HistoryFocusState;
 use itertools::Itertools;
 use solver::grid::Grid;
 use solver::solver::{SolveResults, ValidationResult};
+use solver::strats::UrResult;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
 use web_sys::{EventTarget, HtmlElement, MouseEvent};
@@ -22,7 +23,7 @@ fn border_for_solution(cell: &SolveResults) -> &'static str {
         }
         SolveResults::Fish(2 | 3) => "border-t-8 border-t-blue-700",
         SolveResults::Fish(_) => "border-t-8 border-t-blue-800",
-        SolveResults::UniqueRequirementSingleCell(..) => "border-t-8 border-t-blue-800",
+        SolveResults::SimpleUniqueRequirement(..) => "border-t-8 border-t-blue-800",
         SolveResults::UniqueRequirement(..) => "border-t-8 border-t-blue-800",
         SolveResults::StartChain(_, _)
         | SolveResults::Chain(_, _, _, _)
@@ -52,7 +53,10 @@ pub fn solve_result_discriminant(index: usize, res: &SolveResults) -> usize {
         SolveResults::RowColBrute => 7,
         SolveResults::Setti(_) => 8,
         SolveResults::Fish(_) => 9,
-        SolveResults::UniqueRequirementSingleCell(..) => 10,
+        SolveResults::SimpleUniqueRequirement(UrResult::SingleUnique(..)) => 10_000 + index,
+        SolveResults::SimpleUniqueRequirement(UrResult::IntraCompartmentUnique(..)) => 20_000 + index,
+        SolveResults::SimpleUniqueRequirement(UrResult::ClosedSetCompartment(..)) => 30_000 + index,
+        SolveResults::SimpleUniqueRequirement(UrResult::SingleCellWouldBecomeFree(..)) => 40_000 + index,
         SolveResults::UniqueRequirement(..) => 11,
         SolveResults::StartChain(_, _) => 1_000_000 + index,
         SolveResults::Chain(_, _, _, _) => 2_000_000 + index,

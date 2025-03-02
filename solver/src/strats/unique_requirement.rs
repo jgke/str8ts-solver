@@ -1,8 +1,16 @@
 use crate::bitset::BitSet;
-use crate::grid::{Cell, Grid, Compartment};
+use crate::grid::{Cell, Compartment, Grid};
 use crate::solver::ValidationResult;
 use crate::strats::get_compartment_range;
 use itertools::Itertools;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum UrResult {
+    SingleUnique((usize, usize), u8),
+    IntraCompartmentUnique((usize, usize), u8),
+    ClosedSetCompartment(Vec<(usize, usize)>, u8),
+    SingleCellWouldBecomeFree((usize, usize), u8),
+}
 
 /* If a cell is implied only by other compartments, and those compartments don't refer to a
  * candidate the cell has, the cell has to be that candidate as otherwise it would cause the puzzle
@@ -37,7 +45,7 @@ fn single_cell_cross_compartment_unique(
         }
         if let Some(res) = free_set.into_iter().next() {
             grid.set_cell((x, y), Cell::Solution(res));
-            return Ok(Some(((x, y), true, res)));
+            return Ok(Some(UrResult::SingleUnique((x, y), res)));
         }
     }
     Ok(None)
@@ -89,17 +97,22 @@ fn single_cell_intra_compartment_unique(
 
         if free_set.contains(minx) {
             grid.set_impossible((x, y), maxx)?;
-            return Ok(Some(((x, y), false, maxx)));
+            return Ok(Some(UrResult::IntraCompartmentUnique((x, y), maxx)));
         }
         if free_set.contains(maxx) {
             grid.set_impossible((x, y), minx)?;
-            return Ok(Some(((x, y), false, minx)));
+            return Ok(Some(UrResult::IntraCompartmentUnique((x, y), minx)));
         }
     }
     Ok(None)
 }
 
-fn compartment_pairs(grid: &Grid) -> Vec<((Compartment, BitSet, Vec<(usize, usize)>), (Compartment, BitSet, Vec<(usize, usize)>))> {
+fn compartment_pairs(
+    grid: &Grid,
+) -> Vec<(
+    (Compartment, BitSet, Vec<(usize, usize)>),
+    (Compartment, BitSet, Vec<(usize, usize)>),
+)> {
     let mut res = Vec::new();
     for compartment in grid.iter_by_compartments() {
         let vertical = compartment.vertical;
@@ -168,10 +181,18 @@ fn compartment_pairs(grid: &Grid) -> Vec<((Compartment, BitSet, Vec<(usize, usiz
                 continue;
             }
 
-            res.push(((compartment.clone(), base_set, unresolved_pos.clone()), (other, other_set, other_pos)))
+            res.push((
+                (compartment.clone(), base_set, unresolved_pos.clone()),
+                (other, other_set, other_pos),
+            ))
         }
     }
     res
+}
+fn get_set(grid: &Grid, a: (usize, usize), b: (usize, usize)) -> BitSet {
+    let a = grid.get_cell(a).to_unresolved();
+    let b = grid.get_cell(b).to_unresolved();
+    a.union(b)
 }
 
 /* If two compartments form a closed set except for one number, that one number must be contained
@@ -191,25 +212,26 @@ fn two_compartments_would_have_closed_set(
         let b = grid.get_cell(b).to_unresolved();
         a.len() == 2 && a == b
     }
-    fn get_set(grid: &Grid, a: (usize, usize), b: (usize, usize)) -> BitSet {
-        let a = grid.get_cell(a).to_unresolved();
-        let b = grid.get_cell(b).to_unresolved();
-        a.union(b)
-    }
     fn get_coord(vertical: bool, pos: (usize, usize)) -> usize {
-        if vertical { pos.1 } else { pos.0 }
+        if vertical {
+            pos.1
+        } else {
+            pos.0
+        }
     }
 
-    for ((compartment, base_set, unresolved_pos), (_other, other_set, other_pos))  in compartment_pairs(grid) {
+    for ((compartment, base_set, unresolved_pos), (_other, other_set, other_pos)) in
+        compartment_pairs(grid)
+    {
         let vertical = compartment.vertical;
         let cross_set_1 = get_set(grid, unresolved_pos[0], other_pos[0]);
         let cross_set_2 = get_set(grid, unresolved_pos[1], other_pos[1]);
 
         if unresolved_pos
             .iter()
-                .map(|p| get_coord(vertical, *p))
-                .collect::<Vec<_>>()
-                != other_pos
+            .map(|p| get_coord(vertical, *p))
+            .collect::<Vec<_>>()
+            != other_pos
                 .iter()
                 .map(|p| get_coord(vertical, *p))
                 .collect::<Vec<_>>()
@@ -223,8 +245,8 @@ fn two_compartments_would_have_closed_set(
 
         if !pair_set_candidate(grid, unresolved_pos[0], unresolved_pos[1])
             && !pair_set_candidate(grid, other_pos[0], other_pos[1])
-                && !pair_set_candidate(grid, unresolved_pos[0], other_pos[0])
-                && !pair_set_candidate(grid, unresolved_pos[1], other_pos[1])
+            && !pair_set_candidate(grid, unresolved_pos[0], other_pos[0])
+            && !pair_set_candidate(grid, unresolved_pos[1], other_pos[1])
         {
             continue;
         }
@@ -273,7 +295,7 @@ fn two_compartments_would_have_closed_set(
             )?;
         }
         if changes {
-            return Ok(Some(((2, 3), false, impossible)));
+            return Ok(Some(UrResult::ClosedSetCompartment(vec![], impossible)));
         }
     }
 
@@ -319,14 +341,13 @@ fn single_cell_would_become_free(
             let numbers = base_set.into_iter().sorted().collect::<Vec<_>>();
             let middle = numbers[1];
             grid.set_impossible(p, middle)?;
-            return Ok(Some((p, false, middle)));
+            return Ok(Some(UrResult::SingleCellWouldBecomeFree(p, middle)));
         }
     }
 
     Ok(None)
 }
 
-pub type UrResult = ((usize, usize), bool, u8);
 pub fn unique_requirement(grid: &mut Grid) -> Result<Option<UrResult>, ValidationResult> {
     for ((x, y), cell) in grid.iter_by_cells() {
         if let Cell::Indeterminate(set) = cell {
@@ -386,7 +407,10 @@ mod tests {
         assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
         assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
 
-        assert_eq!(unique_requirement(&mut grid), Ok(Some(((5, 1), true, 5))));
+        assert_eq!(
+            unique_requirement(&mut grid),
+            Ok(Some(UrResult::SingleUnique((5, 1), 5)))
+        );
 
         assert_eq!(grid.cells[1][2], det([1, 2, 3]));
         assert_eq!(grid.cells[1][3], det([1, 2, 3]));
@@ -420,7 +444,10 @@ mod tests {
         assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
         assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
 
-        assert_eq!(unique_requirement(&mut grid), Ok(Some(((1, 2), false, 4))));
+        assert_eq!(
+            unique_requirement(&mut grid),
+            Ok(Some(UrResult::IntraCompartmentUnique((1, 2), 4)))
+        );
 
         assert_eq!(grid.cells[2][1], det([1, 2, 3]));
     }
@@ -443,7 +470,10 @@ mod tests {
         assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
         assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
 
-        assert_eq!(unique_requirement(&mut grid), Ok(Some(((2, 3), false, 3))));
+        assert_eq!(
+            unique_requirement(&mut grid),
+            Ok(Some(UrResult::ClosedSetCompartment(vec![], 3)))
+        );
 
         assert_eq!(grid.cells[3][2], det([1, 2]));
     }
@@ -466,7 +496,10 @@ mod tests {
         assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
         assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
 
-        assert_eq!(unique_requirement(&mut grid), Ok(Some(((1, 2), false, 2))));
+        assert_eq!(
+            unique_requirement(&mut grid),
+            Ok(Some(UrResult::SingleCellWouldBecomeFree((1, 2), 2)))
+        );
 
         assert_eq!(grid.cells[2][1], det([1, 3]));
     }

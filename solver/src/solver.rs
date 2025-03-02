@@ -3,6 +3,7 @@ use crate::grid::Grid;
 use crate::solver::SolveResults::*;
 use crate::solver::ValidationResult::*;
 use crate::strats;
+use crate::strats::UrResult;
 use crate::validator::validate;
 use itertools::intersperse;
 use std::fmt::{Display, Formatter};
@@ -20,7 +21,7 @@ pub enum SolveResults {
     RowColBrute,
     Setti(BitSet),
     Fish(usize),
-    UniqueRequirementSingleCell((usize, usize), bool, u8),
+    SimpleUniqueRequirement(UrResult),
     UniqueRequirement((usize, usize), u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
     StartChain((usize, usize), u8),
     Chain((usize, usize), u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
@@ -43,7 +44,7 @@ impl SolveResults {
             Setti(_) => 5,
             Fish(2) | Fish(3) => 5,
             Fish(_) => 6,
-            UniqueRequirementSingleCell(..) => 6,
+            SimpleUniqueRequirement(..) => 6,
             UniqueRequirement(..) => 7,
             StartChain(_, _) => 1,
             Chain(_, _, steps, _) if steps.len() < 8 => 6,
@@ -96,24 +97,40 @@ impl Display for SolveResults {
             Fish(2) => write!(f, "Calculate a X-wing"),
             Fish(3) => write!(f, "Calculate a Swordfish"),
             Fish(n) => write!(f, "Calculate a {}-fish", n),
-            UniqueRequirementSingleCell((x, y), b, n) => {
-                if *b {
-                    write!(
-                        f,
-                        "({}, {}) must be {}, as other solutions would be ambiguous",
-                        x + 1,
-                        y + 1,
-                        n,
-                    )
-                } else {
-                    write!(
-                        f,
-                        "({}, {}) cannot be {}, as it would cause ambiguous solutions",
-                        x + 1,
-                        y + 1,
-                        n,
-                    )
-                }
+            SimpleUniqueRequirement(UrResult::SingleUnique((x, y), n)) => {
+                write!(
+                    f,
+                    "({}, {}) must be {}, as other solutions would be ambiguous",
+                    x + 1,
+                    y + 1,
+                    n,
+                )
+            }
+            SimpleUniqueRequirement(UrResult::IntraCompartmentUnique((x, y), n)) => {
+                write!(
+                    f,
+                    "({}, {}) cannot be {}, as it would cause ambiguous solutions",
+                    x + 1,
+                    y + 1,
+                    n,
+                )
+            }
+            SimpleUniqueRequirement(UrResult::ClosedSetCompartment(list, n)) => {
+                write!(
+                    f,
+                    "The cells {:?} must contain {} or the puzzle becomes ambiguous",
+                    list.iter().map(|(x, y)| (x + 1, y + 1)).collect::<Vec<_>>(),
+                    n,
+                )
+            }
+            SimpleUniqueRequirement(UrResult::SingleCellWouldBecomeFree((x, y), n)) => {
+                write!(
+                    f,
+                    "({}, {}) cannot be {}, as it would cause ambiguous solutions",
+                    x + 1,
+                    y + 1,
+                    n,
+                )
             }
             UniqueRequirement((x, y), n, steps, _) => {
                 write!(
@@ -286,13 +303,11 @@ pub fn run_advanced(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationR
 }
 
 pub fn run_unique(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
-    Ok(
-        if let Some((pos, b, n)) = strats::unique_requirement(grid)? {
-            Some(UniqueRequirementSingleCell(pos, b, n))
-        } else {
-            None
-        },
-    )
+    Ok(if let Some(res) = strats::unique_requirement(grid)? {
+        Some(SimpleUniqueRequirement(res))
+    } else {
+        None
+    })
 }
 
 pub fn run_chain(
