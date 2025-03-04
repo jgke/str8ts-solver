@@ -141,6 +141,13 @@ impl Display for SolveResults {
                     n,
                 )
             }
+            SimpleUniqueRequirement(UrResult::SolutionCausesClosedSets((x, y), n)) => {
+                write!(
+                    f,
+                    "Setting ({}, {}) to {} creates closed sets, causing puzzle to become ambiguous",
+                    x + 1, y + 1, n,
+                )
+            }
             UniqueRequirement((x, y), n, steps, _) => {
                 write!(
                     f,

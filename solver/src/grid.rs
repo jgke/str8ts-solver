@@ -487,7 +487,7 @@ impl Display for DebugGrid {
                 first = false;
                 for cell in row {
                     for x in 0..=2 {
-                        let num = y * 3 + x;
+                        let num = y * 3 + x + 1;
                         match *cell {
                             Requirement(n) if n == num => write!(f, "{}", n)?,
                             Solution(n) if n == num => write!(f, "{}", n)?,
