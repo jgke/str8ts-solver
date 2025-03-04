@@ -92,7 +92,7 @@ fn single_cell_intra_compartment_unique(
             }
         }
         for (p, c) in grid.get_col(x) {
-            if !row.contains_pos(p) {
+            if !col.contains_pos(p) {
                 free_set = free_set.difference(c.to_possibles());
             }
         }
@@ -489,10 +489,10 @@ pub fn unique_requirement(
             if let Some(res) = single_cell_cross_compartment_unique(grid, x, y, set)? {
                 return Ok(Some(res));
             }
-            if let Some(res) = single_cell_intra_compartment_unique(grid, x, y, set)? {
+            if let Some(res) = single_cell_would_become_free(grid, x, y, set)? {
                 return Ok(Some(res));
             }
-            if let Some(res) = single_cell_would_become_free(grid, x, y, set)? {
+            if let Some(res) = single_cell_intra_compartment_unique(grid, x, y, set)? {
                 return Ok(Some(res));
             }
         }
@@ -568,13 +568,13 @@ mod tests {
     fn test_intra_compartment() {
         let mut grid = g("
 #########
-#...#...#
-#...#...#
-#.......#
+#...#....
+#...#....
+#........
 ##..#####
-#.......#
-#.......#
-#.......#
+#........
+#........
+#........
 #########
 ");
         set_range(&mut grid, (1, 1), (3, 3), [1, 2, 3, 4]);
@@ -603,13 +603,16 @@ mod tests {
 #######
 #..####
 #..####
-##.####
-#######
-#######
+##....#
+###...#
+###...#
 #######
 ");
-        set_range(&mut grid, (1, 1), (1, 2), [1, 2]);
-        set_range(&mut grid, (2, 1), (2, 3), [1, 2, 3]);
+        grid.cells[1][1] = det([1, 3, 4]);
+        grid.cells[1][2] = det([2, 3, 4]);
+        grid.cells[2][1] = det([3, 4]);
+        grid.cells[2][2] = det([3, 4]);
+        grid.cells[3][2] = det([2, 3, 4, 5]);
 
         assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
         assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
@@ -619,11 +622,11 @@ mod tests {
             unique_requirement(&mut grid, true),
             Ok(Some(UrResult::ClosedSetCompartment(
                 vec![(1, 1), (2, 1), (1, 2), (2, 2)],
-                3
+                2
             )))
         );
 
-        assert_eq!(grid.cells[3][2], det([1, 2]));
+        assert_eq!(grid.cells[3][2], det([3, 4, 5]));
     }
 
     #[test]
@@ -641,6 +644,7 @@ mod tests {
 ");
         grid.cells[1][1] = det([2, 3]);
         grid.cells[1][3] = det([2, 3]);
+        grid.cells[3][3] = det([9]);
         set_range(&mut grid, (1, 2), (3, 2), [1, 2, 3, 4]);
         set_range(&mut grid, (1, 3), (3, 2), [2, 4, 6]);
 
