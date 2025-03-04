@@ -318,8 +318,11 @@ pub fn run_advanced(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationR
     }))
 }
 
-pub fn run_unique(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
-    Ok(strats::unique_requirement(grid)?.map(SimpleUniqueRequirement))
+pub fn run_unique(
+    grid: &mut Grid,
+    enable_chains: bool,
+) -> Result<Option<SolveResults>, ValidationResult> {
+    Ok(strats::unique_requirement(grid, enable_chains)?.map(SimpleUniqueRequirement))
 }
 
 pub fn run_chain(
@@ -350,7 +353,7 @@ pub fn solve_round(grid: &mut Grid, enable_chains: bool) -> Result<SolveResults,
             validate(grid)?;
             let res = if let Some(res) = run_advanced(grid)? {
                 Ok(res)
-            } else if let Some(res) = run_unique(grid)? {
+            } else if let Some(res) = run_unique(grid, enable_chains)? {
                 Ok(res)
             } else if let Some(res) = run_chain(grid, enable_chains)? {
                 Ok(res)

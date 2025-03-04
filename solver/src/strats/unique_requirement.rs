@@ -480,7 +480,10 @@ fn solution_causes_closed_sets(grid: &mut Grid) -> Result<Option<UrResult>, Vali
     Ok(None)
 }
 
-pub fn unique_requirement(grid: &mut Grid) -> Result<Option<UrResult>, ValidationResult> {
+pub fn unique_requirement(
+    grid: &mut Grid,
+    enable_chains: bool,
+) -> Result<Option<UrResult>, ValidationResult> {
     for ((x, y), cell) in grid.iter_by_cells() {
         if let Cell::Indeterminate(set) = cell {
             if let Some(res) = single_cell_cross_compartment_unique(grid, x, y, set)? {
@@ -503,8 +506,10 @@ pub fn unique_requirement(grid: &mut Grid) -> Result<Option<UrResult>, Validatio
         return Ok(Some(res));
     }
 
-    if let Some(res) = solution_causes_closed_sets(grid)? {
-        return Ok(Some(res));
+    if enable_chains {
+        if let Some(res) = solution_causes_closed_sets(grid)? {
+            return Ok(Some(res));
+        }
     }
 
     Ok(None)
@@ -548,7 +553,7 @@ mod tests {
         assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
 
         assert_eq!(
-            unique_requirement(&mut grid),
+            unique_requirement(&mut grid, true),
             Ok(Some(UrResult::SingleUnique((5, 1), 5)))
         );
 
@@ -585,13 +590,9 @@ mod tests {
         assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
 
         assert_eq!(
-            unique_requirement(&mut grid),
+            unique_requirement(&mut grid, true),
             Ok(Some(UrResult::IntraCompartmentUnique((1, 2), 4)))
         );
-        //assert_eq!(
-        //    unique_requirement(&mut grid),
-        //    Ok(Some(UrResult::ClosedSetCompartment(vec![(1, 1), (3, 1), (1, 2), (3, 2)], 4)))
-        //);
 
         assert_eq!(grid.cells[2][1], det([1, 2, 3]));
     }
@@ -615,7 +616,7 @@ mod tests {
         assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
 
         assert_eq!(
-            unique_requirement(&mut grid),
+            unique_requirement(&mut grid, true),
             Ok(Some(UrResult::ClosedSetCompartment(
                 vec![(1, 1), (2, 1), (1, 2), (2, 2)],
                 3
@@ -648,7 +649,7 @@ mod tests {
         assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
 
         assert_eq!(
-            unique_requirement(&mut grid),
+            unique_requirement(&mut grid, true),
             Ok(Some(UrResult::SolutionCausesClosedSets((2, 2), 4)))
         );
 
@@ -674,7 +675,7 @@ mod tests {
         assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
 
         assert_eq!(
-            unique_requirement(&mut grid),
+            unique_requirement(&mut grid, true),
             Ok(Some(UrResult::SingleCellWouldBecomeFree((1, 2), 2)))
         );
 
@@ -703,7 +704,7 @@ mod tests {
         assert!(!grid.row_requirements[2].contains(3));
 
         assert_eq!(
-            unique_requirement(&mut grid),
+            unique_requirement(&mut grid, true),
             Ok(Some(UrResult::UrSetti(
                 vec![(1, 1), (2, 1), (1, 2), (2, 2)],
                 false,
