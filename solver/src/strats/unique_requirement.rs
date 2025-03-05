@@ -86,7 +86,12 @@ fn single_cell_intra_compartment_unique(
     if minx != miny || maxx != maxy {
         return Ok(None);
     }
-    if (row.cells.len() as u8 + 1 == range_size || col.cells.len() as u8 + 1 == range_size)
+    let row_len = row.cells.len() as u8;
+    let col_len = col.cells.len() as u8;
+    #[allow(clippy::nonminimal_bool)]
+    if (row_len + 1 == range_size || col_len + 1 == range_size)
+        && (row_len == range_size || row_len + 1 == range_size)
+        && (col_len == range_size || col_len + 1 == range_size)
         && free_set.contains(minx)
         && free_set.contains(maxx)
     {
@@ -458,6 +463,7 @@ fn will_have_closed_sets(grid: &mut Grid) -> Result<bool, ValidationResult> {
             && other_pos.len() == 2
             && base_set == other_set
             && base_set.len() == other_set.len()
+            && unresolved_pos.len() == base_set.len()
         {
             return Ok(true);
         }
@@ -468,7 +474,7 @@ fn will_have_closed_sets(grid: &mut Grid) -> Result<bool, ValidationResult> {
 /* Setting a cell to be some number causes the grid to immediately contain
  * closed sets, causing ambiguity:
  *
- * [23]   [1]   [123]
+ * [23]   [1]   [23]
  * [1234] [234] [1234]
  *
  * Setting (1, 1) to be 4 causes the remaining cells to be [23] pairs.
@@ -499,7 +505,8 @@ pub fn unique_requirement(
             if let Some(res) = single_cell_would_become_free(grid, x, y, set)? {
                 return Ok(Some(res));
             }
-            if let Some(res) = single_cell_intra_compartment_unique(grid, x, y, set)? {
+            if let Some(res) = single_cell_intra_compartment_unique(grid, x, y, set)?
+            {
                 return Ok(Some(res));
             }
         }
