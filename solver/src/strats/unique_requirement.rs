@@ -73,6 +73,10 @@ fn single_cell_intra_compartment_unique(
     y: usize,
     set: BitSet,
 ) -> Result<Option<UrResult>, ValidationResult> {
+    fn closed_set(compartment: &Compartment) -> bool {
+        compartment.to_unresolved().len() == compartment.combined_unresolved().len()
+    }
+
     let mut free_set = set;
     let (row, col) = grid.compartments_containing((x, y));
     let (minx, maxx) = get_compartment_range(grid.x, &row, None).unwrap();
@@ -86,6 +90,9 @@ fn single_cell_intra_compartment_unique(
         && free_set.contains(minx)
         && free_set.contains(maxx)
     {
+        if closed_set(&row) || closed_set(&col) {
+            return Ok(None);
+        }
         for (p, c) in grid.get_row(y) {
             if !row.contains_pos(p) {
                 free_set = free_set.difference(c.to_possibles());
