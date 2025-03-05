@@ -271,7 +271,7 @@ fn two_compartments_would_have_closed_set(
     for ((compartment, base_set, unresolved_pos), (_other, other_set, other_pos)) in
         compartment_pairs(grid)
     {
-        if base_set.union(other_set).len() != 3 {
+        if base_set.union(other_set).len() != 3 || (base_set.len() == 2 && other_set.len() == 2) {
             continue;
         }
         let vertical = compartment.vertical;
@@ -321,7 +321,7 @@ fn two_compartments_would_have_closed_set(
                 &other_pos.iter().copied().collect(),
             )?;
         }
-        if pair_set_candidate(grid, other_pos[0], other_pos[1]) {
+        if !changes && pair_set_candidate(grid, other_pos[0], other_pos[1]) {
             changes |= grid.set_impossible_in(
                 unresolved_pos[0],
                 vertical,
@@ -329,7 +329,7 @@ fn two_compartments_would_have_closed_set(
                 &unresolved_pos.iter().copied().collect(),
             )?;
         }
-        if pair_set_candidate(grid, unresolved_pos[0], other_pos[0]) {
+        if !changes && pair_set_candidate(grid, unresolved_pos[0], other_pos[0]) {
             changes |= grid.set_impossible_in(
                 unresolved_pos[1],
                 !vertical,
@@ -337,7 +337,7 @@ fn two_compartments_would_have_closed_set(
                 &[unresolved_pos[1], other_pos[1]].into_iter().collect(),
             )?;
         }
-        if pair_set_candidate(grid, unresolved_pos[1], other_pos[1]) {
+        if !changes && pair_set_candidate(grid, unresolved_pos[1], other_pos[1]) {
             changes |= grid.set_impossible_in(
                 unresolved_pos[0],
                 !vertical,
