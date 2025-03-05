@@ -58,6 +58,8 @@ fn main() -> ExitCode {
         /// solve: Puzzle to be solved
         #[arg(long)]
         puzzle: Option<String>,
+        #[arg(long, default_value_t = false)]
+        silent: bool,
     }
 
     let Args {
@@ -69,6 +71,7 @@ fn main() -> ExitCode {
         target_difficulty,
         not_symmetric,
         puzzle,
+        silent,
     } = Args::parse();
 
     use log::info;
@@ -107,7 +110,7 @@ fn main() -> ExitCode {
         println!("{}", grid);
     } else if solve {
         if let Some(puzzle) = puzzle {
-            let mut grid = match Grid::parse(vec![puzzle]) {
+            let mut grid = match Grid::parse(vec![puzzle.clone()]) {
                 Ok(grid) => grid,
                 Err(e) => {
                     println!("Failed to parse grid: {}", e);
@@ -130,13 +133,16 @@ fn main() -> ExitCode {
                     }
                     Err(e) => {
                         println!("Failed to solve grid: {}", e);
+                        println!("Original puzzle: {}", puzzle);
                         return ExitCode::FAILURE;
                     }
                 }
             }
 
             info!("Solved grid in {} steps", step_count);
-            println!("{}", grid);
+            if !silent {
+                println!("{}", grid);
+            }
         } else {
             println!("Error: argument puzzle required for solving");
             let _ = Args::command().print_help();
