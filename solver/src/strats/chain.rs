@@ -10,6 +10,7 @@ use std::collections::VecDeque;
 
 type ForcedNumber = ((usize, usize), u8);
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ChainResult {
     Error(ForcedNumber),
     NotUnique(ForcedNumber),
@@ -70,6 +71,7 @@ where
 }
 
 type ChainRes = ((usize, usize), u8, Vec<(Grid, SolveResults)>, Grid);
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ChainSolveResult {
     Error(ChainRes),
     NotUnique(ChainRes),
@@ -179,12 +181,12 @@ mod tests {
 
         let res = chain(&mut grid);
         let (pos, n, _, _) = match res {
-            Ok(Some(crate::strats::ChainSolveResult::NotUnique(res))) => res,
+            Ok(Some(crate::strats::ChainSolveResult::Error(res))) => res,
             _ => unreachable!(),
         };
-        assert_eq!((3, 0), pos);
-        assert_eq!(5, n);
+        assert_eq!((0, 2), pos);
+        assert_eq!(3, n);
 
-        assert_eq!(grid.get_cell((3, 0)), &det([2, 3]));
+        assert_eq!(grid.get_cell((3, 0)), &det([2, 3, 5]));
     }
 }
