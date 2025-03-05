@@ -58,7 +58,7 @@ pub fn solve_result_discriminant(index: usize, res: &SolveResults) -> usize {
         SolveResults::SimpleUniqueRequirement(UrResult::ClosedSetCompartment(..)) => 30_000 + index,
         SolveResults::SimpleUniqueRequirement(UrResult::SingleCellWouldBecomeFree(..)) => 40_000 + index,
         SolveResults::SimpleUniqueRequirement(UrResult::UrSetti(..)) => 50_000 + index,
-        SolveResults::SimpleUniqueRequirement(UrResult::SolutionCausesClosedSets(..)) => 50_000 + index,
+        SolveResults::SimpleUniqueRequirement(UrResult::SolutionCausesClosedSets(..)) => 60_000 + index,
         SolveResults::UniqueRequirement(..) => 11,
         SolveResults::StartChain(_, _) => 1_000_000 + index,
         SolveResults::Chain(_, _, _, _) => 2_000_000 + index,
