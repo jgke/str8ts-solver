@@ -67,10 +67,7 @@ interface SolutionInnerLogItemProps extends FocusProps {
   node: HistoryNode;
 }
 
-function useFocusProps(
-  grid: Grid,
-  focusProps: FocusProps,
-): [boolean, MouseEventHandler, MouseEventHandler, MouseEventHandler] {
+function useFocusProps(grid: Grid, focusProps: FocusProps): [boolean, MouseEventHandler, MouseEventHandler] {
   const { path, focused, manualFocus, setManualFocus, onFocus, prev } = focusProps;
 
   const onHover = useEvent((e: MouseEvent) => {
@@ -81,14 +78,6 @@ function useFocusProps(
     }
   });
 
-  const onHoverExit = useEvent((e: MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!manualFocus) {
-      onFocus(null);
-    }
-  });
-
   const onClick = useEvent((e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -96,12 +85,12 @@ function useFocusProps(
     onFocus(path, prev, grid);
   });
 
-  return [focused === path, onHover, onHoverExit, onClick];
+  return [focused === path, onHover, onClick];
 }
 
 function SolutionInnerLogItem(props: SolutionInnerLogItemProps) {
   const { num, node, ...focusProps } = props;
-  const [focused, onHover, onHoverExit, onClick] = useFocusProps(node.grid, focusProps);
+  const [focused, onHover, onClick] = useFocusProps(node.grid, focusProps);
 
   const extraClass = focused ? "font-bold dark:bg-blue-400" : "font-medium bg-light-900 dark:bg-blue-100";
 
@@ -109,7 +98,6 @@ function SolutionInnerLogItem(props: SolutionInnerLogItemProps) {
     <li
       className={`inline-block h-10 w-10 items-center justify-center ${liClass} ${extraClass}`}
       onMouseOver={onHover}
-      onMouseLeave={onHoverExit}
       onClick={onClick}
     >
       <div className="w-auto cursor-pointer rounded p-2 text-center">{num}</div>
@@ -124,7 +112,7 @@ interface SolutionLogListItemProps extends FocusProps {
 
 function SolutionLogListItem(props: SolutionLogListItemProps) {
   const { nested, row, ...focusProps } = props;
-  const [focused, onHover, onHoverExit, onClick] = useFocusProps(row.grid, focusProps);
+  const [focused, onHover, onClick] = useFocusProps(row.grid, focusProps);
   const extraClass = focused
     ? nested
       ? "font-bold dark:bg-blue-400"
@@ -144,7 +132,7 @@ function SolutionLogListItem(props: SolutionLogListItemProps) {
   }
 
   return (
-    <li className={`${liClass} ${extraClass}`} onMouseOver={onHover} onMouseLeave={onHoverExit} onClick={onClick}>
+    <li className={`${liClass} ${extraClass}`} onMouseOver={onHover} onClick={onClick}>
       <div className={`${isOk(row.data) ? borderForSolution(row.data.Ok) : ""} cursor-pointer rounded p-2`}>
         {isOk(row.message) ? row.message.Ok : row.message.Err}
         {nestedChain && (
@@ -229,10 +217,19 @@ export function SolutionHistory(props: SolutionHistoryProps) {
     onFocus(grid ?? null, other ?? null);
   });
 
+  const onFocusExit = useEvent((e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!manualFocus) onFocusCb(null);
+  });
+
   return (
-    <div className="mx-4 flex w-full flex-col border p-4 md:max-h-[90vh] md:w-[30rem] dark:border-blue-400">
+    <div
+      className="mx-4 flex w-full flex-col border p-4 md:max-h-[90vh] md:w-[30rem] dark:border-blue-400"
+      onMouseLeave={onFocusExit}
+    >
       <h2 className="my-2 text-2xl font-bold dark:text-white">Solution log</h2>
-      <div className="overflow-y-scroll">
+      <div className="cursor-pointer overflow-y-scroll">
         <SolutionLogList
           prev={startingGrid}
           solutionLog={grouped}
