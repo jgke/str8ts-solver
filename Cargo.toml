@@ -9,36 +9,11 @@ license = "AGPL"
 default-run = "str8ts-solver"
 
 [workspace]
+members = [ "solver_wasm", "str8ts_cli" ]
 
 [dependencies]
-itertools = "0.11.0"
-wasm-bindgen = "0.2.87"
-yew = { version="0.21", features=["csr"] }
-solver = { path = "solver" }
-rustc-hash = "1.1.0"
-gloo = "0.8.1"
-log = "0.4.19"
-env_logger = "0.10.0"
-console_log = "1.0.0"
-gloo-worker = "0.5.0"
-serde = { version = "1.0.193", features = ["derive"] }
-serde-wasm-bindgen = "0.6.1"
-futures = "0.3.29"
-js-sys = "0.3.65"
-wasm-bindgen-futures = "0.4.38"
-wasm-streams = "0.4.0"
-console_error_panic_hook = "0.1.7"
-[dependencies.web-sys]
-version = "0.3"
-features = [
-    "console",
-    "FormData",
-    "HtmlFormElement",
-]
-
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-clap = { version = "4.3.19", features = ["derive"] }
-rand = "0.8.5"
+str8ts_cli = { path = "str8ts_cli" }
 
 [profile.release]
 debug = 1

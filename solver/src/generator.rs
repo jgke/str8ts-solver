@@ -6,7 +6,7 @@ use crate::validator::validate;
 use log::debug;
 use rand::seq::SliceRandom;
 use rand::SeedableRng;
-use rand::{thread_rng, Rng};
+use rand::{rng, Rng};
 use rayon::prelude::*;
 use rustc_hash::FxHashSet;
 use std::cmp::Ordering;
@@ -192,8 +192,8 @@ pub fn remove_numbers<Rand: Rng + Send + Clone>(
                                 Cell::Indeterminate((1..=size as u8).collect()),
                             );
                         } else {
-                            let nx = rng.gen_range(0..size);
-                            let ny = rng.gen_range(0..size);
+                            let nx = rng.random_range(0..size);
+                            let ny = rng.random_range(0..size);
                             if let Cell::Solution(_) = grid.get_cell((nx, ny)) {
                                 grid.set_cell(
                                     (size - x - 1, size - y - 1),
@@ -273,10 +273,10 @@ pub fn generate_puzzle<Rand: Rng + Send + Clone>(
     blocker_cells.shuffle(&mut rng);
 
     for (x, y) in blocker_cells.into_iter().take(blocker_num_count) {
-        let n = rng.gen_range(1..=size);
+        let n = rng.random_range(1..=size);
         grid.set_cell((x, y), Cell::Blocker(n as u8));
         if symmetric {
-            let n2 = rng.gen_range(1..=size);
+            let n2 = rng.random_range(1..=size);
             grid.set_cell((size - x - 1, size - y - 1), Cell::Blocker(n2 as u8));
         }
     }
@@ -303,7 +303,7 @@ pub fn generator(
     symmetric: bool,
 ) -> Grid {
     loop {
-        let mut rng = rand_chacha::ChaCha8Rng::from_seed(thread_rng().gen());
+        let mut rng = rand_chacha::ChaCha8Rng::from_seed(rng().random());
         match generate_puzzle(
             size,
             blocker_count,

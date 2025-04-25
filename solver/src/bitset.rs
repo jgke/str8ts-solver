@@ -88,6 +88,18 @@ impl IntoIterator for BitSet {
     }
 }
 
+impl From<std::collections::HashSet<u8>> for BitSet {
+    fn from(value: std::collections::HashSet<u8>) -> Self {
+        value.into_iter().collect()
+    }
+}
+
+impl From<BitSet> for std::collections::HashSet<u8> {
+    fn from(value: BitSet) -> Self {
+        value.into_iter().collect()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

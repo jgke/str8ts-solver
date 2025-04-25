@@ -505,8 +505,7 @@ pub fn unique_requirement(
             if let Some(res) = single_cell_would_become_free(grid, x, y, set)? {
                 return Ok(Some(res));
             }
-            if let Some(res) = single_cell_intra_compartment_unique(grid, x, y, set)?
-            {
+            if let Some(res) = single_cell_intra_compartment_unique(grid, x, y, set)? {
                 return Ok(Some(res));
             }
         }

@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-*: initial;
+  --color-primary: hsl(170, 100%, 20%);
+  --color-primary-light: hsl(170, 100%, 35%);
+  --color-primary-black: hsl(160, 100%, 3%);
+
+  --color-blue-100: hsl(192, 100%, 5%);
+  --color-blue-200: hsl(192, 100%, 10%);
+  --color-blue-300: hsl(192, 100%, 15%);
+  --color-blue-400: hsl(192, 100%, 20%);
+  --color-blue-500: hsl(198, 100%, 25%);
+  --color-blue-600: hsl(210, 100%, 30%);
+  --color-blue-700: hsl(210, 100%, 40%);
+  --color-blue-800: hsl(210, 100%, 50%);
+
+  --color-light-300: hsl(0, 1%, 33%);
+  --color-light-500: hsl(170, 70%, 70%);
+  --color-light-600: hsl(160, 65%, 85%);
+  --color-light-700: hsl(120, 60%, 90%);
+  --color-light-800: hsl(47, 48%, 90%);
+  --color-light-900: hsl(44, 85%, 95%);
+
+  --color-black: #010306;
+  --color-star: #ffd700;
+  --color-error: #c70039;
+  --color-yt-red: #f00;
+  --color-white: #fdf6f3;
+  --color-transparent: transparent;
+
+  --font-*: initial;
+  --font-sans:
+    Lato, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
+  --font-serif: Lato, ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono:
+    Inconsolata, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  --spacing-8xl: 96rem;
+  --spacing-9xl: 128rem;
+  --spacing-1\/10vw: 10vw;
+  --spacing-1\/12vw: 8.33333vw;
+
+  --radius-4xl: 2rem;
+}
+
+@custom-variant parent-sibling-checked {
+  input:checked ~ * & {
+    @slot;
+  }
+}
+
+html,
+body,
+#root {
+  @apply h-full w-full;
+}

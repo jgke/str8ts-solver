@@ -7,7 +7,7 @@ use crate::grid::{Cell, Grid};
 
 #[cfg(test)]
 pub fn g(grid: &str) -> Grid {
-    Grid::parse(grid.trim().lines().map(|row| row.to_string()).collect()).unwrap()
+    Grid::parse_oneline(grid).unwrap()
 }
 #[cfg(test)]
 pub fn set<const N: usize>(vals: [u8; N]) -> BitSet {

@@ -448,6 +448,10 @@ impl Grid {
             Grid::new(cells)
         }
     }
+
+    pub fn parse_oneline(grid: &str) -> Result<Grid, String> {
+        Grid::parse(grid.trim().lines().map(|row| row.to_string()).collect())
+    }
 }
 
 impl Display for Grid {
