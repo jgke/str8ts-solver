@@ -46,7 +46,10 @@ pub fn generate(input: JsValue) -> Result<JsValue, JsValue> {
     );
 
     let grid_str = grid.to_string();
-    let out = GenerateOutput { grid: grid.into(), grid_str };
+    let out = GenerateOutput {
+        grid: grid.into(),
+        grid_str,
+    };
 
     Ok(serde_wasm_bindgen::to_value(&out)?)
 }

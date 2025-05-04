@@ -12,6 +12,7 @@ mod trivial;
 mod unique_requirement;
 mod update_impossibles;
 mod update_required_and_forbidden;
+mod y_wing;
 
 pub use chain::*;
 pub use definite_min_max::*;
@@ -27,3 +28,4 @@ pub use trivial::*;
 pub use unique_requirement::*;
 pub use update_impossibles::*;
 pub use update_required_and_forbidden::*;
+pub use y_wing::*;

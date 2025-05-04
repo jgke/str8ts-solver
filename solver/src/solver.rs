@@ -20,6 +20,7 @@ pub enum SolveResults {
     RequiredAndForbidden,
     RowColBrute,
     Setti(BitSet),
+    YWing((usize, usize), u8),
     Fish(usize),
     SimpleUniqueRequirement(UrResult),
     UniqueRequirement((usize, usize), u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
@@ -42,6 +43,7 @@ impl SolveResults {
             RequiredAndForbidden => 5,
             RowColBrute => 5,
             Setti(_) => 5,
+            YWing(_, _) => 5,
             Fish(2) | Fish(3) => 5,
             Fish(_) => 6,
             SimpleUniqueRequirement(..) => 6,
@@ -94,6 +96,7 @@ impl Display for SolveResults {
                 "Calculate settis on {}",
                 english_list(&set.into_iter().collect::<Vec<_>>())
             ),
+            YWing((x, y), n) => write!(f, "Y-Wing causes ({}, {}) to not be {}", x + 1, y + 1, n),
             Fish(2) => write!(f, "Calculate a X-wing"),
             Fish(3) => write!(f, "Calculate a Swordfish"),
             Fish(n) => write!(f, "Calculate a {}-fish", n),
@@ -311,6 +314,8 @@ pub fn run_advanced(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationR
         Setti(set)
     } else if strats::row_col_brute(grid)? {
         RowColBrute
+    } else if let Some((pos, n)) = strats::y_wing(grid)? {
+        YWing(pos, n)
     } else if let Some(n) = strats::fish(grid)? {
         Fish(n)
     } else {

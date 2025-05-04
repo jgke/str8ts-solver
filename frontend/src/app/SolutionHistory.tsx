@@ -51,7 +51,7 @@ function borderForSolution(cell: WasmSolveResult): string {
     return "";
   if (cell === "RequiredAndForbidden" || cell === "RowColBrute" || "Setti" in cell)
     return "border-t-8 border-t-blue-700";
-  if ("Sets" in cell) return "border-t-8 border-t-blue-700";
+  if ("YWing" in cell || "Sets" in cell) return "border-t-8 border-t-blue-700";
   if ("Fish" in cell && (cell.Fish === 2 || cell.Fish === 3)) return "border-t-8 border-t-blue-700";
   if ("Fish" in cell) return "border-t-8 border-t-blue-800";
   if ("SimpleUniqueRequirement" in cell) return "border-t-8 border-t-blue-800";

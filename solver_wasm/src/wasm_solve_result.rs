@@ -27,6 +27,7 @@ pub enum WasmSolveResult {
     RequiredAndForbidden,
     RowColBrute,
     Setti(HashSet<u8>),
+    YWing((usize, usize), u8),
     Fish(usize),
     SimpleUniqueRequirement(WasmUrResult),
     UniqueRequirement(
@@ -97,6 +98,7 @@ impl From<SolveResults> for WasmSolveResult {
             SolveResults::RequiredAndForbidden => WasmSolveResult::RequiredAndForbidden,
             SolveResults::RowColBrute => WasmSolveResult::RowColBrute,
             SolveResults::Setti(set) => WasmSolveResult::Setti(set.into()),
+            SolveResults::YWing(pos, n) => WasmSolveResult::YWing(pos, n),
             SolveResults::Fish(n) => WasmSolveResult::Fish(n),
             SolveResults::SimpleUniqueRequirement(res) => {
                 WasmSolveResult::SimpleUniqueRequirement(res.into())
@@ -143,6 +145,7 @@ impl From<WasmSolveResult> for SolveResults {
             WasmSolveResult::RequiredAndForbidden => SolveResults::RequiredAndForbidden,
             WasmSolveResult::RowColBrute => SolveResults::RowColBrute,
             WasmSolveResult::Setti(set) => SolveResults::Setti(set.into()),
+            WasmSolveResult::YWing(pos, n) => SolveResults::YWing(pos, n),
             WasmSolveResult::Fish(n) => SolveResults::Fish(n),
             WasmSolveResult::SimpleUniqueRequirement(res) => {
                 SolveResults::SimpleUniqueRequirement(res.into())

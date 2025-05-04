@@ -41,6 +41,7 @@ export function Rating(props: RatingProps) {
     maintain_reqs_and_blocks,
     sets,
     setti,
+    y_wing,
     x_wing,
     swordfish,
     medusa,
@@ -81,6 +82,7 @@ export function Rating(props: RatingProps) {
           Maintain lists of required and forbidden numbers
         </span>
         <span className={setti ? enabled_hard_class : hidden_class}>Setti</span>
+        <span className={y_wing ? enabled_hard_class : hidden_class}>Y-wing</span>
         <span className={x_wing ? enabled_hard_class : hidden_class}>X-wing</span>
         <span className={swordfish ? enabled_hard_class : hidden_class}>Swordfish</span>
         <span className={medusa ? enabled_hard_class : hidden_class}>Medusa</span>

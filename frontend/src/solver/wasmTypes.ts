@@ -47,6 +47,7 @@ export type WasmSolveResult =
   | "RequiredAndForbidden"
   | "RowColBrute"
   | { Setti: number[] }
+  | { YWing: [[number, number], number] }
   | { Fish: number }
   | { SimpleUniqueRequirement: WasmUrResult }
   | { UniqueRequirement: [[number, number], number, [WasmGrid, WasmSolveResult, string][], WasmGrid] }
@@ -83,6 +84,7 @@ export interface WasmDifficulty {
   maintain_reqs_and_blocks: boolean;
   sets: boolean;
   setti: boolean;
+  y_wing: boolean;
   x_wing: boolean;
   swordfish: boolean;
   medusa: boolean;
