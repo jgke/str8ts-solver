@@ -85,9 +85,7 @@ export function Rating(props: RatingProps) {
         <span className={swordfish ? enabled_hard_class : hidden_class}>Swordfish</span>
         <span className={medusa ? enabled_hard_class : hidden_class}>Medusa</span>
         <span className={n_fish > 4 ? enabled_hard_class : hidden_class}>{n_fish}-fish</span>
-        <span className={unique_requirement_single ? enabled_very_hard_class : hidden_class}>
-          Simple unique requirement
-        </span>
+        <span className={unique_requirement_single ? enabled_very_hard_class : hidden_class}>Unique requirement</span>
         <span className={unique_requirement_count > 0 ? enabled_very_hard_class : hidden_class}>
           Unique solution constraint x {unique_requirement_count}
         </span>

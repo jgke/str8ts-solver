@@ -62,14 +62,12 @@ Run tests for the solver:
 $ cargo test --all
 ```
 
-Run e2e tests:
+### Deployment
 
 ```
-$ trunk serve --release
-# ... in other terminal:
-$ cd endtoend-tests
-$ npm install
-$ npx playwright test
+(cd solver_wasm && wasm-pack build --out-dir target/pkg-web --target web)
+(cd frontend && npm install && NODE_ENV=production BASE_URL=./ npm run build)
+# after: copy files from frontend/dist/* to server
 ```
 
 ### License

@@ -14,15 +14,15 @@ import { CopyOnClick } from "./CopyOnClick.tsx";
 
 function defaultGrid() {
   const grid = solver.parse([
-    ".........",
-    ".........",
-    ".........",
-    ".........",
-    ".........",
-    ".........",
-    ".........",
-    ".........",
-    ".........",
+    "#########",
+    "#########",
+    "#########",
+    "#########",
+    "#########",
+    "#########",
+    "#########",
+    "#########",
+    "#########",
   ]) as WasmOk<solver.Grid>;
   return grid.Ok;
 }
@@ -152,7 +152,7 @@ export function App() {
               })
             }
           />
-          {isSolved && solutionLog.length && <Rating solutionLog={solutionLog} />}
+          {isSolved && solutionLog.length > 0 && <Rating solutionLog={solutionLog} />}
         </div>
       </div>
 

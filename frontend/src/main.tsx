@@ -13,7 +13,9 @@ function InitWasm(props: PropsWithChildren) {
   return props.children;
 }
 
-createRoot(document.getElementById("root")!).render(
+const target = document.getElementById("wasm-render-target") || document.getElementById("root");
+
+createRoot(target!).render(
   <StrictMode>
     <Suspense fallback="Loading...">
       <InitWasm>
