@@ -10,12 +10,9 @@ use std::collections::VecDeque;
 type ForcedNumber = ((usize, usize), u8);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum ChainResult {
-    Error(ForcedNumber),
-    NotUnique(ForcedNumber),
-}
+pub struct GuessResult(pub ForcedNumber);
 
-fn run_chain(candidates: Vec<(Grid, ForcedNumber)>, max_depth: usize) -> Option<ChainResult> {
+fn run_guess(candidates: Vec<(Grid, ForcedNumber)>, max_depth: usize) -> Option<GuessResult> {
     let mut candidates: VecDeque<((Grid, ForcedNumber), usize)> =
         candidates.into_iter().map(|c| (c, 0)).collect();
 
@@ -28,18 +25,18 @@ fn run_chain(candidates: Vec<(Grid, ForcedNumber)>, max_depth: usize) -> Option<
             Ok(PuzzleSolved) => {} // well...
             Ok(_) => {
                 if validate(&temp_grid).is_err() {
-                    return Some(ChainResult::Error((pos, n)));
+                    return Some(GuessResult((pos, n)));
                 }
                 candidates.push_back(((temp_grid, (pos, n)), count + 1));
             }
-            Err(_) => return Some(ChainResult::Error((pos, n))),
+            Err(_) => return Some(GuessResult((pos, n))),
         }
     }
 
     None
 }
 
-pub fn gather_and_run_chain<F>(grid: &Grid, filter: F, max_depth: usize) -> Option<ChainResult>
+pub fn gather_and_run_guess<F>(grid: &Grid, filter: F, max_depth: usize) -> Option<GuessResult>
 where
     F: Fn(BitSet) -> bool,
 {
@@ -59,35 +56,29 @@ where
         }
     }
 
-    run_chain(candidates, max_depth)
+    run_guess(candidates, max_depth)
 }
 
-type ChainRes = ((usize, usize), u8, Vec<(Grid, SolveResults)>, Grid);
+type GuessStepRes = ((usize, usize), u8, Vec<(Grid, SolveResults)>, Grid);
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum ChainSolveResult {
-    Error(ChainRes),
-    NotUnique(ChainRes),
-}
+pub struct GuessSolveResult(pub GuessStepRes);
 
 #[allow(clippy::type_complexity)]
-pub fn chain(grid: &mut Grid) -> Result<Option<ChainSolveResult>, ValidationResult> {
+pub fn guess(grid: &mut Grid) -> Result<Option<GuessSolveResult>, ValidationResult> {
     let mut temp_grid = grid.clone();
     let num_count = grid.x;
 
     if let Some(res) = {
         (2..=3)
-            .filter_map(|set_size| gather_and_run_chain(grid, |set| set.len() == set_size, 25))
+            .filter_map(|set_size| gather_and_run_guess(grid, |set| set.len() == set_size, 25))
             .chain((2..=num_count).filter_map(|set_size| {
-                gather_and_run_chain(grid, |set| set.len() == set_size, usize::MAX)
+                gather_and_run_guess(grid, |set| set.len() == set_size, usize::MAX)
             }))
             .next()
     } {
-        let ((x, y), n) = match res {
-            ChainResult::Error(res) => res,
-            ChainResult::NotUnique(res) => res,
-        };
+        let GuessResult(((x, y), n)) = res;
         grid.set_impossible((x, y), n)?;
-        let mut steps = vec![(temp_grid.clone(), StartChain((x, y), n))];
+        let mut steps = vec![(temp_grid.clone(), StartGuess((x, y), n))];
 
         temp_grid.set_cell((x, y), Solution(n));
 
@@ -101,13 +92,13 @@ pub fn chain(grid: &mut Grid) -> Result<Option<ChainSolveResult>, ValidationResu
                 Ok(step) => {
                     steps.push((prev_grid, step));
                     if let Err(e) = validate(&temp_grid) {
-                        steps.push((temp_grid.clone(), EndChain(e)));
-                        return Ok(Some(ChainSolveResult::Error(((x, y), n, steps, temp_grid))));
+                        steps.push((temp_grid.clone(), EndGuess(e)));
+                        return Ok(Some(GuessSolveResult(((x, y), n, steps, temp_grid))));
                     }
                 }
                 Err(e) => {
-                    steps.push((temp_grid.clone(), EndChain(e)));
-                    return Ok(Some(ChainSolveResult::Error(((x, y), n, steps, temp_grid))));
+                    steps.push((temp_grid.clone(), EndGuess(e)));
+                    return Ok(Some(GuessSolveResult(((x, y), n, steps, temp_grid))));
                 }
             }
         }
@@ -123,7 +114,7 @@ mod tests {
     use crate::utils::*;
 
     #[test]
-    fn test_chain() {
+    fn test_guess() {
         let mut grid = g("
 ..1..
 5#...
@@ -137,9 +128,9 @@ mod tests {
         assert_eq!(setti(&mut grid), Some(set([5])));
         assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
 
-        let res = chain(&mut grid);
+        let res = guess(&mut grid);
         let (pos, n, _, _) = match res {
-            Ok(Some(crate::strats::ChainSolveResult::Error(res))) => res,
+            Ok(Some(GuessSolveResult(res))) => res,
             _ => unreachable!(),
         };
         assert_eq!((0, 2), pos);

@@ -49,11 +49,10 @@ export type WasmSolveResult =
   | { Setti: number[] }
   | { YWing: [[number, number], number] }
   | { Fish: number }
-  | { SimpleUniqueRequirement: WasmUrResult }
-  | { UniqueRequirement: [[number, number], number, [WasmGrid, WasmSolveResult, string][], WasmGrid] }
-  | { StartChain: [[number, number], number] }
-  | { Chain: [[number, number], number, [WasmGrid, WasmSolveResult, string][], WasmGrid] }
-  | { EndChain: WasmValidationResult }
+  | { UniqueRequirement: WasmUrResult }
+  | { StartGuess: [[number, number], number] }
+  | { GuessStep: [[number, number], number, [WasmGrid, WasmSolveResult, string][], WasmGrid] }
+  | { EndGuess: WasmValidationResult }
   | "PuzzleSolved"
   | "OutOfBasicStrats";
 
@@ -87,12 +86,10 @@ export interface WasmDifficulty {
   y_wing: boolean;
   x_wing: boolean;
   swordfish: boolean;
-  medusa: boolean;
   n_fish: number;
-  unique_requirement_single: boolean;
-  unique_requirement_count: number;
-  short_chain_count: number;
-  long_chain_count: number;
+  unique_requirement: boolean;
+  short_guess_count: number;
+  long_guess_count: number;
 }
 
 export interface WasmSolveOneReturn {
@@ -122,8 +119,8 @@ export function solve_one(input: WasmGrid): WasmSolveOneReturn {
   return mod.solve_one(input);
 }
 
-export function solve(input: WasmGrid, useChains: boolean): WasmSolveReturn {
-  return mod.solve(input, useChains);
+export function solve(input: WasmGrid, useGuessing: boolean): WasmSolveReturn {
+  return mod.solve(input, useGuessing);
 }
 
 export function puzzle_difficulty(history: WasmSolveResult[]): WasmDifficulty {

@@ -29,21 +29,15 @@ pub enum WasmSolveResult {
     Setti(HashSet<u8>),
     YWing((usize, usize), u8),
     Fish(usize),
-    SimpleUniqueRequirement(WasmUrResult),
-    UniqueRequirement(
+    UniqueRequirement(WasmUrResult),
+    StartGuess((usize, usize), u8),
+    GuessStep(
         (usize, usize),
         u8,
         Vec<(WasmGrid, WasmSolveResult, String)>,
         WasmGrid,
     ),
-    StartChain((usize, usize), u8),
-    Chain(
-        (usize, usize),
-        u8,
-        Vec<(WasmGrid, WasmSolveResult, String)>,
-        WasmGrid,
-    ),
-    EndChain(WasmValidationResult),
+    EndGuess(WasmValidationResult),
     PuzzleSolved,
     OutOfBasicStrats,
 }
@@ -100,23 +94,9 @@ impl From<SolveResults> for WasmSolveResult {
             SolveResults::Setti(set) => WasmSolveResult::Setti(set.into()),
             SolveResults::YWing(pos, n) => WasmSolveResult::YWing(pos, n),
             SolveResults::Fish(n) => WasmSolveResult::Fish(n),
-            SolveResults::SimpleUniqueRequirement(res) => {
-                WasmSolveResult::SimpleUniqueRequirement(res.into())
-            }
-            SolveResults::UniqueRequirement((x, y), n, steps, grid) => {
-                WasmSolveResult::UniqueRequirement(
-                    (x, y),
-                    n,
-                    steps
-                        .iter()
-                        .cloned()
-                        .map(|(l, r)| (l.into(), r.clone().into(), r.to_string()))
-                        .collect(),
-                    grid.into(),
-                )
-            }
-            SolveResults::StartChain((x, y), n) => WasmSolveResult::StartChain((x, y), n),
-            SolveResults::Chain((x, y), n, steps, grid) => WasmSolveResult::Chain(
+            SolveResults::UniqueRequirement(res) => WasmSolveResult::UniqueRequirement(res.into()),
+            SolveResults::StartGuess((x, y), n) => WasmSolveResult::StartGuess((x, y), n),
+            SolveResults::GuessStep((x, y), n, steps, grid) => WasmSolveResult::GuessStep(
                 (x, y),
                 n,
                 steps
@@ -126,7 +106,7 @@ impl From<SolveResults> for WasmSolveResult {
                     .collect(),
                 grid.into(),
             ),
-            SolveResults::EndChain(end) => WasmSolveResult::EndChain(end.into()),
+            SolveResults::EndGuess(end) => WasmSolveResult::EndGuess(end.into()),
             SolveResults::PuzzleSolved => WasmSolveResult::PuzzleSolved,
             SolveResults::OutOfBasicStrats => WasmSolveResult::OutOfBasicStrats,
         }
@@ -147,25 +127,9 @@ impl From<WasmSolveResult> for SolveResults {
             WasmSolveResult::Setti(set) => SolveResults::Setti(set.into()),
             WasmSolveResult::YWing(pos, n) => SolveResults::YWing(pos, n),
             WasmSolveResult::Fish(n) => SolveResults::Fish(n),
-            WasmSolveResult::SimpleUniqueRequirement(res) => {
-                SolveResults::SimpleUniqueRequirement(res.into())
-            }
-            WasmSolveResult::UniqueRequirement((x, y), n, steps, grid) => {
-                SolveResults::UniqueRequirement(
-                    (x, y),
-                    n,
-                    Rc::new(
-                        steps
-                            .iter()
-                            .cloned()
-                            .map(|(l, r, _)| (l.into(), r.into()))
-                            .collect(),
-                    ),
-                    grid.into(),
-                )
-            }
-            WasmSolveResult::StartChain((x, y), n) => SolveResults::StartChain((x, y), n),
-            WasmSolveResult::Chain((x, y), n, steps, grid) => SolveResults::Chain(
+            WasmSolveResult::UniqueRequirement(res) => SolveResults::UniqueRequirement(res.into()),
+            WasmSolveResult::StartGuess((x, y), n) => SolveResults::StartGuess((x, y), n),
+            WasmSolveResult::GuessStep((x, y), n, steps, grid) => SolveResults::GuessStep(
                 (x, y),
                 n,
                 Rc::new(
@@ -177,7 +141,7 @@ impl From<WasmSolveResult> for SolveResults {
                 ),
                 grid.into(),
             ),
-            WasmSolveResult::EndChain(res) => SolveResults::EndChain(res.into()),
+            WasmSolveResult::EndGuess(res) => SolveResults::EndGuess(res.into()),
             WasmSolveResult::PuzzleSolved => SolveResults::PuzzleSolved,
             WasmSolveResult::OutOfBasicStrats => SolveResults::OutOfBasicStrats,
         }

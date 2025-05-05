@@ -14,12 +14,10 @@ pub struct Difficulty {
     pub y_wing: bool,
     pub x_wing: bool,
     pub swordfish: bool,
-    pub medusa: bool,
     pub n_fish: usize,
-    pub unique_requirement_single: bool,
-    pub unique_requirement_count: usize,
-    pub short_chain_count: usize,
-    pub long_chain_count: usize,
+    pub unique_requirement: bool,
+    pub short_guess_count: usize,
+    pub long_guess_count: usize,
 }
 
 pub fn puzzle_difficulty(history: &[&SolveResults]) -> Difficulty {
@@ -55,36 +53,31 @@ pub fn puzzle_difficulty(history: &[&SolveResults]) -> Difficulty {
             .any(|e| matches!(e, SolveResults::YWing(_, _))),
         x_wing: history.iter().any(|e| matches!(e, SolveResults::Fish(2))),
         swordfish: history.iter().any(|e| matches!(e, SolveResults::Fish(3))),
-        medusa: history.iter().any(|e| matches!(e, SolveResults::Fish(4))),
         n_fish: history
             .iter()
             .map(|e| if let SolveResults::Fish(n) = e { *n } else { 0 })
             .max()
             .unwrap_or(0),
-        unique_requirement_single: history
+        unique_requirement: history
             .iter()
-            .any(|e| matches!(e, SolveResults::SimpleUniqueRequirement(..))),
-        unique_requirement_count: history
+            .any(|e| matches!(e, SolveResults::UniqueRequirement(..))),
+        short_guess_count: history
             .iter()
-            .filter(|e| matches!(e, SolveResults::UniqueRequirement(..)))
+            .filter(|e| matches!(e, SolveResults::GuessStep(_, _, steps, _) if steps.len() < 8))
             .count(),
-        short_chain_count: history
+        long_guess_count: history
             .iter()
-            .filter(|e| matches!(e, SolveResults::Chain(_, _, steps, _) if steps.len() < 8))
-            .count(),
-        long_chain_count: history
-            .iter()
-            .filter(|e| matches!(e, SolveResults::Chain(_, _, steps, _) if steps.len() >= 8))
+            .filter(|e| matches!(e, SolveResults::GuessStep(_, _, steps, _) if steps.len() >= 8))
             .count(),
     }
 }
 
-pub fn get_puzzle_difficulty(grid: &Grid, enable_chains: bool) -> Option<Difficulty> {
+pub fn get_puzzle_difficulty(grid: &Grid, enable_guesses: bool) -> Option<Difficulty> {
     let solution = {
         let mut grid = grid.clone();
         let mut history = Vec::new();
         loop {
-            match solve_round(&mut grid, enable_chains) {
+            match solve_round(&mut grid, enable_guesses) {
                 Ok(SolveResults::PuzzleSolved) => {
                     break;
                 }

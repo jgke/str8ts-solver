@@ -91,8 +91,8 @@ export function App() {
     setSolutionLog((log) => [...log, { grid: g, difficulty, message: resDisplay, data: res }]);
   });
 
-  const solve = useEvent((useChains: boolean) => {
-    const { res } = solver.solve(grid, useChains);
+  const solve = useEvent((useGuessing: boolean) => {
+    const { res } = solver.solve(grid, useGuessing);
     if (!res.length) return;
     setGrid(res[res.length - 1].grid);
     const newLog = res.map((row) => ({

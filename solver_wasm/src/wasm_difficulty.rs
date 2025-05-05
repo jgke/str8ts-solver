@@ -14,12 +14,10 @@ pub struct WasmDifficulty {
     pub y_wing: bool,
     pub x_wing: bool,
     pub swordfish: bool,
-    pub medusa: bool,
     pub n_fish: usize,
-    pub unique_requirement_single: bool,
-    pub unique_requirement_count: usize,
-    pub short_chain_count: usize,
-    pub long_chain_count: usize,
+    pub unique_requirement: bool,
+    pub short_guess_count: usize,
+    pub long_guess_count: usize,
 }
 
 impl From<Difficulty> for WasmDifficulty {
@@ -36,12 +34,10 @@ impl From<Difficulty> for WasmDifficulty {
             y_wing: value.y_wing,
             x_wing: value.x_wing,
             swordfish: value.swordfish,
-            medusa: value.medusa,
             n_fish: value.n_fish,
-            unique_requirement_single: value.unique_requirement_single,
-            unique_requirement_count: value.unique_requirement_count,
-            short_chain_count: value.short_chain_count,
-            long_chain_count: value.long_chain_count,
+            unique_requirement: value.unique_requirement,
+            short_guess_count: value.short_guess_count,
+            long_guess_count: value.long_guess_count,
         }
     }
 }

@@ -1,6 +1,6 @@
-mod chain;
 mod definite_min_max;
 mod fish;
+mod guess;
 mod required_and_forbidden;
 mod required_range;
 mod row_col_brute;
@@ -14,9 +14,9 @@ mod update_impossibles;
 mod update_required_and_forbidden;
 mod y_wing;
 
-pub use chain::*;
 pub use definite_min_max::*;
 pub use fish::*;
+pub use guess::*;
 pub use required_and_forbidden::*;
 pub use required_range::*;
 pub use row_col_brute::*;

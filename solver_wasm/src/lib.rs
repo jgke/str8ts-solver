@@ -85,14 +85,14 @@ struct SolveReturn {
 }
 
 #[wasm_bindgen]
-pub fn solve(input: JsValue, use_chains: bool) -> Result<JsValue, JsValue> {
+pub fn solve(input: JsValue, use_guesses: bool) -> Result<JsValue, JsValue> {
     let grid: WasmGrid = serde_wasm_bindgen::from_value(input)?;
     let mut grid: grid::Grid = grid.into();
 
     let mut res = Vec::new();
 
     loop {
-        match solve_round(&mut grid, use_chains) {
+        match solve_round(&mut grid, use_guesses) {
             Ok(strat) => {
                 let difficulty = strat.difficulty();
                 let was_solved = strat == SolveResults::PuzzleSolved;

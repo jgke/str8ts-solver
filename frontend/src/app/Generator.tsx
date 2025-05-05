@@ -31,8 +31,8 @@ function GeneratorFields() {
           <option value="3">Medium</option>
           <option value="4">Hard</option>
           <option value="5">(SLOW) Settis, small fishes</option>
-          <option value="6">(VERY SLOW) Large fishes, short chains</option>
-          <option value="7">(EXTREMELY SLOW) Long chains</option>
+          <option value="6">(VERY SLOW) Large fishes, simple guesses</option>
+          <option value="7">(EXTREMELY SLOW) Complex guesses</option>
         </select>
       </label>
       <label className="flex items-center py-2">

@@ -44,12 +44,10 @@ export function Rating(props: RatingProps) {
     y_wing,
     x_wing,
     swordfish,
-    medusa,
     n_fish,
-    unique_requirement_single,
-    unique_requirement_count,
-    short_chain_count,
-    long_chain_count,
+    unique_requirement,
+    short_guess_count,
+    long_guess_count,
   } = difficulty;
 
   const disabled_class = "hidden";
@@ -85,17 +83,13 @@ export function Rating(props: RatingProps) {
         <span className={y_wing ? enabled_hard_class : hidden_class}>Y-wing</span>
         <span className={x_wing ? enabled_hard_class : hidden_class}>X-wing</span>
         <span className={swordfish ? enabled_hard_class : hidden_class}>Swordfish</span>
-        <span className={medusa ? enabled_hard_class : hidden_class}>Medusa</span>
         <span className={n_fish > 4 ? enabled_hard_class : hidden_class}>{n_fish}-fish</span>
-        <span className={unique_requirement_single ? enabled_very_hard_class : hidden_class}>Unique requirement</span>
-        <span className={unique_requirement_count > 0 ? enabled_very_hard_class : hidden_class}>
-          Unique solution constraint x {unique_requirement_count}
+        <span className={unique_requirement ? enabled_very_hard_class : hidden_class}>Unique requirement</span>
+        <span className={short_guess_count > 0 ? enabled_very_hard_class : hidden_class}>
+          Short guess x {short_guess_count}
         </span>
-        <span className={short_chain_count > 0 ? enabled_very_hard_class : hidden_class}>
-          Short chain x {short_chain_count}
-        </span>
-        <span className={long_chain_count > 0 ? enabled_very_hard_class : hidden_class}>
-          Long chain x {long_chain_count}
+        <span className={long_guess_count > 0 ? enabled_very_hard_class : hidden_class}>
+          Long guess x {long_guess_count}
         </span>
       </div>
     </div>

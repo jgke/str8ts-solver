@@ -495,7 +495,7 @@ fn solution_causes_closed_sets(grid: &mut Grid) -> Result<Option<UrResult>, Vali
 
 pub fn unique_requirement(
     grid: &mut Grid,
-    enable_chains: bool,
+    enable_guesses: bool,
 ) -> Result<Option<UrResult>, ValidationResult> {
     for ((x, y), cell) in grid.iter_by_cells() {
         if let Cell::Indeterminate(set) = cell {
@@ -519,7 +519,7 @@ pub fn unique_requirement(
         return Ok(Some(res));
     }
 
-    if enable_chains {
+    if enable_guesses {
         if let Some(res) = solution_causes_closed_sets(grid)? {
             return Ok(Some(res));
         }

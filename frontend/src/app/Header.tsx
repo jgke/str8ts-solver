@@ -9,7 +9,7 @@ export interface HeaderProps {
 
   onHint(): void;
 
-  onSolve(useChains: boolean): void;
+  onSolve(useGuessing: boolean): void;
 
   setEditMode(mode: boolean): void;
 
@@ -39,7 +39,7 @@ export function Header(props: HeaderProps) {
     openGenerator();
   });
 
-  const onSolveWithoutChainsClick = useEvent(() => {
+  const onSolveWithoutGuessingClick = useEvent(() => {
     closeHamburger();
     onSolve(false);
   });
@@ -105,8 +105,8 @@ export function Header(props: HeaderProps) {
             <Button className="mb-2" onClick={onGenerator}>
               Generate puzzle
             </Button>
-            <Button disabled={isSolved} className="mb-2" onClick={onSolveWithoutChainsClick}>
-              Solve without chains
+            <Button disabled={isSolved} className="mb-2" onClick={onSolveWithoutGuessingClick}>
+              Solve without guessing
             </Button>
             <Button disabled={isSolved} onClick={onSolveClick}>
               Solve

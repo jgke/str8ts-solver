@@ -22,11 +22,10 @@ pub enum SolveResults {
     Setti(BitSet),
     YWing((usize, usize), u8),
     Fish(usize),
-    SimpleUniqueRequirement(UrResult),
-    UniqueRequirement((usize, usize), u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
-    StartChain((usize, usize), u8),
-    Chain((usize, usize), u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
-    EndChain(ValidationResult),
+    UniqueRequirement(UrResult),
+    StartGuess((usize, usize), u8),
+    GuessStep((usize, usize), u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
+    EndGuess(ValidationResult),
     PuzzleSolved,
     OutOfBasicStrats,
 }
@@ -46,12 +45,11 @@ impl SolveResults {
             YWing(_, _) => 5,
             Fish(2) | Fish(3) => 5,
             Fish(_) => 6,
-            SimpleUniqueRequirement(..) => 6,
-            UniqueRequirement(..) => 7,
-            StartChain(_, _) => 1,
-            Chain(_, _, steps, _) if steps.len() < 8 => 6,
-            Chain(_, _, _, _) => 7,
-            EndChain(_) => 1,
+            UniqueRequirement(..) => 6,
+            StartGuess(_, _) => 1,
+            GuessStep(_, _, steps, _) if steps.len() < 8 => 6,
+            GuessStep(_, _, _, _) => 7,
+            EndGuess(_) => 1,
             PuzzleSolved => 1,
             OutOfBasicStrats => 0,
         }
@@ -100,7 +98,7 @@ impl Display for SolveResults {
             Fish(2) => write!(f, "Calculate a X-wing"),
             Fish(3) => write!(f, "Calculate a Swordfish"),
             Fish(n) => write!(f, "Calculate a {}-fish", n),
-            SimpleUniqueRequirement(UrResult::SingleUnique((x, y), n)) => {
+            UniqueRequirement(UrResult::SingleUnique((x, y), n)) => {
                 write!(
                     f,
                     "({}, {}) must be {}, as other solutions would be ambiguous",
@@ -109,7 +107,7 @@ impl Display for SolveResults {
                     n,
                 )
             }
-            SimpleUniqueRequirement(UrResult::IntraCompartmentUnique((x, y), n)) => {
+            UniqueRequirement(UrResult::IntraCompartmentUnique((x, y), n)) => {
                 write!(
                     f,
                     "({}, {}) cannot be {}, as it would cause ambiguous solutions",
@@ -118,7 +116,7 @@ impl Display for SolveResults {
                     n,
                 )
             }
-            SimpleUniqueRequirement(UrResult::ClosedSetCompartment(list, n)) => {
+            UniqueRequirement(UrResult::ClosedSetCompartment(list, n)) => {
                 write!(
                     f,
                     "The cells {:?} must contain {} or the puzzle becomes ambiguous",
@@ -126,7 +124,7 @@ impl Display for SolveResults {
                     n,
                 )
             }
-            SimpleUniqueRequirement(UrResult::SingleCellWouldBecomeFree((x, y), n)) => {
+            UniqueRequirement(UrResult::SingleCellWouldBecomeFree((x, y), n)) => {
                 write!(
                     f,
                     "({}, {}) cannot be {}, as it would cause ambiguous solutions",
@@ -135,7 +133,7 @@ impl Display for SolveResults {
                     n,
                 )
             }
-            SimpleUniqueRequirement(UrResult::UrSetti(list, vertical, n)) => {
+            UniqueRequirement(UrResult::UrSetti(list, vertical, n)) => {
                 write!(
                     f,
                     "The {} containing points {:?} must contain {}, or the puzzle becomes ambiguous",
@@ -144,25 +142,15 @@ impl Display for SolveResults {
                     n,
                 )
             }
-            SimpleUniqueRequirement(UrResult::SolutionCausesClosedSets((x, y), n)) => {
+            UniqueRequirement(UrResult::SolutionCausesClosedSets((x, y), n)) => {
                 write!(
                     f,
                     "Setting ({}, {}) to {} creates closed sets, causing puzzle to become ambiguous",
                     x + 1, y + 1, n,
                 )
             }
-            UniqueRequirement((x, y), n, steps, _) => {
-                write!(
-                    f,
-                    "({}, {}) cannot be {}, as it causes a unique requirement conflict in {} steps",
-                    x + 1,
-                    y + 1,
-                    n,
-                    steps.len(),
-                )
-            }
-            StartChain((x, y), n) => write!(f, "Start chain with ({}, {}) = {}", x + 1, y + 1, n),
-            Chain((x, y), n, steps, _) => write!(
+            StartGuess((x, y), n) => write!(f, "Start guess with ({}, {}) = {}", x + 1, y + 1, n),
+            GuessStep((x, y), n, steps, _) => write!(
                 f,
                 "({}, {}) cannot be {}, as it causes a conflict in {} steps",
                 x + 1,
@@ -170,7 +158,7 @@ impl Display for SolveResults {
                 n,
                 steps.len(),
             ),
-            EndChain(end) => write!(f, "{}", end),
+            EndGuess(end) => write!(f, "{}", end),
             PuzzleSolved => write!(f, "Puzzle solved"),
             OutOfBasicStrats => write!(f, "Out of basic strats"),
         }
@@ -325,30 +313,30 @@ pub fn run_advanced(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationR
 
 pub fn run_unique(
     grid: &mut Grid,
-    enable_chains: bool,
+    enable_guesses: bool,
 ) -> Result<Option<SolveResults>, ValidationResult> {
-    Ok(strats::unique_requirement(grid, enable_chains)?.map(SimpleUniqueRequirement))
+    Ok(strats::unique_requirement(grid, enable_guesses)?.map(UniqueRequirement))
 }
 
-pub fn run_chain(
+pub fn run_guess(
     grid: &mut Grid,
-    enable_chains: bool,
+    enable_guesses: bool,
 ) -> Result<Option<SolveResults>, ValidationResult> {
-    if !enable_chains {
+    if !enable_guesses {
         return Ok(None);
     }
-    Ok(match strats::chain(grid)? {
-        Some(crate::strats::ChainSolveResult::NotUnique(((x, y), n, steps, error_grid))) => {
-            Some(UniqueRequirement((x, y), n, Rc::new(steps), error_grid))
-        }
-        Some(crate::strats::ChainSolveResult::Error(((x, y), n, steps, error_grid))) => {
-            Some(Chain((x, y), n, Rc::new(steps), error_grid))
+    Ok(match strats::guess(grid)? {
+        Some(crate::strats::GuessSolveResult(((x, y), n, steps, error_grid))) => {
+            Some(GuessStep((x, y), n, Rc::new(steps), error_grid))
         }
         None => None,
     })
 }
 
-pub fn solve_round(grid: &mut Grid, enable_chains: bool) -> Result<SolveResults, ValidationResult> {
+pub fn solve_round(
+    grid: &mut Grid,
+    enable_guesses: bool,
+) -> Result<SolveResults, ValidationResult> {
     validate(grid)?;
     if grid.is_solved() {
         return Ok(PuzzleSolved);
@@ -358,9 +346,9 @@ pub fn solve_round(grid: &mut Grid, enable_chains: bool) -> Result<SolveResults,
             validate(grid)?;
             let res = if let Some(res) = run_advanced(grid)? {
                 Ok(res)
-            } else if let Some(res) = run_unique(grid, enable_chains)? {
+            } else if let Some(res) = run_unique(grid, enable_guesses)? {
                 Ok(res)
-            } else if let Some(res) = run_chain(grid, enable_chains)? {
+            } else if let Some(res) = run_guess(grid, enable_guesses)? {
                 Ok(res)
             } else {
                 Err(OutOfStrats)

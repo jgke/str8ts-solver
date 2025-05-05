@@ -56,7 +56,7 @@ function borderForSolution(cell: WasmSolveResult): string {
   if ("Fish" in cell) return "border-t-8 border-t-blue-800";
   if ("SimpleUniqueRequirement" in cell) return "border-t-8 border-t-blue-800";
   if ("UniqueRequirement" in cell) return "border-t-8 border-t-blue-800";
-  if ("StartChain" in cell || "Chain" in cell || "EndChain" in cell) return "border-t-8 border-t-blue-800";
+  if ("StartGuess" in cell || "GuessStep" in cell || "EndGuess" in cell) return "border-t-8 border-t-blue-800";
   unreachable(cell);
 }
 
@@ -121,9 +121,9 @@ function SolutionLogListItem(props: SolutionLogListItemProps) {
       ? "font-medium bg-light-900 dark:bg-blue-500"
       : "font-medium bg-light-900 dark:bg-blue-100";
 
-  let nestedChain: HistoryGroup[] | undefined;
-  if (isOk(row.data) && typeof row.data.Ok === "object" && "Chain" in row.data.Ok) {
-    nestedChain = row.data.Ok.Chain[2].map(([grid, result, msg]) => ({
+  let nestedGuessStep: HistoryGroup[] | undefined;
+  if (isOk(row.data) && typeof row.data.Ok === "object" && "GuessStep" in row.data.Ok) {
+    nestedGuessStep = row.data.Ok.GuessStep[2].map(([grid, result, msg]) => ({
       grid: gridFromWasm(grid),
       data: { Ok: result },
       message: { Ok: msg },
@@ -135,10 +135,10 @@ function SolutionLogListItem(props: SolutionLogListItemProps) {
     <li className={`${liClass} ${extraClass}`} onMouseOver={onHover} onClick={onClick}>
       <div className={`${isOk(row.data) ? borderForSolution(row.data.Ok) : ""} cursor-pointer rounded p-2`}>
         {isOk(row.message) ? row.message.Ok : row.message.Err}
-        {nestedChain && (
+        {nestedGuessStep && (
           <SolutionLogList
             {...focusProps}
-            solutionLog={nestedChain}
+            solutionLog={nestedGuessStep}
             nested={true}
             prev={focusProps.prev}
             path={`${focusProps.path}_`}

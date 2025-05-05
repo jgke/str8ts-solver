@@ -103,9 +103,9 @@ interface SolveResult {
   res: SolveOneResult[];
 }
 
-export function solve(input: Grid, useChains: boolean): SolveResult {
+export function solve(input: Grid, useGuessing: boolean): SolveResult {
   const grid = gridToWasm(input);
-  const out: WasmSolveReturn = wasmSolve(grid, useChains);
+  const out: WasmSolveReturn = wasmSolve(grid, useGuessing);
   return { res: out.res.map(solveOneResultFromWasm) };
 }
 
