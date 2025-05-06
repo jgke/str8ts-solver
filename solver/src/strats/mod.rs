@@ -1,6 +1,7 @@
 mod definite_min_max;
 mod fish;
 mod guess;
+mod medusa;
 mod required_and_forbidden;
 mod required_range;
 mod row_col_brute;
@@ -17,6 +18,7 @@ mod y_wing;
 pub use definite_min_max::*;
 pub use fish::*;
 pub use guess::*;
+pub use medusa::*;
 pub use required_and_forbidden::*;
 pub use required_range::*;
 pub use row_col_brute::*;

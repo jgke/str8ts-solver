@@ -45,6 +45,7 @@ export function Rating(props: RatingProps) {
     x_wing,
     swordfish,
     n_fish,
+    medusa,
     unique_requirement,
     short_guess_count,
     long_guess_count,
@@ -84,6 +85,7 @@ export function Rating(props: RatingProps) {
         <span className={x_wing ? enabled_hard_class : hidden_class}>X-wing</span>
         <span className={swordfish ? enabled_hard_class : hidden_class}>Swordfish</span>
         <span className={n_fish > 4 ? enabled_hard_class : hidden_class}>{n_fish}-fish</span>
+        <span className={medusa ? enabled_very_hard_class : hidden_class}>3D Medusa</span>
         <span className={unique_requirement ? enabled_very_hard_class : hidden_class}>Unique requirement</span>
         <span className={short_guess_count > 0 ? enabled_very_hard_class : hidden_class}>
           Short guess x {short_guess_count}

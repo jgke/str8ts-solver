@@ -75,6 +75,7 @@ pub fn fish(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
                             .flat_map(|line| line.iter())
                             .copied()
                             .collect();
+                        #[allow(clippy::iter_over_hash_type)]
                         for position in &positions {
                             changes |= grid.set_impossible(*position, num)?;
                         }
@@ -86,11 +87,13 @@ pub fn fish(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
                             .flat_map(|line| line.iter())
                             .copied()
                             .collect();
+                        #[allow(clippy::iter_over_hash_type)]
                         for position in &positions {
                             changes |= grid.set_impossible_in(*position, false, num, &positions)?;
                             changes |= grid.set_impossible_in(*position, true, num, &positions)?;
                         }
 
+                        #[allow(clippy::iter_over_hash_type)]
                         for (x, y) in positions {
                             grid.row_requirements[y].insert(num);
                             grid.col_requirements[x].insert(num);

@@ -109,9 +109,7 @@ pub fn row_col_brute(grid: &mut Grid) -> Result<bool, ValidationResult> {
         }
 
         let mut sample_pos = None;
-        let mut new_cells = std::iter::repeat(BitSet::new())
-            .take(grid.x)
-            .collect::<Vec<_>>();
+        let mut new_cells = std::iter::repeat_n(BitSet::new(), grid.x).collect::<Vec<_>>();
         for solution in solutions {
             for compartment in solution {
                 for (pos, cell) in compartment.cells {
@@ -157,9 +155,7 @@ pub fn row_col_brute(grid: &mut Grid) -> Result<bool, ValidationResult> {
         }
 
         let mut sample_pos = None;
-        let mut new_cells = std::iter::repeat(BitSet::new())
-            .take(grid.y)
-            .collect::<Vec<_>>();
+        let mut new_cells = std::iter::repeat_n(BitSet::new(), grid.y).collect::<Vec<_>>();
         for solution in solutions {
             for compartment in solution {
                 for (pos, cell) in compartment.cells {

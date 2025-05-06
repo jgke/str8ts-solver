@@ -1,5 +1,6 @@
 import * as mod from "../../../solver_wasm/target/pkg-web";
 
+export type Point = [number, number];
 export type WasmCell =
   | { Requirement: number }
   | { Solution: number }
@@ -30,12 +31,12 @@ export function isErr<T, K>(res: WasmResult<T, K>): res is WasmErr<K> {
 }
 
 export type WasmUrResult =
-  | { SingleUnique: [[number, number], number] }
-  | { IntraCompartmentUnique: [[number, number], number] }
-  | { ClosedSetCompartment: [[number, number][], number] }
-  | { SingleCellWouldBecomeFree: [[number, number], number] }
-  | { UrSetti: [[number, number][], boolean, number] }
-  | { SolutionCausesClosedSets: [[number, number], number] };
+  | { SingleUnique: [Point, number] }
+  | { IntraCompartmentUnique: [Point, number] }
+  | { ClosedSetCompartment: [Point[], number] }
+  | { SingleCellWouldBecomeFree: [Point, number] }
+  | { UrSetti: [Point[], boolean, number] }
+  | { SolutionCausesClosedSets: [Point, number] };
 
 export type WasmSolveResult =
   | "UpdateImpossibles"
@@ -47,31 +48,32 @@ export type WasmSolveResult =
   | "RequiredAndForbidden"
   | "RowColBrute"
   | { Setti: number[] }
-  | { YWing: [[number, number], number] }
+  | { YWing: [Point, number] }
   | { Fish: number }
+  | { Medusa: [[Point, number][], [Point, number][]] }
   | { UniqueRequirement: WasmUrResult }
-  | { StartGuess: [[number, number], number] }
-  | { GuessStep: [[number, number], number, [WasmGrid, WasmSolveResult, string][], WasmGrid] }
+  | { StartGuess: [Point, number] }
+  | { GuessStep: [Point, number, [WasmGrid, WasmSolveResult, string][], WasmGrid] }
   | { EndGuess: WasmValidationResult }
   | "PuzzleSolved"
   | "OutOfBasicStrats";
 
 export type WasmValidationResult =
-  | { EmptyCell: { pos: [number, number] } }
-  | { Conflict: { pos1: [number, number]; pos2: [number, number]; val: number } }
-  | { Sequence: { vertical: boolean; top_left: [number, number]; range: [number, number]; missing: number } }
+  | { EmptyCell: { pos: Point } }
+  | { Conflict: { pos1: Point; pos2: Point; val: number } }
+  | { Sequence: { vertical: boolean; top_left: Point; range: Point; missing: number } }
   | {
       SequenceTooLarge: {
         vertical: boolean;
-        top_left: [number, number];
-        contains: [number, number];
-        max_ranges: [[number, number], [number, number]];
+        top_left: Point;
+        contains: Point;
+        max_ranges: [Point, Point];
       };
     }
   | { RequirementBlockerConflict: { vertical: boolean; index: number; number: number } }
   | { RequiredNumberMissing: { vertical: boolean; index: number; number: number } }
   | { BlockedNumberPresent: { vertical: boolean; index: number; number: number } }
-  | { Ambiguous: { cells: [number, number][] } }
+  | { Ambiguous: { cells: Point[] } }
   | "OutOfStrats";
 
 export interface WasmDifficulty {
@@ -87,6 +89,7 @@ export interface WasmDifficulty {
   x_wing: boolean;
   swordfish: boolean;
   n_fish: number;
+  medusa: boolean;
   unique_requirement: boolean;
   short_guess_count: number;
   long_guess_count: number;

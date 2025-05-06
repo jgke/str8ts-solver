@@ -1,6 +1,7 @@
 use crate::grid::Grid;
 use crate::solver::ValidationResult;
 
+#[allow(clippy::type_complexity)]
 pub fn y_wing(grid: &mut Grid) -> Result<Option<((usize, usize), u8)>, ValidationResult> {
     let valid_indeterminates = grid
         .iter_by_indeterminates()

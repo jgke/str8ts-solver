@@ -29,6 +29,7 @@ pub enum WasmSolveResult {
     Setti(HashSet<u8>),
     YWing((usize, usize), u8),
     Fish(usize),
+    Medusa(Vec<((usize, usize), u8)>, Vec<((usize, usize), u8)>),
     UniqueRequirement(WasmUrResult),
     StartGuess((usize, usize), u8),
     GuessStep(
@@ -94,6 +95,7 @@ impl From<SolveResults> for WasmSolveResult {
             SolveResults::Setti(set) => WasmSolveResult::Setti(set.into()),
             SolveResults::YWing(pos, n) => WasmSolveResult::YWing(pos, n),
             SolveResults::Fish(n) => WasmSolveResult::Fish(n),
+            SolveResults::Medusa(left, right) => WasmSolveResult::Medusa(left, right),
             SolveResults::UniqueRequirement(res) => WasmSolveResult::UniqueRequirement(res.into()),
             SolveResults::StartGuess((x, y), n) => WasmSolveResult::StartGuess((x, y), n),
             SolveResults::GuessStep((x, y), n, steps, grid) => WasmSolveResult::GuessStep(
@@ -127,6 +129,7 @@ impl From<WasmSolveResult> for SolveResults {
             WasmSolveResult::Setti(set) => SolveResults::Setti(set.into()),
             WasmSolveResult::YWing(pos, n) => SolveResults::YWing(pos, n),
             WasmSolveResult::Fish(n) => SolveResults::Fish(n),
+            WasmSolveResult::Medusa(left, right) => SolveResults::Medusa(left, right),
             WasmSolveResult::UniqueRequirement(res) => SolveResults::UniqueRequirement(res.into()),
             WasmSolveResult::StartGuess((x, y), n) => SolveResults::StartGuess((x, y), n),
             WasmSolveResult::GuessStep((x, y), n, steps, grid) => SolveResults::GuessStep(

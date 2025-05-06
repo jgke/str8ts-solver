@@ -15,6 +15,7 @@ pub struct Difficulty {
     pub x_wing: bool,
     pub swordfish: bool,
     pub n_fish: usize,
+    pub medusa: bool,
     pub unique_requirement: bool,
     pub short_guess_count: usize,
     pub long_guess_count: usize,
@@ -58,6 +59,9 @@ pub fn puzzle_difficulty(history: &[&SolveResults]) -> Difficulty {
             .map(|e| if let SolveResults::Fish(n) = e { *n } else { 0 })
             .max()
             .unwrap_or(0),
+        medusa: history
+            .iter()
+            .any(|e| matches!(e, SolveResults::Medusa(..))),
         unique_requirement: history
             .iter()
             .any(|e| matches!(e, SolveResults::UniqueRequirement(..))),

@@ -1,4 +1,4 @@
-import { Grid, gridFromWasm } from "../solver/solver.ts";
+import { getColors, Grid, gridFromWasm } from "../solver/solver.ts";
 import { isOk, WasmResult, WasmSolveResult } from "../solver/wasmTypes.ts";
 import { unreachable } from "../utils/unreachable.ts";
 import { MouseEventHandler, MouseEvent, useMemo, useState } from "react";
@@ -22,7 +22,7 @@ export interface SolutionHistoryProps {
   startingGrid: Grid;
   solutionLog: HistoryNode[];
 
-  onFocus(before: Grid | null, after: Grid | null): void;
+  onFocus(before: Grid | null, after: Grid | null, colors: number[][][] | null): void;
 }
 
 interface FocusProps {
@@ -33,7 +33,7 @@ interface FocusProps {
 
   onFocus(id: null): void;
 
-  onFocus(id: string, prev: Grid, next: Grid): void;
+  onFocus(id: string, prev: Grid, next: Grid, colors: number[][][] | null): void;
 
   setManualFocus(focus: boolean): void;
 }
@@ -55,7 +55,7 @@ function borderForSolution(cell: WasmSolveResult): string {
   if ("Fish" in cell && (cell.Fish === 2 || cell.Fish === 3)) return "border-t-8 border-t-blue-700";
   if ("Fish" in cell) return "border-t-8 border-t-blue-800";
   if ("SimpleUniqueRequirement" in cell) return "border-t-8 border-t-blue-800";
-  if ("UniqueRequirement" in cell) return "border-t-8 border-t-blue-800";
+  if ("Medusa" in cell || "UniqueRequirement" in cell) return "border-t-8 border-t-blue-800";
   if ("StartGuess" in cell || "GuessStep" in cell || "EndGuess" in cell) return "border-t-8 border-t-blue-800";
   unreachable(cell);
 }
@@ -67,14 +67,18 @@ interface SolutionInnerLogItemProps extends FocusProps {
   node: HistoryNode;
 }
 
-function useFocusProps(grid: Grid, focusProps: FocusProps): [boolean, MouseEventHandler, MouseEventHandler] {
+function useFocusProps(
+  grid: Grid,
+  colors: number[][][] | null,
+  focusProps: FocusProps,
+): [boolean, MouseEventHandler, MouseEventHandler] {
   const { path, focused, manualFocus, setManualFocus, onFocus, prev } = focusProps;
 
   const onHover = useEvent((e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!manualFocus) {
-      onFocus(path, prev, grid);
+      onFocus(path, prev, grid, colors);
     }
   });
 
@@ -82,7 +86,7 @@ function useFocusProps(grid: Grid, focusProps: FocusProps): [boolean, MouseEvent
     e.preventDefault();
     e.stopPropagation();
     setManualFocus(!manualFocus);
-    onFocus(path, prev, grid);
+    onFocus(path, prev, grid, colors);
   });
 
   return [focused === path, onHover, onClick];
@@ -90,7 +94,7 @@ function useFocusProps(grid: Grid, focusProps: FocusProps): [boolean, MouseEvent
 
 function SolutionInnerLogItem(props: SolutionInnerLogItemProps) {
   const { num, node, ...focusProps } = props;
-  const [focused, onHover, onClick] = useFocusProps(node.grid, focusProps);
+  const [focused, onHover, onClick] = useFocusProps(node.grid, getColors(node.data), focusProps);
 
   const extraClass = focused ? "font-bold dark:bg-blue-400" : "font-medium bg-light-900 dark:bg-blue-100";
 
@@ -112,7 +116,7 @@ interface SolutionLogListItemProps extends FocusProps {
 
 function SolutionLogListItem(props: SolutionLogListItemProps) {
   const { nested, row, ...focusProps } = props;
-  const [focused, onHover, onClick] = useFocusProps(row.grid, focusProps);
+  const [focused, onHover, onClick] = useFocusProps(row.grid, getColors(row.data), focusProps);
   const extraClass = focused
     ? nested
       ? "font-bold dark:bg-blue-400"
@@ -212,9 +216,9 @@ export function SolutionHistory(props: SolutionHistoryProps) {
   const [manualFocus, setManualFocus] = useState(false);
   const [focused, setFocused] = useState<string | null>(null);
 
-  const onFocusCb = useEvent((id: string | null, grid?: Grid, other?: Grid) => {
+  const onFocusCb = useEvent((id: string | null, grid?: Grid, other?: Grid, colors?: number[][][] | null) => {
     setFocused(id);
-    onFocus(grid ?? null, other ?? null);
+    onFocus(grid ?? null, other ?? null, colors ?? null);
   });
 
   const onFocusExit = useEvent((e: MouseEvent) => {

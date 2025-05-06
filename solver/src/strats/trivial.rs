@@ -58,7 +58,7 @@ mod tests {
         grid.cells[1][0] = det([2]);
         grid.cells[2][2] = det([3]);
 
-        assert_eq!(trivial(&mut grid), true);
+        assert!(trivial(&mut grid));
 
         assert_eq!(grid.cells[0][0], Cell::Black);
         assert_eq!(grid.cells[0][1], Cell::Solution(1));
@@ -80,9 +80,9 @@ mod tests {
         grid.cells[1][0] = det([2]);
         grid.cells[2][2] = det([3]);
 
-        assert_eq!(trivial(&mut grid), true);
+        assert!(trivial(&mut grid));
         grid.row_requirements[1].insert(1);
-        assert_eq!(trivial(&mut grid), true);
+        assert!(trivial(&mut grid));
 
         assert_eq!(grid.row_requirements[0], set([1]));
         assert_eq!(grid.row_requirements[1], set([1, 2]));

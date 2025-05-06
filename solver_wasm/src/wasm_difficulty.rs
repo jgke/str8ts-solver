@@ -15,6 +15,7 @@ pub struct WasmDifficulty {
     pub x_wing: bool,
     pub swordfish: bool,
     pub n_fish: usize,
+    pub medusa: bool,
     pub unique_requirement: bool,
     pub short_guess_count: usize,
     pub long_guess_count: usize,
@@ -35,6 +36,30 @@ impl From<Difficulty> for WasmDifficulty {
             x_wing: value.x_wing,
             swordfish: value.swordfish,
             n_fish: value.n_fish,
+            medusa: value.medusa,
+            unique_requirement: value.unique_requirement,
+            short_guess_count: value.short_guess_count,
+            long_guess_count: value.long_guess_count,
+        }
+    }
+}
+
+impl From<WasmDifficulty> for Difficulty {
+    fn from(value: WasmDifficulty) -> Self {
+        Difficulty {
+            star_count: value.star_count,
+            move_count: value.move_count,
+            basic_reductions: value.basic_reductions,
+            min_max_reductions: value.min_max_reductions,
+            cross_compartment_ranges: value.cross_compartment_ranges,
+            maintain_reqs_and_blocks: value.maintain_reqs_and_blocks,
+            sets: value.sets,
+            setti: value.setti,
+            y_wing: value.y_wing,
+            x_wing: value.x_wing,
+            swordfish: value.swordfish,
+            n_fish: value.n_fish,
+            medusa: value.medusa,
             unique_requirement: value.unique_requirement,
             short_guess_count: value.short_guess_count,
             long_guess_count: value.long_guess_count,

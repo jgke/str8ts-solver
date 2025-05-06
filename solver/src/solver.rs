@@ -22,6 +22,7 @@ pub enum SolveResults {
     Setti(BitSet),
     YWing((usize, usize), u8),
     Fish(usize),
+    Medusa(Vec<((usize, usize), u8)>, Vec<((usize, usize), u8)>),
     UniqueRequirement(UrResult),
     StartGuess((usize, usize), u8),
     GuessStep((usize, usize), u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
@@ -45,6 +46,7 @@ impl SolveResults {
             YWing(_, _) => 5,
             Fish(2) | Fish(3) => 5,
             Fish(_) => 6,
+            Medusa(..) => 6,
             UniqueRequirement(..) => 6,
             StartGuess(_, _) => 1,
             GuessStep(_, _, steps, _) if steps.len() < 8 => 6,
@@ -98,6 +100,7 @@ impl Display for SolveResults {
             Fish(2) => write!(f, "Calculate a X-wing"),
             Fish(3) => write!(f, "Calculate a Swordfish"),
             Fish(n) => write!(f, "Calculate a {}-fish", n),
+            Medusa(..) => write!(f, "Calculate a 3D Medusa"),
             UniqueRequirement(UrResult::SingleUnique((x, y), n)) => {
                 write!(
                     f,
@@ -311,6 +314,20 @@ pub fn run_advanced(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationR
     }))
 }
 
+pub fn run_medusa(
+    grid: &mut Grid,
+    enable_guesses: bool,
+) -> Result<Option<SolveResults>, ValidationResult> {
+    if !enable_guesses {
+        return Ok(None);
+    }
+    Ok(if let Some((left, right)) = strats::medusa(grid)? {
+        Some(Medusa(left, right))
+    } else {
+        None
+    })
+}
+
 pub fn run_unique(
     grid: &mut Grid,
     enable_guesses: bool,
@@ -325,12 +342,11 @@ pub fn run_guess(
     if !enable_guesses {
         return Ok(None);
     }
-    Ok(match strats::guess(grid)? {
-        Some(crate::strats::GuessSolveResult(((x, y), n, steps, error_grid))) => {
-            Some(GuessStep((x, y), n, Rc::new(steps), error_grid))
-        }
-        None => None,
-    })
+    Ok(strats::guess(grid)?.map(
+        |crate::strats::GuessSolveResult(((x, y), n, steps, error_grid))| {
+            GuessStep((x, y), n, Rc::new(steps), error_grid)
+        },
+    ))
 }
 
 pub fn solve_round(
@@ -345,6 +361,8 @@ pub fn solve_round(
         OutOfBasicStrats => {
             validate(grid)?;
             let res = if let Some(res) = run_advanced(grid)? {
+                Ok(res)
+            } else if let Some(res) = run_medusa(grid, enable_guesses)? {
                 Ok(res)
             } else if let Some(res) = run_unique(grid, enable_guesses)? {
                 Ok(res)

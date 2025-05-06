@@ -112,3 +112,20 @@ export function solve(input: Grid, useGuessing: boolean): SolveResult {
 export function puzzleDifficulty(history: WasmSolveResult[]): WasmDifficulty {
   return wasmPuzzleDifficulty(history);
 }
+
+export function getColors(row: WasmResult<WasmSolveResult, string>): number[][][] | null {
+  if ("Err" in row) return null;
+  if (typeof row.Ok === "object" && "Medusa" in row.Ok) {
+    const [left, right] = row.Ok.Medusa;
+    const grid = [...Array(9)].map(() => [...Array(9)].map(() => [...Array(10)].map(() => 0)));
+
+    left.forEach(([[x, y], n]) => {
+      grid[y][x][n] = 1;
+    });
+    right.forEach(([[x, y], n]) => {
+      grid[y][x][n] = 2;
+    });
+    return grid;
+  }
+  return null;
+}

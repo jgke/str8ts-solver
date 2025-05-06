@@ -3,12 +3,14 @@ import { Cell } from "./Cell.tsx";
 import { useCallback, useMemo, useState } from "react";
 import { useEvent } from "../../utils/useEvent.ts";
 import { newDiff, unDiff } from "./diffgrid.ts";
+import { Point } from "../../solver/wasmTypes.ts";
 
 type ReqForbKey = "col_requirements" | "col_forbidden" | "row_requirements" | "row_forbidden";
 
 export interface GridProps {
   grid: Grid;
   diffgrid: [Grid, Grid] | null;
+  colors: number[][][] | null;
 
   setCell(x: number, y: number, cell: CellT): void;
 
@@ -21,10 +23,10 @@ function hasExtras(grid: Grid): boolean {
   );
 }
 
-type FocusedTy = null | [number, number] | [ReqForbKey, number];
+type FocusedTy = null | Point | [ReqForbKey, number];
 
 export function Grid(props: GridProps) {
-  const { grid: latestGrid, diffgrid, setCell, setReqForbs } = props;
+  const { grid: latestGrid, diffgrid, colors, setCell, setReqForbs } = props;
   const [focused, _setFocused] = useState<FocusedTy>(null);
 
   const grid = useMemo(
@@ -92,6 +94,7 @@ export function Grid(props: GridProps) {
               cell={{ ty: "Requirements", set: reqs }}
               onBlur={updateReqForbs("col_requirements", i)}
               onFocus={() => setFocused(["col_requirements", i])}
+              colors={null}
             />
           ))}
         </div>
@@ -108,6 +111,7 @@ export function Grid(props: GridProps) {
               cell={{ ty: "Blockers", set: reqs }}
               onBlur={updateReqForbs("col_forbidden", i)}
               onFocus={() => setFocused(["col_forbidden", i])}
+              colors={null}
             />
           ))}
         </div>
@@ -120,6 +124,7 @@ export function Grid(props: GridProps) {
               cell={{ ty: "Requirements", set: grid.row_requirements[y] }}
               onBlur={updateReqForbs("row_requirements", y)}
               onFocus={() => setFocused(["row_requirements", y])}
+              colors={null}
             />
           )}
           {showExtras && (
@@ -128,6 +133,7 @@ export function Grid(props: GridProps) {
               cell={{ ty: "Blockers", set: grid.row_forbidden[y] }}
               onBlur={updateReqForbs("row_forbidden", y)}
               onFocus={() => setFocused(["row_forbidden", y])}
+              colors={null}
             />
           )}
           {showExtras && <div className="mr-2" />}
@@ -139,6 +145,7 @@ export function Grid(props: GridProps) {
                 cell={cell}
                 onFocus={() => setFocused([x, y])}
                 onBlur={updateCell(x, y, unDiff(cell))}
+                colors={colors?.[y]?.[x] ?? null}
               />
             ))}
           </div>

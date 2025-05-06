@@ -47,8 +47,10 @@ export function App() {
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [focused, _setFocused] = useState<[solver.Grid, solver.Grid] | null>(null);
-  const setFocused = useEvent((before: solver.Grid | null, after: solver.Grid | null) => {
+  const [focusedColors, _setFocusedColors] = useState<number[][][] | null>(null);
+  const setFocused = useEvent((before: solver.Grid | null, after: solver.Grid | null, colors: number[][][] | null) => {
     _setFocused(before && after ? [before, after] : null);
+    _setFocusedColors(colors);
   });
 
   const openImporter = useEvent(() => {
@@ -151,6 +153,7 @@ export function App() {
                 return { ...grid, [ty]: newField };
               })
             }
+            colors={focusedColors}
           />
           {isSolved && solutionLog.length > 0 && <Rating solutionLog={solutionLog} />}
         </div>

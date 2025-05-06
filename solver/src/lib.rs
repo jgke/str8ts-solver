@@ -1,3 +1,5 @@
+#![deny(clippy::iter_over_hash_type)]
+
 pub mod solver;
 #[macro_use]
 pub mod utils;
