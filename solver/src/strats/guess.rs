@@ -1,13 +1,13 @@
 use crate::bitset::BitSet;
 use crate::grid::Cell::*;
-use crate::grid::Grid;
+use crate::grid::{Grid, Point};
 use crate::solver::SolveResults::*;
 use crate::solver::{solve_round, SolveResults, ValidationResult};
 use crate::validator::validate;
 use itertools::Itertools;
 use std::collections::VecDeque;
 
-type ForcedNumber = ((usize, usize), u8);
+type ForcedNumber = (Point, u8);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GuessResult(pub ForcedNumber);
@@ -59,7 +59,7 @@ where
     run_guess(candidates, max_depth)
 }
 
-type GuessStepRes = ((usize, usize), u8, Vec<(Grid, SolveResults)>, Grid);
+type GuessStepRes = (Point, u8, Vec<(Grid, SolveResults)>, Grid);
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GuessSolveResult(pub GuessStepRes);
 

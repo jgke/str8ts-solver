@@ -1,9 +1,9 @@
-use crate::grid::{CellPair, Grid};
+use crate::grid::{CellPair, Grid, Point};
 use crate::solver::ValidationResult;
 use rustc_hash::FxHashSet;
 
-fn get_cells_with_indeterminate_num(line: &[CellPair], num: u8) -> Vec<(usize, usize)> {
-    let cells: Vec<(usize, usize)> = line
+fn get_cells_with_indeterminate_num(line: &[CellPair], num: u8) -> Vec<Point> {
+    let cells: Vec<Point> = line
         .iter()
         .filter_map(|(pos, cell)| {
             if cell.to_unresolved().contains(num) {
@@ -19,7 +19,7 @@ fn get_cells_with_indeterminate_num(line: &[CellPair], num: u8) -> Vec<(usize, u
 pub fn fish(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
     let mut changes = false;
 
-    fn same_lane(vertical: bool, a: (usize, usize), b: (usize, usize)) -> bool {
+    fn same_lane(vertical: bool, a: Point, b: Point) -> bool {
         if vertical {
             a.0 == b.0
         } else {
@@ -70,7 +70,7 @@ pub fn fish(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
 
                     if candidates.len() > fish_count {
                         // puzzle not solvable
-                        let positions: FxHashSet<(usize, usize)> = candidates
+                        let positions: FxHashSet<Point> = candidates
                             .iter()
                             .flat_map(|line| line.iter())
                             .copied()
@@ -82,7 +82,7 @@ pub fn fish(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
                         changes = true;
                     }
                     if candidates.len() == fish_count {
-                        let positions: FxHashSet<(usize, usize)> = candidates
+                        let positions: FxHashSet<Point> = candidates
                             .iter()
                             .flat_map(|line| line.iter())
                             .copied()

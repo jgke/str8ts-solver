@@ -1,5 +1,5 @@
 use crate::bitset::BitSet;
-use crate::grid::Grid;
+use crate::grid::{Grid, Point};
 use crate::solver::ValidationResult;
 use itertools::Itertools;
 use rustc_hash::FxHashSet;
@@ -9,7 +9,7 @@ pub fn sets(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
 
     for n in 2..grid.x {
         for (vertical, line) in grid.iter_by_rows_and_cols() {
-            let sets: Vec<((usize, usize), BitSet)> = line
+            let sets: Vec<(Point, BitSet)> = line
                 .into_iter()
                 .map(|(p, c)| (p, c.to_unresolved()))
                 .filter(|(_, c)| !c.is_empty())

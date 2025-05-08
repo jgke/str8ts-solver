@@ -30,13 +30,13 @@ impl Compartment {
             Blocker(_) | Black => false,
         })
     }
-    pub fn contains_pos(&self, pos: (usize, usize)) -> bool {
+    pub fn contains_pos(&self, pos: Point) -> bool {
         self.cells.iter().any(|(p, _)| *p == pos)
     }
-    pub fn sample_pos(&self) -> (usize, usize) {
+    pub fn sample_pos(&self) -> Point {
         self.cells[0].0
     }
-    pub fn to_unresolved(&self) -> Vec<((usize, usize), BitSet)> {
+    pub fn to_unresolved(&self) -> Vec<(Point, BitSet)> {
         self.cells
             .iter()
             .filter_map(|(p, cell)| match cell {
@@ -127,11 +127,11 @@ impl Grid {
         })
     }
 
-    pub fn get_cell(&self, pos: (usize, usize)) -> &Cell {
+    pub fn get_cell(&self, pos: Point) -> &Cell {
         &self.cells[pos.1][pos.0]
     }
 
-    pub fn set_cell(&mut self, pos: (usize, usize), cell: Cell) {
+    pub fn set_cell(&mut self, pos: Point, cell: Cell) {
         let (x, y) = pos;
         self.cells[y][x] = cell;
     }
@@ -151,7 +151,7 @@ impl Grid {
             .collect()
     }
 
-    pub fn iter_by_indeterminates(&self) -> Vec<((usize, usize), BitSet)> {
+    pub fn iter_by_indeterminates(&self) -> Vec<(Point, BitSet)> {
         self.iter_by_cells()
             .into_iter()
             .filter_map(|(pos, cell)| {
@@ -211,7 +211,7 @@ impl Grid {
             .collect()
     }
 
-    pub fn iter_by_cell_pos_matching<F>(&self, mut predicate: F) -> Vec<(usize, usize)>
+    pub fn iter_by_cell_pos_matching<F>(&self, mut predicate: F) -> Vec<Point>
     where
         F: FnMut(&Cell) -> bool,
     {
@@ -243,7 +243,7 @@ impl Grid {
         containers
     }
 
-    pub fn horizontal_compartment_containing(&self, pos: (usize, usize)) -> Compartment {
+    pub fn horizontal_compartment_containing(&self, pos: Point) -> Compartment {
         let mut minx = pos.0;
         let mut maxx = pos.0;
         while minx > 0 && self.get_cell((minx - 1, pos.1)).is_compartment_cell() {
@@ -262,7 +262,7 @@ impl Grid {
         }
     }
 
-    pub fn vertical_compartment_containing(&self, pos: (usize, usize)) -> Compartment {
+    pub fn vertical_compartment_containing(&self, pos: Point) -> Compartment {
         let mut miny = pos.1;
         let mut maxy = pos.1;
         while miny > 0 && self.get_cell((pos.0, miny - 1)).is_compartment_cell() {
@@ -281,7 +281,7 @@ impl Grid {
         }
     }
 
-    pub fn compartments_containing(&self, pos: (usize, usize)) -> (Compartment, Compartment) {
+    pub fn compartments_containing(&self, pos: Point) -> (Compartment, Compartment) {
         (
             self.horizontal_compartment_containing(pos),
             self.vertical_compartment_containing(pos),
@@ -310,11 +310,7 @@ impl Grid {
             .collect()
     }
 
-    pub fn set_impossible(
-        &mut self,
-        pos: (usize, usize),
-        num: u8,
-    ) -> Result<bool, ValidationResult> {
+    pub fn set_impossible(&mut self, pos: Point, num: u8) -> Result<bool, ValidationResult> {
         let (x, y) = pos;
         if let Cell::Indeterminate(ref mut set) = self.cells[y][x] {
             let ret = set.remove(num);
@@ -326,11 +322,7 @@ impl Grid {
         Ok(false)
     }
 
-    pub fn remove_numbers(
-        &mut self,
-        pos: (usize, usize),
-        nums: BitSet,
-    ) -> Result<bool, ValidationResult> {
+    pub fn remove_numbers(&mut self, pos: Point, nums: BitSet) -> Result<bool, ValidationResult> {
         let mut retval = false;
         for num in nums {
             retval |= self.set_impossible(pos, num)?;
@@ -340,10 +332,10 @@ impl Grid {
 
     pub fn set_impossible_in(
         &mut self,
-        sample_pos: (usize, usize),
+        sample_pos: Point,
         vertical: bool,
         impossible: u8,
-        except_in: &FxHashSet<(usize, usize)>,
+        except_in: &FxHashSet<Point>,
     ) -> Result<bool, ValidationResult> {
         let mut changes = false;
         if !vertical {
@@ -373,7 +365,7 @@ impl Grid {
             .any(|s| !s.is_empty())
     }
 
-    pub fn requirements(&mut self, vertical: bool, pos: (usize, usize)) -> &mut BitSet {
+    pub fn requirements(&mut self, vertical: bool, pos: Point) -> &mut BitSet {
         if vertical {
             &mut self.col_requirements[pos.0]
         } else {
@@ -381,7 +373,7 @@ impl Grid {
         }
     }
 
-    pub fn forbidden(&mut self, vertical: bool, pos: (usize, usize)) -> &mut BitSet {
+    pub fn forbidden(&mut self, vertical: bool, pos: Point) -> &mut BitSet {
         if vertical {
             &mut self.col_forbidden[pos.0]
         } else {

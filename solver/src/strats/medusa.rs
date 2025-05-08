@@ -1,17 +1,17 @@
 use crate::bitset::BitSet;
-use crate::grid::Grid;
+use crate::grid::{Grid, Point};
 use crate::solver::ValidationResult;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::hash::Hash;
 
-fn indeterminates_matching(grid: &Grid, (x, y): (usize, usize)) -> Vec<((usize, usize), BitSet)> {
+fn indeterminates_matching(grid: &Grid, (x, y): Point) -> Vec<(Point, BitSet)> {
     grid.iter_by_indeterminates()
         .into_iter()
         .filter(|&((xx, yy), _)| (x == xx) || (y == yy))
         .collect()
 }
 
-type Pairs = HashMap<((usize, usize), u8), BTreeSet<(usize, usize)>>;
+type Pairs = HashMap<(Point, u8), BTreeSet<Point>>;
 fn gather_pairs(grid: &mut Grid) -> Pairs {
     let mut res = HashMap::new();
 
@@ -63,7 +63,7 @@ where
 }
 
 #[allow(clippy::type_complexity)]
-fn split(colors: &Colors) -> (Vec<((usize, usize), u8)>, Vec<((usize, usize), u8)>) {
+fn split(colors: &Colors) -> (Vec<(Point, u8)>, Vec<(Point, u8)>) {
     let mut left = Vec::new();
     let mut right = Vec::new();
     for (&pos, nums) in colors {
@@ -80,10 +80,10 @@ fn split(colors: &Colors) -> (Vec<((usize, usize), u8)>, Vec<((usize, usize), u8
     (left, right)
 }
 
-type Colors = BTreeMap<(usize, usize), BTreeMap<u8, bool>>;
-fn get_colors(grid: &mut Grid, pairs: &Pairs, orig_pos: (usize, usize), orig_num: u8) -> Colors {
+type Colors = BTreeMap<Point, BTreeMap<u8, bool>>;
+fn get_colors(grid: &mut Grid, pairs: &Pairs, orig_pos: Point, orig_num: u8) -> Colors {
     let mut colors: Colors = BTreeMap::new();
-    let mut queue: BTreeSet<(usize, usize)> = BTreeSet::new();
+    let mut queue: BTreeSet<Point> = BTreeSet::new();
     colors.insert(orig_pos, [(orig_num, false)].into_iter().collect());
     for &pos in pairs.get(&(orig_pos, orig_num)).into_iter().flatten() {
         colors.entry(pos).or_default().insert(orig_num, true);
@@ -110,10 +110,10 @@ fn get_colors(grid: &mut Grid, pairs: &Pairs, orig_pos: (usize, usize), orig_num
     colors
 }
 
-type SeenColor = HashMap<u8, Vec<(usize, usize)>>;
+type SeenColor = HashMap<u8, Vec<Point>>;
 fn get_row_and_col_colors(
     colors: &Colors,
-    center: (usize, usize),
+    center: Point,
     include_center: bool,
 ) -> (SeenColor, SeenColor) {
     let mut seen_false: SeenColor = HashMap::new();
@@ -139,7 +139,7 @@ fn get_row_and_col_colors(
     (seen_false, seen_true)
 }
 
-fn split_seen(seen: &SeenColor, center: (usize, usize)) -> (SeenColor, SeenColor) {
+fn split_seen(seen: &SeenColor, center: Point) -> (SeenColor, SeenColor) {
     let seen_col = seen
         .iter()
         .map(|(&k, v)| {
@@ -184,7 +184,7 @@ fn block_color(grid: &mut Grid, colors: &Colors, val: bool) -> Result<bool, Vali
 #[allow(clippy::type_complexity)]
 pub fn medusa(
     grid: &mut Grid,
-) -> Result<Option<(Vec<((usize, usize), u8)>, Vec<((usize, usize), u8)>)>, ValidationResult> {
+) -> Result<Option<(Vec<(Point, u8)>, Vec<(Point, u8)>)>, ValidationResult> {
     let mut previously_colored = HashSet::new();
     let pairs = gather_pairs(grid);
     for (orig_pos, orig_set) in grid.iter_by_indeterminates() {
@@ -344,7 +344,7 @@ mod tests {
     use crate::utils::*;
     use rustc_hash::FxHashSet;
 
-    pub fn set<const N: usize>(vals: [(usize, usize); N]) -> FxHashSet<(usize, usize)> {
+    pub fn set<const N: usize>(vals: [Point; N]) -> FxHashSet<Point> {
         vals.into_iter().collect()
     }
 

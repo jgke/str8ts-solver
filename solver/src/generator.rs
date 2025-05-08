@@ -1,5 +1,5 @@
 use crate::difficulty::get_puzzle_difficulty;
-use crate::grid::{Cell, Grid};
+use crate::grid::{Cell, Grid, Point};
 use crate::solver::run_fast_basic;
 use crate::solver::SolveResults::OutOfBasicStrats;
 use crate::validator::validate;
@@ -125,7 +125,7 @@ pub fn remove_numbers<Rand: Rng + Send + Clone>(
     symmetric: bool,
     rng: &mut Rand,
 ) -> Option<Grid> {
-    let mut queue: BinaryHeap<Task<(usize, usize), Rand>> = BinaryHeap::new();
+    let mut queue: BinaryHeap<Task<Point, Rand>> = BinaryHeap::new();
     queue.push(Task((0, 0), rng.clone(), grid.clone()));
     let size = grid.y;
 

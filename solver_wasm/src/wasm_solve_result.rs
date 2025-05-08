@@ -1,6 +1,7 @@
 use crate::wasm_grid::WasmGrid;
 use crate::wasm_validation_result::WasmValidationResult;
 use serde::{Deserialize, Serialize};
+use solver::grid::Point;
 use solver::solver::SolveResults;
 use solver::strats::UrResult;
 use std::collections::HashSet;
@@ -8,12 +9,12 @@ use std::rc::Rc;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum WasmUrResult {
-    SingleUnique((usize, usize), u8),
-    IntraCompartmentUnique((usize, usize), u8),
-    ClosedSetCompartment(Vec<(usize, usize)>, u8),
-    SingleCellWouldBecomeFree((usize, usize), u8),
-    UrSetti(Vec<(usize, usize)>, bool, u8),
-    SolutionCausesClosedSets((usize, usize), u8),
+    SingleUnique(Point, u8),
+    IntraCompartmentUnique(Point, u8),
+    ClosedSetCompartment(Vec<Point>, u8),
+    SingleCellWouldBecomeFree(Point, u8),
+    UrSetti(Vec<Point>, bool, u8),
+    SolutionCausesClosedSets(Point, u8),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -27,13 +28,13 @@ pub enum WasmSolveResult {
     RequiredAndForbidden,
     RowColBrute,
     Setti(HashSet<u8>),
-    YWing((usize, usize), u8),
+    YWing(Point, u8),
     Fish(usize),
-    Medusa(Vec<((usize, usize), u8)>, Vec<((usize, usize), u8)>),
+    Medusa(Vec<(Point, u8)>, Vec<(Point, u8)>),
     UniqueRequirement(WasmUrResult),
-    StartGuess((usize, usize), u8),
+    StartGuess(Point, u8),
     GuessStep(
-        (usize, usize),
+        Point,
         u8,
         Vec<(WasmGrid, WasmSolveResult, String)>,
         WasmGrid,

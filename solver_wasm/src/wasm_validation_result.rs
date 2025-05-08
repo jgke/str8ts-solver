@@ -1,25 +1,26 @@
 use serde::{Deserialize, Serialize};
+use solver::grid::Point;
 use solver::solver::ValidationResult;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum WasmValidationResult {
     EmptyCell {
-        pos: (usize, usize),
+        pos: Point,
     },
     Conflict {
-        pos1: (usize, usize),
-        pos2: (usize, usize),
+        pos1: Point,
+        pos2: Point,
         val: u8,
     },
     Sequence {
         vertical: bool,
-        top_left: (usize, usize),
+        top_left: Point,
         range: (u8, u8),
         missing: u8,
     },
     SequenceTooLarge {
         vertical: bool,
-        top_left: (usize, usize),
+        top_left: Point,
         contains: (u8, u8),
         max_ranges: ((u8, u8), (u8, u8)),
     },
@@ -39,7 +40,7 @@ pub enum WasmValidationResult {
         number: u8,
     },
     Ambiguous {
-        cells: Vec<(usize, usize)>,
+        cells: Vec<Point>,
     },
     OutOfStrats,
 }

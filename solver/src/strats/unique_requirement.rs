@@ -6,12 +6,12 @@ use itertools::Itertools;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum UrResult {
-    SingleUnique((usize, usize), u8),
-    IntraCompartmentUnique((usize, usize), u8),
-    ClosedSetCompartment(Vec<(usize, usize)>, u8),
-    SingleCellWouldBecomeFree((usize, usize), u8),
-    UrSetti(Vec<(usize, usize)>, bool, u8),
-    SolutionCausesClosedSets((usize, usize), u8),
+    SingleUnique(Point, u8),
+    IntraCompartmentUnique(Point, u8),
+    ClosedSetCompartment(Vec<Point>, u8),
+    SingleCellWouldBecomeFree(Point, u8),
+    UrSetti(Vec<Point>, bool, u8),
+    SolutionCausesClosedSets(Point, u8),
 }
 
 /* If a cell is implied only by other compartments, and those compartments don't refer to a
@@ -242,7 +242,7 @@ fn compartment_pairs(grid: &Grid) -> Vec<(CPair, CPair)> {
     }
     res
 }
-fn get_set(grid: &Grid, a: (usize, usize), b: (usize, usize)) -> BitSet {
+fn get_set(grid: &Grid, a: Point, b: Point) -> BitSet {
     let a = grid.get_cell(a).to_unresolved();
     let b = grid.get_cell(b).to_unresolved();
     a.union(b)
@@ -260,12 +260,12 @@ fn get_set(grid: &Grid, a: (usize, usize), b: (usize, usize)) -> BitSet {
 fn two_compartments_would_have_closed_set(
     grid: &mut Grid,
 ) -> Result<Option<UrResult>, ValidationResult> {
-    fn pair_set_candidate(grid: &Grid, a: (usize, usize), b: (usize, usize)) -> bool {
+    fn pair_set_candidate(grid: &Grid, a: Point, b: Point) -> bool {
         let a = grid.get_cell(a).to_unresolved();
         let b = grid.get_cell(b).to_unresolved();
         a.len() == 2 && a == b
     }
-    fn get_coord(vertical: bool, pos: (usize, usize)) -> usize {
+    fn get_coord(vertical: bool, pos: Point) -> usize {
         if vertical {
             pos.1
         } else {

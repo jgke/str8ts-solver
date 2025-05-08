@@ -3,7 +3,7 @@ use crate::bitset::BitSet;
 #[cfg(test)]
 use crate::grid::Cell::*;
 #[cfg(test)]
-use crate::grid::{Cell, Grid};
+use crate::grid::{Cell, Grid, Point};
 
 #[cfg(test)]
 pub fn g(grid: &str) -> Grid {
@@ -20,12 +20,7 @@ pub fn det<const N: usize>(vals: [u8; N]) -> Cell {
 }
 
 #[cfg(test)]
-pub fn set_range<const N: usize>(
-    grid: &mut Grid,
-    tl: (usize, usize),
-    br: (usize, usize),
-    vals: [u8; N],
-) {
+pub fn set_range<const N: usize>(grid: &mut Grid, tl: Point, br: Point, vals: [u8; N]) {
     for y in tl.1..=br.1 {
         for x in tl.0..=br.0 {
             grid.cells[y][x] = det(vals);

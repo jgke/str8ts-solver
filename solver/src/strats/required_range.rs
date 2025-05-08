@@ -1,4 +1,4 @@
-use crate::grid::Grid;
+use crate::grid::{Grid, Point};
 use crate::solver::ValidationResult;
 use crate::strats::required_in_compartment_by_range;
 use rustc_hash::FxHashSet;
@@ -7,7 +7,7 @@ pub fn required_range(grid: &mut Grid) -> Result<bool, ValidationResult> {
     let mut changes = false;
 
     for compartment in grid.iter_by_compartments() {
-        let compartment_positions: FxHashSet<(usize, usize)> =
+        let compartment_positions: FxHashSet<Point> =
             compartment.cells.iter().map(|(p, _)| *p).collect();
         let sample_pos = compartment.sample_pos();
 

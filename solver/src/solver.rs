@@ -1,5 +1,5 @@
 use crate::bitset::BitSet;
-use crate::grid::Grid;
+use crate::grid::{Grid, Point};
 use crate::solver::SolveResults::*;
 use crate::solver::ValidationResult::*;
 use crate::strats;
@@ -20,12 +20,12 @@ pub enum SolveResults {
     RequiredAndForbidden,
     RowColBrute,
     Setti(BitSet),
-    YWing((usize, usize), u8),
+    YWing(Point, u8),
     Fish(usize),
-    Medusa(Vec<((usize, usize), u8)>, Vec<((usize, usize), u8)>),
+    Medusa(Vec<(Point, u8)>, Vec<(Point, u8)>),
     UniqueRequirement(UrResult),
-    StartGuess((usize, usize), u8),
-    GuessStep((usize, usize), u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
+    StartGuess(Point, u8),
+    GuessStep(Point, u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
     EndGuess(ValidationResult),
     PuzzleSolved,
     OutOfBasicStrats,
@@ -171,22 +171,22 @@ impl Display for SolveResults {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ValidationResult {
     EmptyCell {
-        pos: (usize, usize),
+        pos: Point,
     },
     Conflict {
-        pos1: (usize, usize),
-        pos2: (usize, usize),
+        pos1: Point,
+        pos2: Point,
         val: u8,
     },
     Sequence {
         vertical: bool,
-        top_left: (usize, usize),
+        top_left: Point,
         range: (u8, u8),
         missing: u8,
     },
     SequenceTooLarge {
         vertical: bool,
-        top_left: (usize, usize),
+        top_left: Point,
         contains: (u8, u8),
         max_ranges: ((u8, u8), (u8, u8)),
     },
@@ -206,7 +206,7 @@ pub enum ValidationResult {
         number: u8,
     },
     Ambiguous {
-        cells: Vec<(usize, usize)>,
+        cells: Vec<Point>,
     },
     OutOfStrats,
 }
