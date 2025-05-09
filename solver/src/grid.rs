@@ -164,6 +164,26 @@ impl Grid {
             .collect()
     }
 
+    pub fn iter_by_indeterminates_at(
+        &self,
+        center: Point,
+        include_center: bool,
+    ) -> Vec<(Point, BitSet)> {
+        self.iter_by_cells()
+            .into_iter()
+            .filter(|&(pos, _)| {
+                (center.0 == pos.0 || center.1 == pos.1) && (include_center || pos != center)
+            })
+            .filter_map(|(pos, cell)| {
+                if let Indeterminate(set) = cell {
+                    Some((pos, set))
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
     pub fn iter_by_rows(&self) -> Vec<Vec<CellPair>> {
         self.cells
             .iter()
@@ -365,7 +385,15 @@ impl Grid {
             .any(|s| !s.is_empty())
     }
 
-    pub fn requirements(&mut self, vertical: bool, pos: Point) -> &mut BitSet {
+    pub fn requirements(&self, vertical: bool, pos: Point) -> BitSet {
+        if vertical {
+            self.col_requirements[pos.0]
+        } else {
+            self.row_requirements[pos.1]
+        }
+    }
+
+    pub fn requirements_mut(&mut self, vertical: bool, pos: Point) -> &mut BitSet {
         if vertical {
             &mut self.col_requirements[pos.0]
         } else {
@@ -373,7 +401,15 @@ impl Grid {
         }
     }
 
-    pub fn forbidden(&mut self, vertical: bool, pos: Point) -> &mut BitSet {
+    pub fn forbidden(&self, vertical: bool, pos: Point) -> BitSet {
+        if vertical {
+            self.col_forbidden[pos.0]
+        } else {
+            self.row_forbidden[pos.1]
+        }
+    }
+
+    pub fn forbidden_mut(&mut self, vertical: bool, pos: Point) -> &mut BitSet {
         if vertical {
             &mut self.col_forbidden[pos.0]
         } else {

@@ -43,7 +43,7 @@ pub fn sets(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
 
                     if grid.has_requirements() {
                         let sample_pos = applies_to.iter().copied().next().unwrap();
-                        changes |= grid.requirements(vertical, sample_pos).append(try_set);
+                        changes |= grid.requirements_mut(vertical, sample_pos).append(try_set);
                     }
                     changes |= local_changes;
                     if local_changes {

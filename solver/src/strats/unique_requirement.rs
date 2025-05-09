@@ -430,8 +430,10 @@ fn two_compartment_setti(grid: &mut Grid) -> Result<Option<UrResult>, Validation
         };
 
         let mut changes = false;
-        changes |= grid.requirements(vertical, sample_pos).insert(max);
-        changes |= grid.requirements(vertical, other_sample_pos).insert(max);
+        changes |= grid.requirements_mut(vertical, sample_pos).insert(max);
+        changes |= grid
+            .requirements_mut(vertical, other_sample_pos)
+            .insert(max);
 
         if changes {
             return Ok(Some(UrResult::UrSetti(

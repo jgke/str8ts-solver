@@ -4,25 +4,15 @@ use crate::solver::ValidationResult;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::hash::Hash;
 
-fn indeterminates_matching(grid: &Grid, (x, y): Point) -> Vec<(Point, BitSet)> {
-    grid.iter_by_indeterminates()
-        .into_iter()
-        .filter(|&((xx, yy), _)| (x == xx) || (y == yy))
-        .collect()
-}
-
 type Pairs = HashMap<(Point, u8), BTreeSet<Point>>;
-fn gather_pairs(grid: &mut Grid) -> Pairs {
+fn gather_pairs(grid: &Grid) -> Pairs {
     let mut res = HashMap::new();
 
     for (pos, set) in grid.iter_by_indeterminates() {
         for num in set {
             let mut other_row = vec![];
             let mut other_col = vec![];
-            for (other_pos, other_set) in indeterminates_matching(grid, pos) {
-                if other_pos == pos {
-                    continue;
-                }
+            for (other_pos, other_set) in grid.iter_by_indeterminates_at(pos, false) {
                 if !grid.requirements(other_pos.0 == pos.0, pos).contains(num) {
                     continue;
                 }

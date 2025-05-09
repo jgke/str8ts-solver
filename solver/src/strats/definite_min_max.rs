@@ -51,7 +51,7 @@ pub fn definite_min_max(grid: &mut Grid) -> Result<bool, ValidationResult> {
     if grid.has_requirements() {
         for compartment in grid.iter_by_compartments() {
             let pos = compartment.sample_pos();
-            let reqs = *grid.requirements(compartment.vertical, pos);
+            let reqs = grid.requirements(compartment.vertical, pos);
             for n in reqs {
                 let compartment = update_data(grid, compartment.clone());
                 if compartment.contains(n) && num_count_in_containers(grid, &compartment, n) == 1 {

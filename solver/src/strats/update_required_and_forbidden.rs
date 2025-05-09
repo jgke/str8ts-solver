@@ -56,10 +56,10 @@ pub fn update_required_and_forbidden(grid: &mut Grid) -> Result<bool, Validation
             let sample_pos = row[0].0;
 
             if required_numbers(grid, &row).contains(n) {
-                changes |= grid.requirements(vertical, sample_pos).insert(n);
+                changes |= grid.requirements_mut(vertical, sample_pos).insert(n);
             }
             if forbidden_numbers(grid, &row).contains(n) {
-                changes |= grid.forbidden(vertical, sample_pos).insert(n);
+                changes |= grid.forbidden_mut(vertical, sample_pos).insert(n);
             }
         }
     }

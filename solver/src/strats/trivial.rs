@@ -25,15 +25,16 @@ pub fn trivial(grid: &mut Grid) -> bool {
                     }
                     Requirement(n) | Solution(n) => {
                         missing_numbers.remove(n);
-                        changes |= grid.requirements(vertical, sample_pos).insert(n);
+                        changes |= grid.requirements_mut(vertical, sample_pos).insert(n);
                     }
                     Blocker(n) => {
-                        changes |= grid.forbidden(vertical, sample_pos).insert(n);
+                        changes |= grid.forbidden_mut(vertical, sample_pos).insert(n);
                     }
                     Black => {}
                 }
             }
-            grid.forbidden(vertical, sample_pos).append(missing_numbers);
+            grid.forbidden_mut(vertical, sample_pos)
+                .append(missing_numbers);
         }
     }
 
