@@ -91,6 +91,14 @@ pub fn row_col_brute(grid: &mut Grid) -> Result<bool, ValidationResult> {
         }
         let solutions = compartment_solutions(&compartments, grid.row_requirements[index]);
         if solutions.is_empty() {
+            /* Grid is unsolvable */
+            for compartment in &compartments {
+                for (pos, cell) in &compartment.cells {
+                    if let Cell::Indeterminate(set) = cell {
+                        grid.remove_numbers(*pos, *set)?;
+                    }
+                }
+            }
             unreachable!();
         }
         for i in 1..=9 {
@@ -137,6 +145,14 @@ pub fn row_col_brute(grid: &mut Grid) -> Result<bool, ValidationResult> {
         }
         let solutions = compartment_solutions(&compartments, grid.col_requirements[index]);
         if solutions.is_empty() {
+            /* Grid is unsolvable */
+            for compartment in &compartments {
+                for (pos, cell) in &compartment.cells {
+                    if let Cell::Indeterminate(set) = cell {
+                        grid.remove_numbers(*pos, *set)?;
+                    }
+                }
+            }
             unreachable!();
         }
         for i in 1..=9 {

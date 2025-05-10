@@ -286,6 +286,8 @@ pub fn run_basic(grid: &mut Grid) -> Result<SolveResults, ValidationResult> {
             DefiniteMinMax
         } else if strats::required_range(grid)? {
             RequiredRange
+        } else if grid.has_requirements() && strats::update_required_and_forbidden(grid)? {
+            RequiredAndForbidden
         } else if let Some(n) = strats::sets(grid)? {
             Sets(n)
         } else {

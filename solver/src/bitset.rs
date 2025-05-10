@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Copy, Clone, PartialEq, Eq, Default)]
+#[derive(Copy, Clone, PartialEq, Eq, Default, Hash, PartialOrd, Ord)]
 pub struct BitSet(u32);
 
 impl fmt::Debug for BitSet {
