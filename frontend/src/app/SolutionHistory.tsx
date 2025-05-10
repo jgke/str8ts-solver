@@ -207,6 +207,7 @@ function groupNodes(nodes: HistoryNode[]): HistoryGroup[] {
       cur = { ...node, children: [node] };
     }
   }
+  res.push(cur);
   return res;
 }
 

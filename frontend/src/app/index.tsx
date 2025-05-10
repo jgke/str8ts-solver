@@ -34,9 +34,6 @@ export function App() {
   const [solutionLog, setSolutionLog] = useState<HistoryNode[]>([]);
 
   const [error, setError] = useState("");
-  useEffect(() => {
-    setError("");
-  }, [grid]);
 
   const [hint, setHint] = useState("");
   useEffect(() => {
@@ -69,6 +66,7 @@ export function App() {
       setGrid(grid.Ok);
       setStartingGrid(grid.Ok);
       setSolutionLog([]);
+      setError("");
     } else {
       setError(grid.Err);
     }
@@ -80,6 +78,7 @@ export function App() {
     setStartingGrid(newGrid);
     setSolutionLog([]);
     setGridStr(gridStr);
+    setError("");
   });
 
   const openGenerator = useEvent(() => {
@@ -91,6 +90,11 @@ export function App() {
     const { grid: g, res, resDisplay, difficulty } = solver.solve_one(grid);
     setGrid(g);
     setSolutionLog((log) => [...log, { grid: g, difficulty, message: resDisplay, data: res }]);
+    if (res && "Err" in resDisplay) {
+      setError(resDisplay.Err);
+    } else {
+      setError("");
+    }
   });
 
   const solve = useEvent((useGuessing: boolean) => {
@@ -104,6 +108,12 @@ export function App() {
       data: row.res,
     }));
     setSolutionLog((log) => [...log, ...newLog]);
+    const last = newLog.length && newLog[newLog.length - 1];
+    if (last && "Err" in last.message) {
+      setError(last.message.Err);
+    } else {
+      setError("");
+    }
   });
 
   const onHint = useEvent(() => {
@@ -135,7 +145,7 @@ export function App() {
           <Grid
             diffgrid={focused}
             grid={grid}
-            setCell={(x, y, cell) =>
+            setCell={(x, y, cell) => {
               setGrid((grid) => {
                 const newRow = [...grid.cells[y]];
                 newRow[x] = cell;
@@ -144,15 +154,17 @@ export function App() {
                 cells[y] = newRow;
 
                 return { ...grid, cells };
-              })
-            }
-            setReqForbs={(ty, idx, val) =>
+              });
+              setError("");
+            }}
+            setReqForbs={(ty, idx, val) => {
               setGrid((grid) => {
                 const newField = [...grid[ty]];
                 newField[idx] = val;
                 return { ...grid, [ty]: newField };
-              })
-            }
+              });
+              setError("");
+            }}
             colors={focusedColors}
           />
           {isSolved && solutionLog.length > 0 && <Rating solutionLog={solutionLog} />}
