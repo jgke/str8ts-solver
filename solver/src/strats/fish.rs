@@ -1,5 +1,7 @@
 use crate::grid::{CellPair, Grid, Point};
-use crate::solver::ValidationResult;
+use crate::solver::SolveType::Fish;
+use crate::solver::{SolveMetadata, SolveResults, ValidationResult};
+use itertools::Itertools;
 use rustc_hash::FxHashSet;
 
 fn get_cells_with_indeterminate_num(line: &[CellPair], num: u8) -> Vec<Point> {
@@ -16,8 +18,9 @@ fn get_cells_with_indeterminate_num(line: &[CellPair], num: u8) -> Vec<Point> {
     cells
 }
 
-pub fn fish(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
+pub fn fish(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
     let mut changes = false;
+    let mut colors = vec![];
 
     fn same_lane(vertical: bool, a: Point, b: Point) -> bool {
         if vertical {
@@ -82,6 +85,7 @@ pub fn fish(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
                         changes = true;
                     }
                     if candidates.len() == fish_count {
+                        let mut local_changes = false;
                         let positions: FxHashSet<Point> = candidates
                             .iter()
                             .flat_map(|line| line.iter())
@@ -89,21 +93,38 @@ pub fn fish(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
                             .collect();
                         #[allow(clippy::iter_over_hash_type)]
                         for position in &positions {
-                            changes |= grid.set_impossible_in(*position, false, num, &positions)?;
-                            changes |= grid.set_impossible_in(*position, true, num, &positions)?;
+                            local_changes |=
+                                grid.set_impossible_in(*position, false, num, &positions)?;
+                            local_changes |=
+                                grid.set_impossible_in(*position, true, num, &positions)?;
                         }
 
                         #[allow(clippy::iter_over_hash_type)]
-                        for (x, y) in positions {
-                            grid.row_requirements[y].insert(num);
-                            grid.col_requirements[x].insert(num);
+                        for &(x, y) in &positions {
+                            local_changes |= grid.row_requirements[y].insert(num);
+                            local_changes |= grid.col_requirements[x].insert(num);
                         }
+
+                        if local_changes {
+                            colors.push(
+                                positions
+                                    .into_iter()
+                                    .sorted()
+                                    .map(|pos| (pos, num))
+                                    .collect(),
+                            );
+                        }
+
+                        changes |= local_changes;
                     }
                 }
             }
         }
         if changes {
-            return Ok(Some(fish_count));
+            return Ok(Some(SolveResults {
+                ty: Fish(fish_count),
+                meta: SolveMetadata { colors },
+            }));
         }
     }
 
@@ -140,7 +161,15 @@ mod tests {
         assert_eq!(grid.cells[2][2], det([1, 2, 3, 4, 5]));
         assert_eq!(grid.cells[2][3], det([1, 2, 3, 4, 5]));
 
-        assert_eq!(Ok(Some(2)), fish(&mut grid));
+        assert_eq!(
+            Ok(Some(SolveResults {
+                ty: Fish(2),
+                meta: SolveMetadata {
+                    colors: vec![vec![((2, 3), 3), ((2, 4), 3), ((3, 3), 3), ((3, 4), 3)]]
+                }
+            })),
+            fish(&mut grid)
+        );
 
         assert_eq!(grid.cells[0][2], det([1, 2, 4, 5]));
         assert_eq!(grid.cells[0][3], det([1, 2, 4, 5]));

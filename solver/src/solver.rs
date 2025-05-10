@@ -347,8 +347,8 @@ pub fn run_advanced(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationR
         RowColBrute.into()
     } else if let Some(res) = strats::y_wing(grid)? {
         res
-    } else if let Some(n) = strats::fish(grid)? {
-        Fish(n).into()
+    } else if let Some(res) = strats::fish(grid)? {
+        res
     } else {
         return Ok(None);
     }))
