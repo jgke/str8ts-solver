@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
 use solver::grid::Point;
-use solver::solver::ValidationResult;
+use solver::solver::{ValidationError, ValidationResult};
+use crate::wasm_solve_result::WasmSolveMetadata;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum WasmValidationResult {
+pub enum WasmValidationError {
     EmptyCell {
         pos: Point,
     },
@@ -45,36 +46,60 @@ pub enum WasmValidationResult {
     OutOfStrats,
 }
 
-impl From<ValidationResult> for WasmValidationResult {
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WasmValidationResult {
+    pub ty: WasmValidationError,
+    pub meta: WasmSolveMetadata,
+}
+
+impl From<ValidationError> for WasmValidationError {
     #[rustfmt::skip]
-    fn from(value: ValidationResult) -> Self {
+    fn from(value: ValidationError) -> Self {
         match value {
-            ValidationResult::EmptyCell { pos } => WasmValidationResult::EmptyCell { pos },
-            ValidationResult::Conflict { pos1, pos2, val } => WasmValidationResult::Conflict { pos1, pos2, val },
-            ValidationResult::Sequence { vertical, top_left, range, missing, } => WasmValidationResult::Sequence { vertical, top_left, range, missing, },
-            ValidationResult::SequenceTooLarge { vertical, top_left, contains, max_ranges, } => WasmValidationResult::SequenceTooLarge { vertical, top_left, contains, max_ranges, },
-            ValidationResult::RequirementBlockerConflict { vertical, index, number, } => WasmValidationResult::RequirementBlockerConflict { vertical, index, number, },
-            ValidationResult::RequiredNumberMissing { vertical, index, number, } => WasmValidationResult::RequiredNumberMissing { vertical, index, number, },
-            ValidationResult::BlockedNumberPresent { vertical, index, number, } => WasmValidationResult::BlockedNumberPresent { vertical, index, number, },
-            ValidationResult::Ambiguous { cells, } => WasmValidationResult::Ambiguous { cells, },
-            ValidationResult::OutOfStrats => WasmValidationResult::OutOfStrats,
+            ValidationError::EmptyCell { pos } => WasmValidationError::EmptyCell { pos },
+            ValidationError::Conflict { pos1, pos2, val } => WasmValidationError::Conflict { pos1, pos2, val },
+            ValidationError::Sequence { vertical, top_left, range, missing, } => WasmValidationError::Sequence { vertical, top_left, range, missing, },
+            ValidationError::SequenceTooLarge { vertical, top_left, contains, max_ranges, } => WasmValidationError::SequenceTooLarge { vertical, top_left, contains, max_ranges, },
+            ValidationError::RequirementBlockerConflict { vertical, index, number, } => WasmValidationError::RequirementBlockerConflict { vertical, index, number, },
+            ValidationError::RequiredNumberMissing { vertical, index, number, } => WasmValidationError::RequiredNumberMissing { vertical, index, number, },
+            ValidationError::BlockedNumberPresent { vertical, index, number, } => WasmValidationError::BlockedNumberPresent { vertical, index, number, },
+            ValidationError::Ambiguous { cells, } => WasmValidationError::Ambiguous { cells, },
+            ValidationError::OutOfStrats => WasmValidationError::OutOfStrats,
+        }
+    }
+}
+
+impl From<WasmValidationError> for ValidationError {
+    #[rustfmt::skip]
+    fn from(value: WasmValidationError) -> Self {
+        match value {
+            WasmValidationError::EmptyCell { pos } => ValidationError::EmptyCell { pos },
+            WasmValidationError::Conflict { pos1, pos2, val } => ValidationError::Conflict { pos1, pos2, val },
+            WasmValidationError::Sequence { vertical, top_left, range, missing, } => ValidationError::Sequence { vertical, top_left, range, missing, },
+            WasmValidationError::SequenceTooLarge { vertical, top_left, contains, max_ranges, } => ValidationError::SequenceTooLarge { vertical, top_left, contains, max_ranges, },
+            WasmValidationError::RequirementBlockerConflict { vertical, index, number, } => ValidationError::RequirementBlockerConflict { vertical, index, number, },
+            WasmValidationError::RequiredNumberMissing { vertical, index, number, } => ValidationError::RequiredNumberMissing { vertical, index, number, },
+            WasmValidationError::BlockedNumberPresent { vertical, index, number, } => ValidationError::BlockedNumberPresent { vertical, index, number, },
+            WasmValidationError::Ambiguous { cells, } => ValidationError::Ambiguous { cells, },
+            WasmValidationError::OutOfStrats => ValidationError::OutOfStrats,
+        }
+    }
+}
+
+impl From<ValidationResult> for WasmValidationResult {
+    fn from(value: ValidationResult) -> Self {
+        WasmValidationResult {
+            ty: value.ty.into(),
+            meta: value.meta.into(),
         }
     }
 }
 
 impl From<WasmValidationResult> for ValidationResult {
-    #[rustfmt::skip]
     fn from(value: WasmValidationResult) -> Self {
-        match value {
-            WasmValidationResult::EmptyCell { pos } => ValidationResult::EmptyCell { pos },
-            WasmValidationResult::Conflict { pos1, pos2, val } => ValidationResult::Conflict { pos1, pos2, val },
-            WasmValidationResult::Sequence { vertical, top_left, range, missing, } => ValidationResult::Sequence { vertical, top_left, range, missing, },
-            WasmValidationResult::SequenceTooLarge { vertical, top_left, contains, max_ranges, } => ValidationResult::SequenceTooLarge { vertical, top_left, contains, max_ranges, },
-            WasmValidationResult::RequirementBlockerConflict { vertical, index, number, } => ValidationResult::RequirementBlockerConflict { vertical, index, number, },
-            WasmValidationResult::RequiredNumberMissing { vertical, index, number, } => ValidationResult::RequiredNumberMissing { vertical, index, number, },
-            WasmValidationResult::BlockedNumberPresent { vertical, index, number, } => ValidationResult::BlockedNumberPresent { vertical, index, number, },
-            WasmValidationResult::Ambiguous { cells, } => ValidationResult::Ambiguous { cells, },
-            WasmValidationResult::OutOfStrats => ValidationResult::OutOfStrats,
+        ValidationResult {
+            ty: value.ty.into(),
+            meta: value.meta.into(),
         }
     }
 }

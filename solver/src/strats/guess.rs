@@ -1,8 +1,8 @@
 use crate::bitset::BitSet;
 use crate::grid::Cell::*;
 use crate::grid::{Grid, Point};
-use crate::solver::SolveResults::*;
-use crate::solver::{solve_round, SolveResults, ValidationResult};
+use crate::solver::SolveType::*;
+use crate::solver::{into_ty, solve_round, SolveResults, ValidationError, ValidationResult};
 use crate::validator::validate;
 use itertools::Itertools;
 use std::collections::VecDeque;
@@ -20,8 +20,8 @@ fn run_guess(candidates: Vec<(Grid, ForcedNumber)>, max_depth: usize) -> Option<
         if count > max_depth {
             continue;
         }
-        match solve_round(&mut temp_grid, false) {
-            Err(ValidationResult::OutOfStrats) => {}
+        match into_ty(solve_round(&mut temp_grid, false)) {
+            Err(ValidationError::OutOfStrats) => {}
             Ok(PuzzleSolved) => {} // well...
             Ok(_) => {
                 if validate(&temp_grid).is_err() {
@@ -78,26 +78,33 @@ pub fn guess(grid: &mut Grid) -> Result<Option<GuessSolveResult>, ValidationResu
     } {
         let GuessResult(((x, y), n)) = res;
         grid.set_impossible((x, y), n)?;
-        let mut steps = vec![(temp_grid.clone(), StartGuess((x, y), n))];
+        let mut steps: Vec<(Grid, SolveResults)> =
+            vec![(temp_grid.clone(), StartGuess((x, y), n).into())];
 
         temp_grid.set_cell((x, y), Solution(n));
 
         loop {
             let prev_grid = temp_grid.clone();
             match solve_round(&mut temp_grid, false) {
-                Err(ValidationResult::OutOfStrats) => {
+                Err(ValidationResult {
+                    ty: ValidationError::OutOfStrats,
+                    meta: _,
+                }) => {
                     unreachable!();
                 }
-                Ok(PuzzleSolved) => unreachable!(),
+                Ok(SolveResults {
+                    ty: PuzzleSolved,
+                    meta: _,
+                }) => unreachable!(),
                 Ok(step) => {
                     steps.push((prev_grid, step));
                     if let Err(e) = validate(&temp_grid) {
-                        steps.push((temp_grid.clone(), EndGuess(e)));
+                        steps.push((temp_grid.clone(), EndGuess(e).into()));
                         return Ok(Some(GuessSolveResult(((x, y), n, steps, temp_grid))));
                     }
                 }
                 Err(e) => {
-                    steps.push((temp_grid.clone(), EndGuess(e)));
+                    steps.push((temp_grid.clone(), EndGuess(e).into()));
                     return Ok(Some(GuessSolveResult(((x, y), n, steps, temp_grid))));
                 }
             }

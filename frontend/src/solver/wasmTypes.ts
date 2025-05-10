@@ -38,7 +38,11 @@ export type WasmUrResult =
   | { UrSetti: [Point[], boolean, number] }
   | { SolutionCausesClosedSets: [Point, number] };
 
-export type WasmSolveResult =
+export interface WasmSolveMetadata {
+  colors: [Point, number][][],
+}
+
+export type WasmSolveType =
   | "UpdateImpossibles"
   | "Singles"
   | "Stranded"
@@ -58,7 +62,12 @@ export type WasmSolveResult =
   | "PuzzleSolved"
   | "OutOfBasicStrats";
 
-export type WasmValidationResult =
+export interface WasmSolveResult {
+  ty: WasmSolveType,
+  meta: WasmSolveMetadata
+}
+
+export type WasmValidationError =
   | { EmptyCell: { pos: Point } }
   | { Conflict: { pos1: Point; pos2: Point; val: number } }
   | { Sequence: { vertical: boolean; top_left: Point; range: Point; missing: number } }
@@ -75,6 +84,11 @@ export type WasmValidationResult =
   | { BlockedNumberPresent: { vertical: boolean; index: number; number: number } }
   | { Ambiguous: { cells: Point[] } }
   | "OutOfStrats";
+
+export interface WasmValidationResult {
+  ty: WasmValidationError,
+  meta: WasmSolveMetadata
+}
 
 export interface WasmDifficulty {
   star_count: number;

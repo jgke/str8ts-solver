@@ -2,10 +2,15 @@ use crate::wasm_grid::WasmGrid;
 use crate::wasm_validation_result::WasmValidationResult;
 use serde::{Deserialize, Serialize};
 use solver::grid::Point;
-use solver::solver::SolveResults;
+use solver::solver::{SolveMetadata, SolveResults, SolveType};
 use solver::strats::UrResult;
 use std::collections::HashSet;
 use std::rc::Rc;
+
+#[derive(Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct WasmSolveMetadata {
+    pub colors: Vec<Vec<(Point, u8)>>,
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum WasmUrResult {
@@ -18,7 +23,7 @@ pub enum WasmUrResult {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum WasmSolveResult {
+pub enum WasmSolveType {
     UpdateImpossibles,
     Singles,
     Stranded,
@@ -30,7 +35,7 @@ pub enum WasmSolveResult {
     Setti(HashSet<u8>),
     YWing(Point, u8),
     Fish(usize),
-    Medusa(Vec<(Point, u8)>, Vec<(Point, u8)>),
+    Medusa,
     UniqueRequirement(WasmUrResult),
     StartGuess(Point, u8),
     GuessStep(
@@ -42,6 +47,24 @@ pub enum WasmSolveResult {
     EndGuess(WasmValidationResult),
     PuzzleSolved,
     OutOfBasicStrats,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WasmSolveResult {
+    pub ty: WasmSolveType,
+    pub meta: WasmSolveMetadata,
+}
+
+impl From<SolveMetadata> for WasmSolveMetadata {
+    fn from(value: SolveMetadata) -> Self {
+        WasmSolveMetadata {colors: value.colors}
+    }
+}
+
+impl From<WasmSolveMetadata> for SolveMetadata {
+    fn from(value: WasmSolveMetadata) -> Self {
+        SolveMetadata {colors: value.colors}
+    }
 }
 
 impl From<UrResult> for WasmUrResult {
@@ -82,24 +105,24 @@ impl From<WasmUrResult> for UrResult {
     }
 }
 
-impl From<SolveResults> for WasmSolveResult {
-    fn from(value: SolveResults) -> Self {
+impl From<SolveType> for WasmSolveType {
+    fn from(value: SolveType) -> Self {
         match value {
-            SolveResults::UpdateImpossibles => WasmSolveResult::UpdateImpossibles,
-            SolveResults::Singles => WasmSolveResult::Singles,
-            SolveResults::Stranded => WasmSolveResult::Stranded,
-            SolveResults::DefiniteMinMax => WasmSolveResult::DefiniteMinMax,
-            SolveResults::RequiredRange => WasmSolveResult::RequiredRange,
-            SolveResults::Sets(n) => WasmSolveResult::Sets(n),
-            SolveResults::RequiredAndForbidden => WasmSolveResult::RequiredAndForbidden,
-            SolveResults::RowColBrute => WasmSolveResult::RowColBrute,
-            SolveResults::Setti(set) => WasmSolveResult::Setti(set.into()),
-            SolveResults::YWing(pos, n) => WasmSolveResult::YWing(pos, n),
-            SolveResults::Fish(n) => WasmSolveResult::Fish(n),
-            SolveResults::Medusa(left, right) => WasmSolveResult::Medusa(left, right),
-            SolveResults::UniqueRequirement(res) => WasmSolveResult::UniqueRequirement(res.into()),
-            SolveResults::StartGuess((x, y), n) => WasmSolveResult::StartGuess((x, y), n),
-            SolveResults::GuessStep((x, y), n, steps, grid) => WasmSolveResult::GuessStep(
+            SolveType::UpdateImpossibles => WasmSolveType::UpdateImpossibles,
+            SolveType::Singles => WasmSolveType::Singles,
+            SolveType::Stranded => WasmSolveType::Stranded,
+            SolveType::DefiniteMinMax => WasmSolveType::DefiniteMinMax,
+            SolveType::RequiredRange => WasmSolveType::RequiredRange,
+            SolveType::Sets(n) => WasmSolveType::Sets(n),
+            SolveType::RequiredAndForbidden => WasmSolveType::RequiredAndForbidden,
+            SolveType::RowColBrute => WasmSolveType::RowColBrute,
+            SolveType::Setti(set) => WasmSolveType::Setti(set.into()),
+            SolveType::YWing(pos, n) => WasmSolveType::YWing(pos, n),
+            SolveType::Fish(n) => WasmSolveType::Fish(n),
+            SolveType::Medusa => WasmSolveType::Medusa,
+            SolveType::UniqueRequirement(res) => WasmSolveType::UniqueRequirement(res.into()),
+            SolveType::StartGuess((x, y), n) => WasmSolveType::StartGuess((x, y), n),
+            SolveType::GuessStep((x, y), n, steps, grid) => WasmSolveType::GuessStep(
                 (x, y),
                 n,
                 steps
@@ -109,31 +132,31 @@ impl From<SolveResults> for WasmSolveResult {
                     .collect(),
                 grid.into(),
             ),
-            SolveResults::EndGuess(end) => WasmSolveResult::EndGuess(end.into()),
-            SolveResults::PuzzleSolved => WasmSolveResult::PuzzleSolved,
-            SolveResults::OutOfBasicStrats => WasmSolveResult::OutOfBasicStrats,
+            SolveType::EndGuess(end) => WasmSolveType::EndGuess(end.into()),
+            SolveType::PuzzleSolved => WasmSolveType::PuzzleSolved,
+            SolveType::OutOfBasicStrats => WasmSolveType::OutOfBasicStrats,
         }
     }
 }
 
-impl From<WasmSolveResult> for SolveResults {
-    fn from(value: WasmSolveResult) -> Self {
+impl From<WasmSolveType> for SolveType {
+    fn from(value: WasmSolveType) -> Self {
         match value {
-            WasmSolveResult::UpdateImpossibles => SolveResults::UpdateImpossibles,
-            WasmSolveResult::Singles => SolveResults::Singles,
-            WasmSolveResult::Stranded => SolveResults::Stranded,
-            WasmSolveResult::DefiniteMinMax => SolveResults::DefiniteMinMax,
-            WasmSolveResult::RequiredRange => SolveResults::RequiredRange,
-            WasmSolveResult::Sets(n) => SolveResults::Sets(n),
-            WasmSolveResult::RequiredAndForbidden => SolveResults::RequiredAndForbidden,
-            WasmSolveResult::RowColBrute => SolveResults::RowColBrute,
-            WasmSolveResult::Setti(set) => SolveResults::Setti(set.into()),
-            WasmSolveResult::YWing(pos, n) => SolveResults::YWing(pos, n),
-            WasmSolveResult::Fish(n) => SolveResults::Fish(n),
-            WasmSolveResult::Medusa(left, right) => SolveResults::Medusa(left, right),
-            WasmSolveResult::UniqueRequirement(res) => SolveResults::UniqueRequirement(res.into()),
-            WasmSolveResult::StartGuess((x, y), n) => SolveResults::StartGuess((x, y), n),
-            WasmSolveResult::GuessStep((x, y), n, steps, grid) => SolveResults::GuessStep(
+            WasmSolveType::UpdateImpossibles => SolveType::UpdateImpossibles,
+            WasmSolveType::Singles => SolveType::Singles,
+            WasmSolveType::Stranded => SolveType::Stranded,
+            WasmSolveType::DefiniteMinMax => SolveType::DefiniteMinMax,
+            WasmSolveType::RequiredRange => SolveType::RequiredRange,
+            WasmSolveType::Sets(n) => SolveType::Sets(n),
+            WasmSolveType::RequiredAndForbidden => SolveType::RequiredAndForbidden,
+            WasmSolveType::RowColBrute => SolveType::RowColBrute,
+            WasmSolveType::Setti(set) => SolveType::Setti(set.into()),
+            WasmSolveType::YWing(pos, n) => SolveType::YWing(pos, n),
+            WasmSolveType::Fish(n) => SolveType::Fish(n),
+            WasmSolveType::Medusa => SolveType::Medusa,
+            WasmSolveType::UniqueRequirement(res) => SolveType::UniqueRequirement(res.into()),
+            WasmSolveType::StartGuess((x, y), n) => SolveType::StartGuess((x, y), n),
+            WasmSolveType::GuessStep((x, y), n, steps, grid) => SolveType::GuessStep(
                 (x, y),
                 n,
                 Rc::new(
@@ -145,9 +168,27 @@ impl From<WasmSolveResult> for SolveResults {
                 ),
                 grid.into(),
             ),
-            WasmSolveResult::EndGuess(res) => SolveResults::EndGuess(res.into()),
-            WasmSolveResult::PuzzleSolved => SolveResults::PuzzleSolved,
-            WasmSolveResult::OutOfBasicStrats => SolveResults::OutOfBasicStrats,
+            WasmSolveType::EndGuess(res) => SolveType::EndGuess(res.into()),
+            WasmSolveType::PuzzleSolved => SolveType::PuzzleSolved,
+            WasmSolveType::OutOfBasicStrats => SolveType::OutOfBasicStrats,
+        }
+    }
+}
+
+impl From<SolveResults> for WasmSolveResult {
+    fn from(value: SolveResults) -> Self {
+        WasmSolveResult {
+            ty: value.ty.into(),
+            meta: value.meta.into(),
+        }
+    }
+}
+
+impl From<WasmSolveResult> for SolveResults {
+    fn from(value: WasmSolveResult) -> Self {
+        SolveResults {
+            ty: value.ty.into(),
+            meta: value.meta.into(),
         }
     }
 }

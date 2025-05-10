@@ -78,7 +78,7 @@ pub fn setti(grid: &mut Grid) -> Option<BitSet> {
 mod tests {
     use super::*;
     use crate::solver::solve_basic;
-    use crate::solver::SolveResults::OutOfBasicStrats;
+    use crate::solver::SolveType::OutOfBasicStrats;
     use crate::strats::update_required_and_forbidden;
     use crate::utils::*;
 

@@ -1,7 +1,7 @@
 use crate::bitset::BitSet;
 use crate::grid::{Grid, Point};
-use crate::solver::SolveResults::*;
-use crate::solver::ValidationResult::*;
+use crate::solver::SolveType::*;
+use crate::solver::ValidationError::*;
 use crate::strats;
 use crate::strats::UrResult;
 use crate::validator::validate;
@@ -9,8 +9,13 @@ use itertools::intersperse;
 use std::fmt::{Display, Formatter};
 use std::rc::Rc;
 
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct SolveMetadata {
+    pub colors: Vec<Vec<(Point, u8)>>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum SolveResults {
+pub enum SolveType {
     UpdateImpossibles,
     Singles,
     Stranded,
@@ -22,7 +27,7 @@ pub enum SolveResults {
     Setti(BitSet),
     YWing(Point, u8),
     Fish(usize),
-    Medusa(Vec<(Point, u8)>, Vec<(Point, u8)>),
+    Medusa,
     UniqueRequirement(UrResult),
     StartGuess(Point, u8),
     GuessStep(Point, u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
@@ -31,7 +36,20 @@ pub enum SolveResults {
     OutOfBasicStrats,
 }
 
-impl SolveResults {
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SolveResults {
+    pub ty: SolveType,
+    pub meta: SolveMetadata,
+}
+
+impl From<SolveType> for SolveResults {
+    fn from(ty: SolveType) -> Self {
+        let meta = SolveMetadata::default();
+        SolveResults { ty, meta }
+    }
+}
+
+impl SolveType {
     pub fn difficulty(&self) -> usize {
         match self {
             UpdateImpossibles => 1,
@@ -46,7 +64,7 @@ impl SolveResults {
             YWing(_, _) => 5,
             Fish(2) | Fish(3) => 5,
             Fish(_) => 6,
-            Medusa(..) => 6,
+            Medusa => 6,
             UniqueRequirement(..) => 6,
             StartGuess(_, _) => 1,
             GuessStep(_, _, steps, _) if steps.len() < 8 => 6,
@@ -76,7 +94,7 @@ fn english_list<T: ToString>(list: &[T]) -> String {
 
 impl Display for SolveResults {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
+        match &self.ty {
             UpdateImpossibles => write!(f, "Remove trivially impossible numbers"),
             Stranded => write!(f, "Remove stranded numbers"),
             DefiniteMinMax => write!(f, "Remove unreachable numbers from compartments"),
@@ -100,7 +118,7 @@ impl Display for SolveResults {
             Fish(2) => write!(f, "Calculate a X-wing"),
             Fish(3) => write!(f, "Calculate a Swordfish"),
             Fish(n) => write!(f, "Calculate a {}-fish", n),
-            Medusa(..) => write!(f, "Calculate a 3D Medusa"),
+            Medusa => write!(f, "Calculate a 3D Medusa"),
             UniqueRequirement(UrResult::SingleUnique((x, y), n)) => {
                 write!(
                     f,
@@ -169,7 +187,7 @@ impl Display for SolveResults {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum ValidationResult {
+pub enum ValidationError {
     EmptyCell {
         pos: Point,
     },
@@ -211,9 +229,29 @@ pub enum ValidationResult {
     OutOfStrats,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ValidationResult {
+    pub ty: ValidationError,
+    pub meta: SolveMetadata,
+}
+
+impl From<ValidationError> for ValidationResult {
+    fn from(ty: ValidationError) -> Self {
+        let meta = SolveMetadata::default();
+        ValidationResult { ty, meta }
+    }
+}
+
+pub fn into_ty(res: Result<SolveResults, ValidationResult>) -> Result<SolveType, ValidationError> {
+    match res {
+        Ok(SolveResults { ty, meta: _ }) => Ok(ty),
+        Err(ValidationResult { ty, meta: _ }) => Err(ty),
+    }
+}
+
 impl Display for ValidationResult {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
+        match &self.ty {
             EmptyCell { pos: (x, y) } => write!(
                 f,
                 "Cell scan: Cell ({}, {}) ran out of possible options",
@@ -253,8 +291,8 @@ impl Display for ValidationResult {
     }
 }
 
-pub fn run_fast_basic(grid: &mut Grid) -> Result<SolveResults, ValidationResult> {
-    let res = {
+pub fn run_fast_basic(grid: &mut Grid) -> Result<SolveType, ValidationResult> {
+    let res: SolveType = {
         if strats::update_impossibles(grid)? {
             UpdateImpossibles
         } else if strats::singles(grid)? {
@@ -277,21 +315,21 @@ pub fn run_fast_basic(grid: &mut Grid) -> Result<SolveResults, ValidationResult>
 pub fn run_basic(grid: &mut Grid) -> Result<SolveResults, ValidationResult> {
     let res = {
         if strats::update_impossibles(grid)? {
-            UpdateImpossibles
+            UpdateImpossibles.into()
         } else if strats::singles(grid)? {
-            Singles
+            Singles.into()
         } else if strats::stranded(grid)? {
-            Stranded
+            Stranded.into()
         } else if strats::definite_min_max(grid)? {
-            DefiniteMinMax
+            DefiniteMinMax.into()
         } else if strats::required_range(grid)? {
-            RequiredRange
+            RequiredRange.into()
         } else if grid.has_requirements() && strats::update_required_and_forbidden(grid)? {
-            RequiredAndForbidden
+            RequiredAndForbidden.into()
         } else if let Some(n) = strats::sets(grid)? {
-            Sets(n)
+            Sets(n).into()
         } else {
-            OutOfBasicStrats
+            OutOfBasicStrats.into()
         }
     };
 
@@ -302,15 +340,15 @@ pub fn run_basic(grid: &mut Grid) -> Result<SolveResults, ValidationResult> {
 
 pub fn run_advanced(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
     Ok(Some(if strats::update_required_and_forbidden(grid)? {
-        RequiredAndForbidden
+        RequiredAndForbidden.into()
     } else if let Some(set) = strats::setti(grid) {
-        Setti(set)
+        Setti(set).into()
     } else if strats::row_col_brute(grid)? {
-        RowColBrute
+        RowColBrute.into()
     } else if let Some((pos, n)) = strats::y_wing(grid)? {
-        YWing(pos, n)
+        YWing(pos, n).into()
     } else if let Some(n) = strats::fish(grid)? {
-        Fish(n)
+        Fish(n).into()
     } else {
         return Ok(None);
     }))
@@ -324,7 +362,10 @@ pub fn run_medusa(
         return Ok(None);
     }
     Ok(if let Some((left, right)) = strats::medusa(grid)? {
-        Some(Medusa(left, right))
+        let meta = SolveMetadata {
+            colors: vec![left, right],
+        };
+        Some(SolveResults { ty: Medusa, meta })
     } else {
         None
     })
@@ -334,7 +375,7 @@ pub fn run_unique(
     grid: &mut Grid,
     enable_guesses: bool,
 ) -> Result<Option<SolveResults>, ValidationResult> {
-    Ok(strats::unique_requirement(grid, enable_guesses)?.map(UniqueRequirement))
+    Ok(strats::unique_requirement(grid, enable_guesses)?.map(|res| UniqueRequirement(res).into()))
 }
 
 pub fn run_guess(
@@ -346,7 +387,7 @@ pub fn run_guess(
     }
     Ok(strats::guess(grid)?.map(
         |crate::strats::GuessSolveResult(((x, y), n, steps, error_grid))| {
-            GuessStep((x, y), n, Rc::new(steps), error_grid)
+            GuessStep((x, y), n, Rc::new(steps), error_grid).into()
         },
     ))
 }
@@ -357,12 +398,16 @@ pub fn solve_round(
 ) -> Result<SolveResults, ValidationResult> {
     validate(grid)?;
     if grid.is_solved() {
-        return Ok(PuzzleSolved);
+        return Ok(PuzzleSolved.into());
     }
     match run_basic(grid)? {
-        OutOfBasicStrats => {
+        SolveResults {
+            ty: OutOfBasicStrats,
+            meta: _,
+        } => {
             validate(grid)?;
-            let res = if let Some(res) = run_advanced(grid)? {
+            let res: Result<SolveResults, ValidationResult> = if let Some(res) = run_advanced(grid)?
+            {
                 Ok(res)
             } else if let Some(res) = run_medusa(grid, enable_guesses)? {
                 Ok(res)
@@ -371,7 +416,7 @@ pub fn solve_round(
             } else if let Some(res) = run_guess(grid, enable_guesses)? {
                 Ok(res)
             } else {
-                Err(OutOfStrats)
+                Err(OutOfStrats.into())
             };
             strats::trivial(grid);
             validate(grid)?;
@@ -384,8 +429,8 @@ pub fn solve_round(
     }
 }
 
-pub fn solve_basic(grid: &mut Grid) -> Result<SolveResults, ValidationResult> {
-    while run_basic(grid)? != OutOfBasicStrats {}
+pub fn solve_basic(grid: &mut Grid) -> Result<SolveType, ValidationResult> {
+    while run_basic(grid)?.ty != OutOfBasicStrats {}
     Ok(OutOfBasicStrats)
 }
 
@@ -404,10 +449,13 @@ mod tests {
 ");
         assert_eq!(
             validate(&grid),
-            Err(Conflict {
-                pos1: (2, 2),
-                pos2: (3, 2),
-                val: 4
+            Err(ValidationResult {
+                ty: Conflict {
+                    pos1: (2, 2),
+                    pos2: (3, 2),
+                    val: 4
+                },
+                meta: SolveMetadata::default()
             })
         );
     }
@@ -422,10 +470,13 @@ mod tests {
 ");
         assert_eq!(
             validate(&grid),
-            Err(Conflict {
-                pos1: (2, 2),
-                pos2: (2, 3),
-                val: 4
+            Err(ValidationResult {
+                ty: Conflict {
+                    pos1: (2, 2),
+                    pos2: (2, 3),
+                    val: 4
+                },
+                meta: SolveMetadata::default()
             })
         );
     }
@@ -440,11 +491,14 @@ mod tests {
 ");
         assert_eq!(
             validate(&grid),
-            Err(Sequence {
-                range: (1, 4),
-                vertical: false,
-                missing: 3,
-                top_left: (1, 1)
+            Err(ValidationResult {
+                ty: Sequence {
+                    range: (1, 4),
+                    vertical: false,
+                    missing: 3,
+                    top_left: (1, 1)
+                },
+                meta: SolveMetadata::default()
             })
         );
     }

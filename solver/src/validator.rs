@@ -1,8 +1,8 @@
 use crate::bitset::BitSet;
 use crate::grid::Cell::*;
 use crate::grid::{Cell, Compartment, Grid};
+use crate::solver::ValidationError::*;
 use crate::solver::ValidationResult;
-use crate::solver::ValidationResult::*;
 use rustc_hash::FxHashMap;
 
 pub fn cell_has_solutions(x: usize, y: usize, cell: &Cell) -> Result<(), ValidationResult> {
@@ -10,7 +10,7 @@ pub fn cell_has_solutions(x: usize, y: usize, cell: &Cell) -> Result<(), Validat
         Requirement(_) | Solution(_) | Blocker(_) | Black => {}
         Indeterminate(group) => {
             if group.is_empty() {
-                return Err(EmptyCell { pos: (x, y) });
+                return Err(EmptyCell { pos: (x, y) }.into());
             }
         }
     }
@@ -28,7 +28,8 @@ pub fn grid_has_conflicts(grid: &Grid) -> Result<(), ValidationResult> {
                         pos1: (other_x + 1, other_y + 1),
                         pos2: (x + 1, y + 1),
                         val,
-                    });
+                    }
+                    .into());
                 }
                 map.insert(val, (x, y));
             }
@@ -67,7 +68,8 @@ pub fn compartment_valid(compartment: &Compartment) -> Result<(), ValidationResu
                 top_left,
                 range: (min, max),
                 missing: n,
-            });
+            }
+            .into());
         }
     }
 
@@ -77,7 +79,8 @@ pub fn compartment_valid(compartment: &Compartment) -> Result<(), ValidationResu
             vertical,
             top_left,
             max_ranges: ((min, min + size - 1), (max + 1 - size, max)),
-        });
+        }
+        .into());
     }
 
     Ok(())
@@ -94,7 +97,8 @@ pub fn has_requirement_conflicts(grid: &Grid) -> Result<(), ValidationResult> {
                 vertical: true,
                 index,
                 number,
-            });
+            }
+            .into());
         }
         if let Some(number) = grid.row_forbidden[index]
             .intersection(grid.row_requirements[index])
@@ -105,7 +109,8 @@ pub fn has_requirement_conflicts(grid: &Grid) -> Result<(), ValidationResult> {
                 vertical: false,
                 index,
                 number,
-            });
+            }
+            .into());
         }
     }
 
@@ -120,7 +125,8 @@ pub fn has_requirement_conflicts(grid: &Grid) -> Result<(), ValidationResult> {
                     vertical: false,
                     index,
                     number,
-                });
+                }
+                .into());
             }
         }
         for number in grid.col_requirements[index] {
@@ -133,7 +139,8 @@ pub fn has_requirement_conflicts(grid: &Grid) -> Result<(), ValidationResult> {
                     vertical: true,
                     index,
                     number,
-                });
+                }
+                .into());
             }
         }
         for number in grid.row_forbidden[index] {
@@ -146,7 +153,8 @@ pub fn has_requirement_conflicts(grid: &Grid) -> Result<(), ValidationResult> {
                     vertical: false,
                     index,
                     number,
-                });
+                }
+                .into());
             }
         }
         for number in grid.col_forbidden[index] {
@@ -159,7 +167,8 @@ pub fn has_requirement_conflicts(grid: &Grid) -> Result<(), ValidationResult> {
                     vertical: true,
                     index,
                     number,
-                });
+                }
+                .into());
             }
         }
     }

@@ -1,5 +1,5 @@
 import { getColors, Grid, gridFromWasm } from "../solver/solver.ts";
-import { isOk, WasmResult, WasmSolveResult } from "../solver/wasmTypes.ts";
+import { isOk, WasmResult, WasmSolveResult, WasmSolveType } from "../solver/wasmTypes.ts";
 import { unreachable } from "../utils/unreachable.ts";
 import { MouseEventHandler, MouseEvent, useMemo, useState } from "react";
 import { useEvent } from "../utils/useEvent.ts";
@@ -38,7 +38,7 @@ interface FocusProps {
   setManualFocus(focus: boolean): void;
 }
 
-function borderForSolution(cell: WasmSolveResult): string {
+function borderForSolution(cell: WasmSolveType): string {
   if (
     cell === "PuzzleSolved" ||
     cell === "OutOfBasicStrats" ||
@@ -126,8 +126,8 @@ function SolutionLogListItem(props: SolutionLogListItemProps) {
       : "font-medium bg-light-900 dark:bg-blue-100";
 
   let nestedGuessStep: HistoryGroup[] | undefined;
-  if (isOk(row.data) && typeof row.data.Ok === "object" && "GuessStep" in row.data.Ok) {
-    nestedGuessStep = row.data.Ok.GuessStep[2].map(([grid, result, msg]) => ({
+  if (isOk(row.data) && typeof row.data.Ok.ty === "object" && "GuessStep" in row.data.Ok.ty) {
+    nestedGuessStep = row.data.Ok.ty.GuessStep[2].map(([grid, result, msg]) => ({
       grid: gridFromWasm(grid),
       data: { Ok: result },
       message: { Ok: msg },
@@ -137,7 +137,7 @@ function SolutionLogListItem(props: SolutionLogListItemProps) {
 
   return (
     <li className={`${liClass} ${extraClass}`} onMouseOver={onHover} onClick={onClick}>
-      <div className={`${isOk(row.data) ? borderForSolution(row.data.Ok) : ""} cursor-pointer rounded p-2`}>
+      <div className={`${isOk(row.data) ? borderForSolution(row.data.Ok.ty) : ""} cursor-pointer rounded p-2`}>
         {isOk(row.message) ? row.message.Ok : row.message.Err}
         {nestedGuessStep && (
           <SolutionLogList

@@ -1,7 +1,7 @@
 use crate::difficulty::get_puzzle_difficulty;
 use crate::grid::{Cell, Grid, Point};
 use crate::solver::run_fast_basic;
-use crate::solver::SolveResults::OutOfBasicStrats;
+use crate::solver::SolveType::OutOfBasicStrats;
 use crate::validator::validate;
 use log::debug;
 use rand::seq::SliceRandom;

@@ -1,6 +1,6 @@
 use crate::bitset::BitSet;
 use crate::grid::{Cell, Compartment, Grid, Point};
-use crate::solver::ValidationResult;
+use crate::solver::{ValidationError, ValidationResult};
 use crate::strats::get_compartment_range;
 use itertools::Itertools;
 
@@ -41,9 +41,10 @@ fn single_cell_cross_compartment_unique(
         }
 
         if free_set.len() > 1 {
-            return Err(ValidationResult::Ambiguous {
+            return Err(ValidationError::Ambiguous {
                 cells: vec![(x, y)],
-            });
+            }
+            .into());
         }
         if let Some(res) = free_set.into_iter().next() {
             grid.set_cell((x, y), Cell::Solution(res));
@@ -535,7 +536,7 @@ mod tests {
     use super::*;
     use crate::grid::Cell;
     use crate::solver::solve_basic;
-    use crate::solver::SolveResults::OutOfBasicStrats;
+    use crate::solver::SolveType::OutOfBasicStrats;
     use crate::strats::update_required_and_forbidden;
     use crate::utils::*;
 

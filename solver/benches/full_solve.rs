@@ -2,7 +2,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rand::SeedableRng;
 use solver::generator::generate_puzzle;
 use solver::grid::Grid;
-use solver::solver::{solve_round, SolveResults};
+use solver::solver::{solve_round, SolveResults, SolveType};
 
 fn full_solve(mut grid: Grid, enable_chains: bool) -> usize {
     let orig_grid = grid.clone();
@@ -10,7 +10,7 @@ fn full_solve(mut grid: Grid, enable_chains: bool) -> usize {
     loop {
         loop_count += 1;
         match solve_round(&mut grid, enable_chains) {
-            Ok(SolveResults::PuzzleSolved) => {
+            Ok(SolveResults { ty: SolveType::PuzzleSolved, meta: _ }) => {
                 break;
             }
             Ok(_) => {}

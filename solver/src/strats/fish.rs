@@ -114,7 +114,7 @@ pub fn fish(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
 mod tests {
     use super::*;
     use crate::solver::solve_basic;
-    use crate::solver::SolveResults::OutOfBasicStrats;
+    use crate::solver::SolveType::OutOfBasicStrats;
     use crate::strats::{setti, update_required_and_forbidden};
     use crate::utils::*;
 

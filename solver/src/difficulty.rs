@@ -1,5 +1,5 @@
 use crate::grid::Grid;
-use crate::solver::{solve_round, SolveResults};
+use crate::solver::{into_ty, solve_round, SolveType};
 
 #[derive(Debug, Clone)]
 pub struct Difficulty {
@@ -21,7 +21,7 @@ pub struct Difficulty {
     pub long_guess_count: usize,
 }
 
-pub fn puzzle_difficulty(history: &[&SolveResults]) -> Difficulty {
+pub fn puzzle_difficulty(history: &[&SolveType]) -> Difficulty {
     let move_count = history.len();
 
     let mut star_count = history
@@ -40,38 +40,34 @@ pub fn puzzle_difficulty(history: &[&SolveResults]) -> Difficulty {
         basic_reductions: history.len() > 1,
         min_max_reductions: history
             .iter()
-            .any(|e| matches!(e, SolveResults::DefiniteMinMax)),
+            .any(|e| matches!(e, SolveType::DefiniteMinMax)),
         cross_compartment_ranges: history
             .iter()
-            .any(|e| matches!(e, SolveResults::RequiredRange)),
-        sets: history.iter().any(|e| matches!(e, SolveResults::Sets(_))),
+            .any(|e| matches!(e, SolveType::RequiredRange)),
+        sets: history.iter().any(|e| matches!(e, SolveType::Sets(_))),
         maintain_reqs_and_blocks: history
             .iter()
-            .any(|e| matches!(e, SolveResults::RequiredAndForbidden)),
-        setti: history.iter().any(|e| matches!(e, SolveResults::Setti(_))),
-        y_wing: history
-            .iter()
-            .any(|e| matches!(e, SolveResults::YWing(_, _))),
-        x_wing: history.iter().any(|e| matches!(e, SolveResults::Fish(2))),
-        swordfish: history.iter().any(|e| matches!(e, SolveResults::Fish(3))),
+            .any(|e| matches!(e, SolveType::RequiredAndForbidden)),
+        setti: history.iter().any(|e| matches!(e, SolveType::Setti(_))),
+        y_wing: history.iter().any(|e| matches!(e, SolveType::YWing(_, _))),
+        x_wing: history.iter().any(|e| matches!(e, SolveType::Fish(2))),
+        swordfish: history.iter().any(|e| matches!(e, SolveType::Fish(3))),
         n_fish: history
             .iter()
-            .map(|e| if let SolveResults::Fish(n) = e { *n } else { 0 })
+            .map(|e| if let SolveType::Fish(n) = e { *n } else { 0 })
             .max()
             .unwrap_or(0),
-        medusa: history
-            .iter()
-            .any(|e| matches!(e, SolveResults::Medusa(..))),
+        medusa: history.iter().any(|e| matches!(e, SolveType::Medusa)),
         unique_requirement: history
             .iter()
-            .any(|e| matches!(e, SolveResults::UniqueRequirement(..))),
+            .any(|e| matches!(e, SolveType::UniqueRequirement(..))),
         short_guess_count: history
             .iter()
-            .filter(|e| matches!(e, SolveResults::GuessStep(_, _, steps, _) if steps.len() < 8))
+            .filter(|e| matches!(e, SolveType::GuessStep(_, _, steps, _) if steps.len() < 8))
             .count(),
         long_guess_count: history
             .iter()
-            .filter(|e| matches!(e, SolveResults::GuessStep(_, _, steps, _) if steps.len() >= 8))
+            .filter(|e| matches!(e, SolveType::GuessStep(_, _, steps, _) if steps.len() >= 8))
             .count(),
     }
 }
@@ -81,8 +77,8 @@ pub fn get_puzzle_difficulty(grid: &Grid, enable_guesses: bool) -> Option<Diffic
         let mut grid = grid.clone();
         let mut history = Vec::new();
         loop {
-            match solve_round(&mut grid, enable_guesses) {
-                Ok(SolveResults::PuzzleSolved) => {
+            match into_ty(solve_round(&mut grid, enable_guesses)) {
+                Ok(SolveType::PuzzleSolved) => {
                     break;
                 }
                 Ok(res) => history.push(res),

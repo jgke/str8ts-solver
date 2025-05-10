@@ -49,7 +49,7 @@ pub fn y_wing(grid: &mut Grid) -> Result<Option<(Point, u8)>, ValidationResult> 
 mod tests {
     use super::*;
     use crate::solver::solve_basic;
-    use crate::solver::SolveResults::OutOfBasicStrats;
+    use crate::solver::SolveType::OutOfBasicStrats;
     use crate::utils::*;
 
     #[test]

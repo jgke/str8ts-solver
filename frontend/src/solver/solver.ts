@@ -115,16 +115,14 @@ export function puzzleDifficulty(history: WasmSolveResult[]): WasmDifficulty {
 
 export function getColors(row: WasmResult<WasmSolveResult, string>): number[][][] | null {
   if ("Err" in row) return null;
-  if (typeof row.Ok === "object" && "Medusa" in row.Ok) {
-    const [left, right] = row.Ok.Medusa;
+  if (row.Ok.meta.colors.length) {
     const grid = [...Array(9)].map(() => [...Array(9)].map(() => [...Array(10)].map(() => 0)));
 
-    left.forEach(([[x, y], n]) => {
-      grid[y][x][n] = 1;
-    });
-    right.forEach(([[x, y], n]) => {
-      grid[y][x][n] = 2;
-    });
+    for (let color = 0; color < row.Ok.meta.colors.length; color++) {
+      row.Ok.meta.colors[color].forEach(([[x, y], n]) => {
+        grid[y][x][n] = color + 1;
+      });
+    }
     return grid;
   }
   return null;

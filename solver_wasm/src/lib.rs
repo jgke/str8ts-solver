@@ -8,7 +8,7 @@ use crate::wasm_difficulty::WasmDifficulty;
 use crate::wasm_grid::WasmGrid;
 use crate::wasm_solve_result::WasmSolveResult;
 use serde::{Deserialize, Serialize};
-use solver::solver::{SolveResults, ValidationResult, solve_round};
+use solver::solver::{SolveResults, ValidationResult, solve_round, SolveType, ValidationError};
 use solver::{generator, grid};
 use wasm_bindgen::prelude::*;
 
@@ -67,7 +67,7 @@ pub fn solve_one(input: JsValue) -> Result<JsValue, JsValue> {
     let grid: WasmGrid = serde_wasm_bindgen::from_value(input)?;
     let mut grid: grid::Grid = grid.into();
     let res = solve_round(&mut grid, true);
-    let difficulty = res.as_ref().map(|res| res.difficulty()).unwrap_or(0);
+    let difficulty = res.as_ref().map(|res| res.ty.difficulty()).unwrap_or(0);
     Ok(serde_wasm_bindgen::to_value(&SolveOneReturn {
         grid: grid.into(),
         res_display: res
@@ -94,8 +94,8 @@ pub fn solve(input: JsValue, use_guesses: bool) -> Result<JsValue, JsValue> {
     loop {
         match solve_round(&mut grid, use_guesses) {
             Ok(strat) => {
-                let difficulty = strat.difficulty();
-                let was_solved = strat == SolveResults::PuzzleSolved;
+                let difficulty = strat.ty.difficulty();
+                let was_solved = strat.ty == SolveType::PuzzleSolved;
                 res.push(SolveOneReturn {
                     grid: grid.clone().into(),
                     res_display: Ok(strat.to_string()),
@@ -106,7 +106,7 @@ pub fn solve(input: JsValue, use_guesses: bool) -> Result<JsValue, JsValue> {
                     break;
                 }
             }
-            Err(ValidationResult::OutOfStrats) => {
+            Err(ValidationResult { ty: ValidationError::OutOfStrats, meta: _ }) => {
                 break;
             }
             Err(e) => {
@@ -129,7 +129,7 @@ pub fn puzzle_difficulty(input: JsValue) -> Result<JsValue, JsValue> {
     let history: Vec<WasmSolveResult> = serde_wasm_bindgen::from_value(input)?;
     let history: Vec<SolveResults> = history.into_iter().map(|item| item.into()).collect();
     let difficulty: WasmDifficulty =
-        solver::difficulty::puzzle_difficulty(&history.iter().collect::<Vec<_>>()).into();
+        solver::difficulty::puzzle_difficulty(&history.iter().map(|res| &res.ty).collect::<Vec<_>>()).into();
 
     Ok(serde_wasm_bindgen::to_value(&difficulty)?)
 }

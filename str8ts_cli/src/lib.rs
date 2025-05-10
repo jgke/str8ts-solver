@@ -1,4 +1,6 @@
 use std::process::ExitCode;
+use solver::solver::SolveType;
+
 pub fn cli() -> ExitCode {
     use clap::CommandFactory;
     use clap::Parser;
@@ -100,7 +102,7 @@ pub fn cli() -> ExitCode {
             let mut step_count = 0;
             loop {
                 match solve_round(&mut grid, true) {
-                    Ok(SolveResults::PuzzleSolved) => {
+                    Ok(SolveResults { ty: SolveType::PuzzleSolved, meta: _ }) => {
                         break;
                     }
                     Ok(step) => {

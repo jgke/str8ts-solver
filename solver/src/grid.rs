@@ -2,7 +2,7 @@ use rustc_hash::FxHashSet;
 use std::fmt::{Display, Formatter};
 
 use crate::bitset::BitSet;
-use crate::solver::ValidationResult;
+use crate::solver::{ValidationError, ValidationResult};
 use Cell::*;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -335,7 +335,7 @@ impl Grid {
         if let Cell::Indeterminate(ref mut set) = self.cells[y][x] {
             let ret = set.remove(num);
             if set.is_empty() {
-                return Err(ValidationResult::EmptyCell { pos });
+                return Err(ValidationError::EmptyCell { pos }.into());
             }
             return Ok(ret);
         }

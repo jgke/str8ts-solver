@@ -78,7 +78,7 @@ mod tests {
     use super::*;
     use crate::grid::Cell;
     use crate::solver::solve_basic;
-    use crate::solver::SolveResults::OutOfBasicStrats;
+    use crate::solver::SolveType::OutOfBasicStrats;
     use crate::strats;
     use crate::utils::*;
 
