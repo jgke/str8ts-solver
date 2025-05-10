@@ -78,13 +78,11 @@ pub fn guess(grid: &mut Grid) -> Result<Option<GuessSolveResult>, ValidationResu
     } {
         let GuessResult(((x, y), n)) = res;
         grid.set_impossible((x, y), n)?;
+        temp_grid.set_cell((x, y), Solution(n));
         let mut steps: Vec<(Grid, SolveResults)> =
             vec![(temp_grid.clone(), StartGuess((x, y), n).into())];
 
-        temp_grid.set_cell((x, y), Solution(n));
-
         loop {
-            let prev_grid = temp_grid.clone();
             match solve_round(&mut temp_grid, false) {
                 Err(ValidationResult {
                     ty: ValidationError::OutOfStrats,
@@ -97,7 +95,7 @@ pub fn guess(grid: &mut Grid) -> Result<Option<GuessSolveResult>, ValidationResu
                     meta: _,
                 }) => unreachable!(),
                 Ok(step) => {
-                    steps.push((prev_grid, step));
+                    steps.push((temp_grid.clone(), step));
                     if let Err(e) = validate(&temp_grid) {
                         steps.push((temp_grid.clone(), EndGuess(e).into()));
                         return Ok(Some(GuessSolveResult(((x, y), n, steps, temp_grid))));

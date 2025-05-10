@@ -10,7 +10,10 @@ fn full_solve(mut grid: Grid, enable_chains: bool) -> usize {
     loop {
         loop_count += 1;
         match solve_round(&mut grid, enable_chains) {
-            Ok(SolveResults { ty: SolveType::PuzzleSolved, meta: _ }) => {
+            Ok(SolveResults {
+                ty: SolveType::PuzzleSolved,
+                meta: _,
+            }) => {
                 break;
             }
             Ok(_) => {}

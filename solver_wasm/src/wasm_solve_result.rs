@@ -57,13 +57,17 @@ pub struct WasmSolveResult {
 
 impl From<SolveMetadata> for WasmSolveMetadata {
     fn from(value: SolveMetadata) -> Self {
-        WasmSolveMetadata {colors: value.colors}
+        WasmSolveMetadata {
+            colors: value.colors,
+        }
     }
 }
 
 impl From<WasmSolveMetadata> for SolveMetadata {
     fn from(value: WasmSolveMetadata) -> Self {
-        SolveMetadata {colors: value.colors}
+        SolveMetadata {
+            colors: value.colors,
+        }
     }
 }
 

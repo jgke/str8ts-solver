@@ -8,7 +8,7 @@ use crate::wasm_difficulty::WasmDifficulty;
 use crate::wasm_grid::WasmGrid;
 use crate::wasm_solve_result::WasmSolveResult;
 use serde::{Deserialize, Serialize};
-use solver::solver::{SolveResults, ValidationResult, solve_round, SolveType, ValidationError};
+use solver::solver::{SolveResults, SolveType, ValidationError, ValidationResult, solve_round};
 use solver::{generator, grid};
 use wasm_bindgen::prelude::*;
 
@@ -106,7 +106,10 @@ pub fn solve(input: JsValue, use_guesses: bool) -> Result<JsValue, JsValue> {
                     break;
                 }
             }
-            Err(ValidationResult { ty: ValidationError::OutOfStrats, meta: _ }) => {
+            Err(ValidationResult {
+                ty: ValidationError::OutOfStrats,
+                meta: _,
+            }) => {
                 break;
             }
             Err(e) => {
@@ -128,8 +131,10 @@ pub fn solve(input: JsValue, use_guesses: bool) -> Result<JsValue, JsValue> {
 pub fn puzzle_difficulty(input: JsValue) -> Result<JsValue, JsValue> {
     let history: Vec<WasmSolveResult> = serde_wasm_bindgen::from_value(input)?;
     let history: Vec<SolveResults> = history.into_iter().map(|item| item.into()).collect();
-    let difficulty: WasmDifficulty =
-        solver::difficulty::puzzle_difficulty(&history.iter().map(|res| &res.ty).collect::<Vec<_>>()).into();
+    let difficulty: WasmDifficulty = solver::difficulty::puzzle_difficulty(
+        &history.iter().map(|res| &res.ty).collect::<Vec<_>>(),
+    )
+    .into();
 
     Ok(serde_wasm_bindgen::to_value(&difficulty)?)
 }

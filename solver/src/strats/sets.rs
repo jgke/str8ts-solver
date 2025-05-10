@@ -1,11 +1,12 @@
 use crate::bitset::BitSet;
 use crate::grid::{Grid, Point};
-use crate::solver::ValidationResult;
+use crate::solver::{SolveMetadata, SolveResults, SolveType, ValidationResult};
 use itertools::Itertools;
 use rustc_hash::FxHashSet;
 
-pub fn sets(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
+pub fn sets(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
     let mut changes = false;
+    let mut colored_sets: Vec<(Vec<Point>, BitSet)> = Vec::new();
 
     for n in 2..grid.x {
         for (vertical, line) in grid.iter_by_rows_and_cols() {
@@ -47,6 +48,7 @@ pub fn sets(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
                     }
                     changes |= local_changes;
                     if local_changes {
+                        colored_sets.push((applies_to.into_iter().sorted().collect(), try_set));
                         break;
                     }
                 }
@@ -54,7 +56,17 @@ pub fn sets(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
         }
 
         if changes {
-            return Ok(Some(n));
+            let colors = colored_sets
+                .into_iter()
+                .map(|(points, set)| {
+                    set.into_iter()
+                        .flat_map(|n| points.iter().copied().map(move |point| (point, n)))
+                        .collect()
+                })
+                .collect();
+            let meta = SolveMetadata { colors };
+            let ty = SolveType::Sets(n);
+            return Ok(Some(SolveResults { ty, meta }));
         }
     }
     Ok(None)
@@ -63,6 +75,7 @@ pub fn sets(grid: &mut Grid) -> Result<Option<usize>, ValidationResult> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::solver::SolveType::Sets;
     use crate::utils::*;
 
     #[test]
@@ -83,7 +96,15 @@ mod tests {
         grid.cells[3][1] = det([1, 2, 3]);
 
         /* round 1: n=2 */
-        assert_eq!(Ok(Some(2)), sets(&mut grid));
+        assert_eq!(
+            Ok(Some(SolveResults {
+                ty: Sets(2),
+                meta: SolveMetadata {
+                    colors: vec![vec![((1, 1), 1), ((2, 1), 1), ((1, 1), 2), ((2, 1), 2)]]
+                }
+            })),
+            sets(&mut grid)
+        );
 
         assert_eq!(grid.cells[1][1], det([1, 2]));
         assert_eq!(grid.cells[1][2], det([1, 2]));
@@ -103,7 +124,25 @@ mod tests {
         assert_eq!(grid.cells[6][6], det([1, 2, 3, 4, 5, 6, 7, 8]));
 
         /* round 2: n=3 */
-        assert_eq!(Ok(Some(3)), sets(&mut grid));
+        assert_eq!(
+            Ok(Some(SolveResults {
+                ty: Sets(3),
+                meta: SolveMetadata {
+                    colors: vec![vec![
+                        ((1, 1), 1),
+                        ((1, 2), 1),
+                        ((1, 3), 1),
+                        ((1, 1), 2),
+                        ((1, 2), 2),
+                        ((1, 3), 2),
+                        ((1, 1), 3),
+                        ((1, 2), 3),
+                        ((1, 3), 3)
+                    ]]
+                }
+            })),
+            sets(&mut grid)
+        );
 
         assert_eq!(grid.cells[1][1], det([1, 2]));
         assert_eq!(grid.cells[1][2], det([1, 2]));
@@ -142,13 +181,39 @@ mod tests {
         grid.row_requirements[0].insert(1);
 
         /* round 1: n=2 */
-        assert_eq!(Ok(Some(2)), sets(&mut grid));
+        assert_eq!(
+            Ok(Some(SolveResults {
+                ty: Sets(2),
+                meta: SolveMetadata {
+                    colors: vec![vec![((1, 1), 1), ((2, 1), 1), ((1, 1), 2), ((2, 1), 2)]]
+                }
+            })),
+            sets(&mut grid)
+        );
 
         assert_eq!(grid.row_requirements[1], set([1, 2]));
         assert_eq!(grid.col_requirements[1], set([]));
 
         /* round 2: n=3 */
-        assert_eq!(Ok(Some(3)), sets(&mut grid));
+        assert_eq!(
+            Ok(Some(SolveResults {
+                ty: Sets(3),
+                meta: SolveMetadata {
+                    colors: vec![vec![
+                        ((1, 1), 1),
+                        ((1, 2), 1),
+                        ((1, 3), 1),
+                        ((1, 1), 2),
+                        ((1, 2), 2),
+                        ((1, 3), 2),
+                        ((1, 1), 3),
+                        ((1, 2), 3),
+                        ((1, 3), 3)
+                    ]]
+                }
+            })),
+            sets(&mut grid)
+        );
 
         assert_eq!(grid.row_requirements[1], set([1, 2]));
         assert_eq!(grid.col_requirements[1], set([1, 2, 3]));

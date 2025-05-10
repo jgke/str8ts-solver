@@ -326,8 +326,8 @@ pub fn run_basic(grid: &mut Grid) -> Result<SolveResults, ValidationResult> {
             RequiredRange.into()
         } else if grid.has_requirements() && strats::update_required_and_forbidden(grid)? {
             RequiredAndForbidden.into()
-        } else if let Some(n) = strats::sets(grid)? {
-            Sets(n).into()
+        } else if let Some(res) = strats::sets(grid)? {
+            res
         } else {
             OutOfBasicStrats.into()
         }
@@ -345,8 +345,8 @@ pub fn run_advanced(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationR
         Setti(set).into()
     } else if strats::row_col_brute(grid)? {
         RowColBrute.into()
-    } else if let Some((pos, n)) = strats::y_wing(grid)? {
-        YWing(pos, n).into()
+    } else if let Some(res) = strats::y_wing(grid)? {
+        res
     } else if let Some(n) = strats::fish(grid)? {
         Fish(n).into()
     } else {
