@@ -39,7 +39,7 @@ export type WasmUrResult =
   | { SolutionCausesClosedSets: [Point, number] };
 
 export interface WasmSolveMetadata {
-  colors: [Point, number][][],
+  colors: [Point, number][][];
 }
 
 export type WasmSolveType =
@@ -60,11 +60,12 @@ export type WasmSolveType =
   | { GuessStep: [Point, number, [WasmGrid, WasmSolveResult, string][], WasmGrid] }
   | { EndGuess: WasmValidationResult }
   | "PuzzleSolved"
+  | "EnumerateSolutions"
   | "OutOfBasicStrats";
 
 export interface WasmSolveResult {
-  ty: WasmSolveType,
-  meta: WasmSolveMetadata
+  ty: WasmSolveType;
+  meta: WasmSolveMetadata;
 }
 
 export type WasmValidationError =
@@ -86,8 +87,8 @@ export type WasmValidationError =
   | "OutOfStrats";
 
 export interface WasmValidationResult {
-  ty: WasmValidationError,
-  meta: WasmSolveMetadata
+  ty: WasmValidationError;
+  meta: WasmSolveMetadata;
 }
 
 export interface WasmDifficulty {
@@ -112,7 +113,7 @@ export interface WasmDifficulty {
 export interface WasmSolveOneReturn {
   difficulty: number;
   grid: WasmGrid;
-  res: WasmResult<WasmSolveResult, string>;
+  res: WasmResult<WasmSolveResult, WasmValidationResult>;
   res_display: WasmResult<string, string>;
 }
 

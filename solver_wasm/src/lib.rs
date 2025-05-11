@@ -7,6 +7,7 @@ mod wasm_validation_result;
 use crate::wasm_difficulty::WasmDifficulty;
 use crate::wasm_grid::WasmGrid;
 use crate::wasm_solve_result::WasmSolveResult;
+use crate::wasm_validation_result::WasmValidationResult;
 use serde::{Deserialize, Serialize};
 use solver::solver::{SolveResults, SolveType, ValidationError, ValidationResult, solve_round};
 use solver::{generator, grid};
@@ -58,7 +59,7 @@ pub fn generate(input: JsValue) -> Result<JsValue, JsValue> {
 struct SolveOneReturn {
     grid: WasmGrid,
     res_display: Result<String, String>,
-    res: Result<WasmSolveResult, String>,
+    res: Result<WasmSolveResult, WasmValidationResult>,
     difficulty: usize,
 }
 
@@ -74,7 +75,7 @@ pub fn solve_one(input: JsValue) -> Result<JsValue, JsValue> {
             .as_ref()
             .map(|ok| ok.to_string())
             .map_err(|err| err.to_string()),
-        res: res.map(|ok| ok.into()).map_err(|err| err.to_string()),
+        res: res.map(|ok| ok.into()).map_err(|err| err.into()),
         difficulty,
     })?)
 }
@@ -115,7 +116,7 @@ pub fn solve(input: JsValue, use_guesses: bool) -> Result<JsValue, JsValue> {
             Err(e) => {
                 res.push(SolveOneReturn {
                     grid: grid.clone().into(),
-                    res: Err(e.to_string()),
+                    res: Err(e.clone().into()),
                     res_display: Err(e.to_string()),
                     difficulty: 0,
                 });

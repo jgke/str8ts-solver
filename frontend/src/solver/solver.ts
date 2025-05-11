@@ -11,6 +11,7 @@ import {
   puzzle_difficulty as wasmPuzzleDifficulty,
   WasmSolveResult,
   WasmDifficulty,
+  WasmValidationResult,
 } from "./wasmTypes.ts";
 
 export type Cell =
@@ -85,7 +86,7 @@ export function parse(input: string[]): WasmResult<Grid, string> {
 interface SolveOneResult {
   difficulty: number;
   grid: Grid;
-  res: WasmResult<WasmSolveResult, string>;
+  res: WasmResult<WasmSolveResult, WasmValidationResult>;
   resDisplay: WasmResult<string, string>;
 }
 
@@ -113,13 +114,13 @@ export function puzzleDifficulty(history: WasmSolveResult[]): WasmDifficulty {
   return wasmPuzzleDifficulty(history);
 }
 
-export function getColors(row: WasmResult<WasmSolveResult, string>): number[][][] | null {
-  if ("Err" in row) return null;
-  if (row.Ok.meta.colors.length) {
+export function getColors(row: WasmResult<WasmSolveResult, WasmValidationResult>): number[][][] | null {
+  const colors = "Err" in row ? row.Err.meta.colors : row.Ok.meta.colors;
+  if (colors.length) {
     const grid = [...Array(9)].map(() => [...Array(9)].map(() => [...Array(10)].map(() => 0)));
 
-    for (let color = 0; color < row.Ok.meta.colors.length; color++) {
-      row.Ok.meta.colors[color].forEach(([[x, y], n]) => {
+    for (let color = 0; color < colors.length; color++) {
+      colors[color].forEach(([[x, y], n]) => {
         grid[y][x][n] = color + 1;
       });
     }

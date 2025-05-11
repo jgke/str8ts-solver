@@ -43,6 +43,7 @@ pub enum WasmValidationError {
     Ambiguous {
         cells: Vec<Point>,
     },
+    NoSolutions,
     OutOfStrats,
 }
 
@@ -64,6 +65,7 @@ impl From<ValidationError> for WasmValidationError {
             ValidationError::RequiredNumberMissing { vertical, index, number, } => WasmValidationError::RequiredNumberMissing { vertical, index, number, },
             ValidationError::BlockedNumberPresent { vertical, index, number, } => WasmValidationError::BlockedNumberPresent { vertical, index, number, },
             ValidationError::Ambiguous { cells, } => WasmValidationError::Ambiguous { cells, },
+            ValidationError::NoSolutions => WasmValidationError::NoSolutions,
             ValidationError::OutOfStrats => WasmValidationError::OutOfStrats,
         }
     }
@@ -81,6 +83,7 @@ impl From<WasmValidationError> for ValidationError {
             WasmValidationError::RequiredNumberMissing { vertical, index, number, } => ValidationError::RequiredNumberMissing { vertical, index, number, },
             WasmValidationError::BlockedNumberPresent { vertical, index, number, } => ValidationError::BlockedNumberPresent { vertical, index, number, },
             WasmValidationError::Ambiguous { cells, } => ValidationError::Ambiguous { cells, },
+            WasmValidationError::NoSolutions => ValidationError::NoSolutions,
             WasmValidationError::OutOfStrats => ValidationError::OutOfStrats,
         }
     }

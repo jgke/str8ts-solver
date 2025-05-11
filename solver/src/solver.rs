@@ -3,7 +3,7 @@ use crate::grid::{Grid, Point};
 use crate::solver::SolveType::*;
 use crate::solver::ValidationError::*;
 use crate::strats;
-use crate::strats::UrResult;
+use crate::strats::{enumerate_solutions, UrResult};
 use crate::validator::validate;
 use itertools::intersperse;
 use std::fmt::{Display, Formatter};
@@ -33,6 +33,7 @@ pub enum SolveType {
     GuessStep(Point, u8, Rc<Vec<(Grid, SolveResults)>>, Grid),
     EndGuess(ValidationResult),
     PuzzleSolved,
+    EnumerateSolutions,
     OutOfBasicStrats,
 }
 
@@ -71,6 +72,7 @@ impl SolveType {
             GuessStep(_, _, _, _) => 7,
             EndGuess(_) => 1,
             PuzzleSolved => 1,
+            EnumerateSolutions => 7,
             OutOfBasicStrats => 0,
         }
     }
@@ -181,6 +183,7 @@ impl Display for SolveResults {
             ),
             EndGuess(end) => write!(f, "{}", end),
             PuzzleSolved => write!(f, "Puzzle solved"),
+            EnumerateSolutions => write!(f, "Enumerate all possible solutions"),
             OutOfBasicStrats => write!(f, "Out of basic strats"),
         }
     }
@@ -226,6 +229,7 @@ pub enum ValidationError {
     Ambiguous {
         cells: Vec<Point>,
     },
+    NoSolutions,
     OutOfStrats,
 }
 
@@ -286,6 +290,7 @@ impl Display for ValidationResult {
                        number, if *vertical {"column"} else {"row"}, index + 1
                        ),
             Ambiguous { .. } => write!(f, "Grid is ambiguous, and cannot be solved"),
+            NoSolutions => write!(f, "Exhaustive search proves grid has no solutions"),
             OutOfStrats => write!(f, "Ran out of strategies!"),
         }
     }
@@ -392,6 +397,16 @@ pub fn run_guess(
     ))
 }
 
+pub fn run_enumerate(
+    grid: &mut Grid,
+    enable_guesses: bool,
+) -> Result<Option<SolveResults>, ValidationResult> {
+    if !enable_guesses {
+        return Ok(None);
+    }
+    enumerate_solutions(grid)
+}
+
 pub fn solve_round(
     grid: &mut Grid,
     enable_guesses: bool,
@@ -414,6 +429,8 @@ pub fn solve_round(
             } else if let Some(res) = run_unique(grid, enable_guesses)? {
                 Ok(res)
             } else if let Some(res) = run_guess(grid, enable_guesses)? {
+                Ok(res)
+            } else if let Some(res) = run_enumerate(grid, enable_guesses)? {
                 Ok(res)
             } else {
                 Err(OutOfStrats.into())

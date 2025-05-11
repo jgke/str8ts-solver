@@ -1,4 +1,5 @@
 mod definite_min_max;
+mod enumerate_solutions;
 mod fish;
 mod guess;
 mod medusa;
@@ -16,6 +17,7 @@ mod update_required_and_forbidden;
 mod y_wing;
 
 pub use definite_min_max::*;
+pub use enumerate_solutions::*;
 pub use fish::*;
 pub use guess::*;
 pub use medusa::*;

@@ -1,5 +1,5 @@
 import { getColors, Grid, gridFromWasm } from "../solver/solver.ts";
-import { isOk, WasmResult, WasmSolveResult, WasmSolveType } from "../solver/wasmTypes.ts";
+import { isOk, WasmResult, WasmSolveResult, WasmSolveType, WasmValidationResult } from "../solver/wasmTypes.ts";
 import { unreachable } from "../utils/unreachable.ts";
 import { MouseEventHandler, MouseEvent, useMemo, useState } from "react";
 import { useEvent } from "../utils/useEvent.ts";
@@ -7,14 +7,14 @@ import { useEvent } from "../utils/useEvent.ts";
 export interface HistoryNode {
   grid: Grid;
   message: WasmResult<string, string>;
-  data: WasmResult<WasmSolveResult, string>;
+  data: WasmResult<WasmSolveResult, WasmValidationResult>;
   difficulty: number;
 }
 
 export interface HistoryGroup {
   grid: Grid;
   message: WasmResult<string, string>;
-  data: WasmResult<WasmSolveResult, string>;
+  data: WasmResult<WasmSolveResult, WasmValidationResult>;
   children: HistoryNode[];
 }
 
@@ -46,7 +46,8 @@ function borderForSolution(cell: WasmSolveType): string {
     cell === "Singles" ||
     cell === "Stranded" ||
     cell === "DefiniteMinMax" ||
-    cell === "RequiredRange"
+    cell === "RequiredRange" ||
+    cell === "EnumerateSolutions"
   )
     return "";
   if (cell === "RequiredAndForbidden" || cell === "RowColBrute" || "Setti" in cell)
