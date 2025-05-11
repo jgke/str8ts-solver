@@ -10,7 +10,9 @@ fn iter(grid: &Grid, indeterminates: &[(Point, BitSet)]) -> Vec<Grid> {
         for num in set {
             let mut inner = grid.clone();
             inner.set_cell(pos, Solution(num));
-            res.extend(iter(&inner, rest))
+            if validate(grid).is_ok() {
+                res.extend(iter(&inner, rest));
+            }
         }
         res
     } else if validate(grid).is_ok() {
