@@ -375,7 +375,7 @@ pub fn run_unique(
     grid: &mut Grid,
     enable_guesses: bool,
 ) -> Result<Option<SolveResults>, ValidationResult> {
-    Ok(strats::unique_requirement(grid, enable_guesses)?.map(|res| UniqueRequirement(res).into()))
+    strats::unique_requirement(grid, enable_guesses)
 }
 
 pub fn run_guess(
