@@ -124,4 +124,17 @@ mod tests {
             })
         );
     }
+
+    #[test]
+    fn test_over_limit() {
+        let mut grid = g("
+.....
+.....
+.....
+.....
+.....
+");
+
+        assert_eq!(enumerate_solutions(&mut grid), Ok(None));
+    }
 }
