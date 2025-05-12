@@ -71,19 +71,6 @@ pub fn fish(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
                         }
                     }
 
-                    if candidates.len() > fish_count {
-                        // puzzle not solvable
-                        let positions: FxHashSet<Point> = candidates
-                            .iter()
-                            .flat_map(|line| line.iter())
-                            .copied()
-                            .collect();
-                        #[allow(clippy::iter_over_hash_type)]
-                        for position in &positions {
-                            changes |= grid.set_impossible(*position, num)?;
-                        }
-                        changes = true;
-                    }
                     if candidates.len() == fish_count {
                         let mut local_changes = false;
                         let positions: FxHashSet<Point> = candidates
