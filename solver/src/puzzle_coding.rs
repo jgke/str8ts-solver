@@ -1,4 +1,4 @@
-//! Puzzle decoding component, based on the str8ts.com string definition format
+//! Puzzle encoding / decoding, based on the str8ts.com string definition format
 //! https://www.str8ts.com/Str8ts_String_Definitions
 
 use crate::bitset::BitSet;
@@ -214,15 +214,14 @@ mod tests {
     #[test]
     fn test_encode() {
         let mut grid = g("
-#.#
+#.c
 ..#
-#..
+#.2
 ");
         grid.cells[0][1] = det([1]);
-        grid.cells[1][1] = det([1, 2]);
-        grid.cells[1][0] = det([2]);
-        grid.cells[2][2] = det([3]);
+        grid.cells[1][0] = det([1, 2]);
+        let _ = crate::strats::trivial(&mut grid);
 
-        assert_eq!("T3B0a0u0a0v0w0a0a100x", encode(&grid));
+        assert_eq!("T3B0a0l0d0w100a0a1002", encode(&grid));
     }
 }
