@@ -23,12 +23,7 @@ fn run_guess(candidates: Vec<(Grid, ForcedNumber)>, max_depth: usize) -> Option<
         match into_ty(solve_round(&mut temp_grid, false)) {
             Err(ValidationError::OutOfStrats) => {}
             Ok(PuzzleSolved) => {} // well...
-            Ok(_) => {
-                if validate(&temp_grid).is_err() {
-                    return Some(GuessResult((pos, n)));
-                }
-                candidates.push_back(((temp_grid, (pos, n)), count + 1));
-            }
+            Ok(_) => candidates.push_back(((temp_grid, (pos, n)), count + 1)),
             Err(_) => return Some(GuessResult((pos, n))),
         }
     }
@@ -96,10 +91,6 @@ pub fn guess(grid: &mut Grid) -> Result<Option<GuessSolveResult>, ValidationResu
                 }) => break,
                 Ok(step) => {
                     steps.push((temp_grid.clone(), step));
-                    if let Err(e) = validate(&temp_grid) {
-                        steps.push((temp_grid.clone(), EndGuess(e).into()));
-                        return Ok(Some(GuessSolveResult(((x, y), n, steps, temp_grid))));
-                    }
                 }
                 Err(e) => {
                     steps.push((temp_grid.clone(), EndGuess(e).into()));
@@ -142,5 +133,15 @@ mod tests {
         assert_eq!(3, n);
 
         assert_eq!(grid.get_cell((3, 0)), &det([2, 3, 5]));
+    }
+
+    #[test]
+    fn guess_ambiguous() {
+        let mut grid = g("
+..
+..
+");
+
+        assert_eq!(Ok(None), guess(&mut grid));
     }
 }
