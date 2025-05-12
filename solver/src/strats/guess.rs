@@ -3,7 +3,6 @@ use crate::grid::Cell::*;
 use crate::grid::{Grid, Point};
 use crate::solver::SolveType::*;
 use crate::solver::{into_ty, solve_round, SolveResults, ValidationError, ValidationResult};
-use crate::validator::validate;
 use itertools::Itertools;
 use std::collections::VecDeque;
 

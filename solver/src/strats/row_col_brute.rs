@@ -1,7 +1,7 @@
 use crate::bitset::BitSet;
 use crate::grid::{Cell, Compartment, Grid};
 use crate::solver::ValidationResult;
-use crate::validator::{compartment_valid, validate};
+use crate::validator::compartment_valid;
 
 pub fn solution_valid(compartments: &[Compartment], requirements: BitSet) -> bool {
     let mut seen_numbers = BitSet::new();
