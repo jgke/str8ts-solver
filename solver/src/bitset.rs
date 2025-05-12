@@ -17,6 +17,14 @@ impl BitSet {
         BitSet(0)
     }
 
+    pub fn new_from_number(num: u32) -> BitSet {
+        BitSet(num)
+    }
+
+    pub fn to_number(&self) -> u32 {
+        self.0
+    }
+
     pub fn contains(&self, num: u8) -> bool {
         (self.0 & (1 << num)) != 0
     }

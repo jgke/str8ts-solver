@@ -10,7 +10,7 @@ use crate::wasm_solve_result::WasmSolveResult;
 use crate::wasm_validation_result::WasmValidationResult;
 use serde::{Deserialize, Serialize};
 use solver::solver::{SolveResults, SolveType, ValidationError, ValidationResult, solve_round};
-use solver::{generator, grid};
+use solver::{generator, grid, puzzle_coding};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -138,4 +138,12 @@ pub fn puzzle_difficulty(input: JsValue) -> Result<JsValue, JsValue> {
     .into();
 
     Ok(serde_wasm_bindgen::to_value(&difficulty)?)
+}
+
+#[wasm_bindgen]
+pub fn encode(input: JsValue) -> Result<String, JsValue> {
+    let grid: WasmGrid = serde_wasm_bindgen::from_value(input)?;
+    let grid: grid::Grid = grid.into();
+
+    Ok(puzzle_coding::encode(&grid))
 }

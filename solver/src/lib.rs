@@ -7,5 +7,6 @@ pub mod bitset;
 pub mod difficulty;
 pub mod generator;
 pub mod grid;
+pub mod puzzle_coding;
 pub mod strats;
 pub mod validator;

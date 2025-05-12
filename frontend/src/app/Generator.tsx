@@ -44,7 +44,7 @@ function GeneratorFields() {
         type="submit"
         disabled={pending}
       >
-        Parse
+        Generate
       </button>
       {pending && <p>Calculating...</p>}
     </>

@@ -1,7 +1,7 @@
 use crate::bitset::BitSet;
 use crate::grid::{Cell, Compartment, Grid};
 use crate::solver::ValidationResult;
-use crate::validator::compartment_valid;
+use crate::validator::{compartment_valid, validate};
 
 pub fn solution_valid(compartments: &[Compartment], requirements: BitSet) -> bool {
     let mut seen_numbers = BitSet::new();
@@ -70,13 +70,13 @@ pub fn compartment_solutions(
 fn compartment_contains_number(comp: &Compartment, num: u8) -> bool {
     comp.cells.iter().any(|(_, cell)| match cell {
         Cell::Solution(n) | Cell::Requirement(n) => *n == num,
-        Cell::Indeterminate(_) => unreachable!(),
+        Cell::Indeterminate(_) => false,
         Cell::Black => false,
         Cell::Blocker(_) => false,
     })
 }
 
-fn compartments_contains_number(compartments: &[Compartment], num: u8) -> bool {
+fn solved_compartments_contains_number(compartments: &[Compartment], num: u8) -> bool {
     compartments
         .iter()
         .any(|comp| compartment_contains_number(comp, num))
@@ -99,18 +99,19 @@ pub fn row_col_brute(grid: &mut Grid) -> Result<bool, ValidationResult> {
                     }
                 }
             }
-            unreachable!();
+            validate(grid)?;
+            return Ok(true);
         }
         for i in 1..=9 {
             if solutions
                 .iter()
-                .all(|comps| compartments_contains_number(comps, i))
+                .all(|comps| solved_compartments_contains_number(comps, i))
             {
                 changes |= grid.row_requirements[index].insert(i);
             }
             if solutions
                 .iter()
-                .all(|comps| !compartments_contains_number(comps, i))
+                .all(|comps| !solved_compartments_contains_number(comps, i))
             {
                 changes |= grid.row_forbidden[index].insert(i);
             }
@@ -153,18 +154,19 @@ pub fn row_col_brute(grid: &mut Grid) -> Result<bool, ValidationResult> {
                     }
                 }
             }
-            unreachable!();
+            validate(grid)?;
+            return Ok(true);
         }
         for i in 1..=9 {
             if solutions
                 .iter()
-                .all(|comps| compartments_contains_number(comps, i))
+                .all(|comps| solved_compartments_contains_number(comps, i))
             {
                 changes |= grid.col_requirements[index].insert(i);
             }
             if solutions
                 .iter()
-                .all(|comps| !compartments_contains_number(comps, i))
+                .all(|comps| !solved_compartments_contains_number(comps, i))
             {
                 changes |= grid.col_forbidden[index].insert(i);
             }

@@ -9,6 +9,7 @@ import {
   solve_one as wasmSolveOne,
   solve as wasmSolve,
   puzzle_difficulty as wasmPuzzleDifficulty,
+  encode as wasmEncode,
   WasmSolveResult,
   WasmDifficulty,
   WasmValidationResult,
@@ -112,6 +113,10 @@ export function solve(input: Grid, useGuessing: boolean): SolveResult {
 
 export function puzzleDifficulty(history: WasmSolveResult[]): WasmDifficulty {
   return wasmPuzzleDifficulty(history);
+}
+
+export function encode(grid: Grid): string {
+  return wasmEncode(gridToWasm(grid));
 }
 
 export function getColors(row: WasmResult<WasmSolveResult, WasmValidationResult>): number[][][] | null {

@@ -121,6 +121,11 @@ export function App() {
     if (isOk(resDisplay)) setHint(resDisplay.Ok);
   });
 
+  const onCopy = useEvent(() => {
+    const s = solver.encode(grid);
+    void navigator.clipboard.writeText(s);
+  });
+
   const isSolved = useMemo(() => grid.cells.every((row) => row.every((cell) => cell.ty !== "Indeterminate")), [grid]);
 
   return (
@@ -136,6 +141,7 @@ export function App() {
             editMode={editMode}
             openImporter={openImporter}
             openGenerator={openGenerator}
+            onCopy={onCopy}
           />
           <Hint hint={hint} />
           <Error error={error} />

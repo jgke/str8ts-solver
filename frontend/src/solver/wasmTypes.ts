@@ -145,6 +145,10 @@ export function puzzle_difficulty(history: WasmSolveResult[]): WasmDifficulty {
   return mod.puzzle_difficulty(history);
 }
 
+export function encode(grid: WasmGrid): string {
+  return mod.encode(grid);
+}
+
 const generatorWorker = new Worker(new URL("generatorWorker.js", import.meta.url));
 generatorWorker.onerror = console.warn;
 

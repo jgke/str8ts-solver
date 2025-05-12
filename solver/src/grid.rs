@@ -2,6 +2,7 @@ use rustc_hash::FxHashSet;
 use std::fmt::{Display, Formatter};
 
 use crate::bitset::BitSet;
+use crate::puzzle_coding;
 use crate::solver::{ValidationError, ValidationResult};
 use Cell::*;
 
@@ -418,63 +419,7 @@ impl Grid {
     }
 
     pub fn parse(puzzle: Vec<String>) -> Result<Grid, String> {
-        let puzzle = puzzle
-            .join("\n")
-            .trim()
-            .lines()
-            .map(|s| s.to_string())
-            .collect::<Vec<_>>();
-
-        if puzzle.len() == 1 {
-            let row = puzzle[0]
-                .split("bd=")
-                .last()
-                .unwrap()
-                .chars()
-                .take_while(|c| c.is_ascii_digit())
-                .collect::<Vec<_>>();
-
-            let size = ((row.len() / 2) as f64).sqrt() as usize;
-            let size2 = size * size;
-            if 2 * size2 != row.len() {
-                return Err("Did not recognize puzzle format: Tried to detect as oneline but dimensions did not match".to_string());
-            }
-
-            let mut cells = Vec::new();
-            for y in 0..size {
-                let mut res = Vec::new();
-                for x in 0..size {
-                    match (row[y * size + x], row[y * size + x + size2]) {
-                        ('0', '0') => res.push(Indeterminate((1..=size as u8).collect())),
-                        ('0', '1') => res.push(Black),
-                        (c @ '1'..='9', '0') => res.push(Requirement((c as u8) - b'0')),
-                        (c @ '1'..='9', '1') => res.push(Blocker((c as u8) - b'0')),
-                        (other, _) => return Err(format!("Unexpected character: {}", other)),
-                    }
-                }
-                cells.push(res);
-            }
-
-            Grid::new(cells)
-        } else {
-            let mut cells = Vec::new();
-            let size = puzzle.len();
-            for row in puzzle {
-                let mut res = Vec::new();
-                for c in row.chars() {
-                    match c {
-                        '1'..='9' => res.push(Requirement((c as u8) - b'0')),
-                        'a'..='i' => res.push(Blocker((c as u8) - b'a' + 1)),
-                        '.' => res.push(Indeterminate((1..=size as u8).collect())),
-                        '#' => res.push(Black),
-                        other => return Err(format!("Unexpected character: {}", other)),
-                    }
-                }
-                cells.push(res);
-            }
-
-            Grid::new(cells)
-        }
+        puzzle_coding::parse(puzzle)
     }
 
     pub fn parse_oneline(grid: &str) -> Result<Grid, String> {

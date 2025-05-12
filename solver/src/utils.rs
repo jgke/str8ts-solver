@@ -27,3 +27,31 @@ pub fn set_range<const N: usize>(grid: &mut Grid, tl: Point, br: Point, vals: [u
         }
     }
 }
+
+// Taken from: https://github.com/rust-lang/rust/blob/master/library/coretests/tests/num/mod.rs
+// Not currently in std lib (issue: #27728)
+pub fn format_radix<T>(mut x: T, radix: T) -> String
+where
+    T: std::ops::Rem<Output = T>,
+    T: std::ops::Div<Output = T>,
+    T: std::cmp::PartialEq,
+    T: std::default::Default,
+    T: Copy,
+    T: Default,
+    u32: TryFrom<T>,
+{
+    let mut result = vec![];
+
+    loop {
+        let m = x % radix;
+        x = x / radix;
+        result.push(
+            std::char::from_digit(m.try_into().ok().unwrap(), radix.try_into().ok().unwrap())
+                .unwrap(),
+        );
+        if x == T::default() {
+            break;
+        }
+    }
+    result.into_iter().rev().collect()
+}

@@ -18,10 +18,12 @@ export interface HeaderProps {
   openImporter(): void;
 
   openGenerator(): void;
+
+  onCopy(): void;
 }
 
 export function Header(props: HeaderProps) {
-  const { isSolved, onStep, onHint, onSolve, setEditMode, editMode, openImporter, openGenerator } = props;
+  const { isSolved, onStep, onHint, onSolve, setEditMode, editMode, openImporter, openGenerator, onCopy } = props;
 
   const [hamburger, setHamburger] = useState(false);
 
@@ -47,6 +49,11 @@ export function Header(props: HeaderProps) {
   const onSolveClick = useEvent(() => {
     closeHamburger();
     onSolve(true);
+  });
+
+  const onCopyClick = useEvent(() => {
+    closeHamburger();
+    onCopy();
   });
 
   const label_classNamees =
@@ -104,6 +111,9 @@ export function Header(props: HeaderProps) {
             </Button>
             <Button className="mb-2" onClick={onGenerator}>
               Generate puzzle
+            </Button>
+            <Button className="mb-2" onClick={onCopyClick}>
+              Copy puzzle to clipboard
             </Button>
             <Button disabled={isSolved} className="mb-2" onClick={onSolveWithoutGuessingClick}>
               Solve without guessing

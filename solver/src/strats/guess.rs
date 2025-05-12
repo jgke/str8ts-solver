@@ -88,12 +88,12 @@ pub fn guess(grid: &mut Grid) -> Result<Option<GuessSolveResult>, ValidationResu
                     ty: ValidationError::OutOfStrats,
                     meta: _,
                 }) => {
-                    unreachable!();
+                    break;
                 }
                 Ok(SolveResults {
                     ty: PuzzleSolved,
                     meta: _,
-                }) => unreachable!(),
+                }) => break,
                 Ok(step) => {
                     steps.push((temp_grid.clone(), step));
                     if let Err(e) = validate(&temp_grid) {
