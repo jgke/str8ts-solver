@@ -30,12 +30,6 @@ pub fn required_by_range(grid_size: usize, line: &[CellPair]) -> BitSet {
         .collect()
 }
 
-pub fn possible_numbers(line: &[CellPair]) -> BitSet {
-    line.iter()
-        .map(|(_, cell)| cell.to_possibles())
-        .fold(BitSet::new(), |a, b| a.union(b))
-}
-
 pub fn get_compartment_range(
     grid_size: usize,
     compartment: &Compartment,

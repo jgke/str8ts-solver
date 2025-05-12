@@ -68,12 +68,9 @@ pub fn compartment_solutions(
 }
 
 fn compartment_contains_number(comp: &Compartment, num: u8) -> bool {
-    comp.cells.iter().any(|(_, cell)| match cell {
-        Cell::Solution(n) | Cell::Requirement(n) => *n == num,
-        Cell::Indeterminate(_) => false,
-        Cell::Black => false,
-        Cell::Blocker(_) => false,
-    })
+    comp.cells
+        .iter()
+        .any(|(_, cell)| cell.to_req_or_sol() == Some(num))
 }
 
 fn solved_compartments_contains_number(compartments: &[Compartment], num: u8) -> bool {
@@ -90,18 +87,6 @@ pub fn row_col_brute(grid: &mut Grid) -> Result<bool, ValidationResult> {
             continue;
         }
         let solutions = compartment_solutions(&compartments, grid.row_requirements[index]);
-        if solutions.is_empty() {
-            /* Grid is unsolvable */
-            for compartment in &compartments {
-                for (pos, cell) in &compartment.cells {
-                    if let Cell::Indeterminate(set) = cell {
-                        grid.remove_numbers(*pos, *set)?;
-                    }
-                }
-            }
-            validate(grid)?;
-            return Ok(true);
-        }
         for i in 1..=9 {
             if solutions
                 .iter()
@@ -145,18 +130,6 @@ pub fn row_col_brute(grid: &mut Grid) -> Result<bool, ValidationResult> {
             continue;
         }
         let solutions = compartment_solutions(&compartments, grid.col_requirements[index]);
-        if solutions.is_empty() {
-            /* Grid is unsolvable */
-            for compartment in &compartments {
-                for (pos, cell) in &compartment.cells {
-                    if let Cell::Indeterminate(set) = cell {
-                        grid.remove_numbers(*pos, *set)?;
-                    }
-                }
-            }
-            validate(grid)?;
-            return Ok(true);
-        }
         for i in 1..=9 {
             if solutions
                 .iter()

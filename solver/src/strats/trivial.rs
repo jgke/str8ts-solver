@@ -72,7 +72,7 @@ mod tests {
     #[test]
     fn required_forbidden_updates() {
         let mut grid = g("
-#.#
+#.b
 ..#
 #..
 ");

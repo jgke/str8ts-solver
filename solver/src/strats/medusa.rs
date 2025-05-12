@@ -339,7 +339,76 @@ mod tests {
     }
 
     #[test]
-    fn test_medusa_rule_1() {
+    fn test_medusa_rule_1_true() {
+        let mut grid = g("
+a...b....
+.........
+..#....##
+....d.f..
+c.....e..
+.........
+..#......
+..#......
+..#......
+");
+        let a = (0, 0);
+        let b = (4, 0);
+        let c = (0, 4);
+        let d = (4, 3);
+        let e = (6, 4);
+        let f = (6, 3);
+
+        grid.cells[a.1][a.0] = det([1, 4, 7, 8]);
+        grid.cells[b.1][b.0] = det([4, 7]);
+        grid.cells[c.1][c.0] = det([4, 5]);
+        grid.cells[d.1][d.0] = det([5, 7]);
+        grid.cells[e.1][e.0] = det([6, 5]);
+        grid.cells[f.1][f.0] = det([5, 6, 7]);
+
+        grid.set_impossible_in(a, false, 4, &set([a, b])).unwrap();
+        grid.set_impossible_in(c, false, 5, &set([c, e])).unwrap();
+        grid.set_impossible_in(d, false, 5, &set([d, f])).unwrap();
+
+        grid.set_impossible_in(a, true, 4, &set([a, c])).unwrap();
+        grid.set_impossible_in(b, true, 7, &set([b, d])).unwrap();
+        grid.set_impossible_in(e, true, 6, &set([e, f])).unwrap();
+
+        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        update_required_and_forbidden(&mut grid).unwrap();
+
+        assert_eq!(grid.cells[f.1][f.0], det([5, 6, 7]));
+
+        assert_eq!(
+            Ok(Some((
+                vec![
+                    ((0, 0), 4),
+                    ((0, 4), 5),
+                    ((4, 0), 7),
+                    ((4, 3), 5),
+                    ((6, 4), 6)
+                ],
+                vec![
+                    ((0, 4), 4),
+                    ((4, 0), 4),
+                    ((4, 3), 7),
+                    ((6, 3), 5),
+                    ((6, 3), 6),
+                    ((6, 4), 5)
+                ]
+            ))),
+            medusa(&mut grid)
+        );
+
+        assert_eq!(grid.cells[a.1][a.0], det([1, 4, 7, 8]));
+        assert_eq!(grid.cells[b.1][b.0], det([7]));
+        assert_eq!(grid.cells[c.1][c.0], det([5]));
+        assert_eq!(grid.cells[d.1][d.0], det([5]));
+        assert_eq!(grid.cells[e.1][e.0], det([6]));
+        assert_eq!(grid.cells[f.1][f.0], det([7]));
+    }
+
+    #[test]
+    fn test_medusa_rule_1_false() {
         let mut grid = g("
 a...b....
 .........
