@@ -1,4 +1,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use rand::SeedableRng;
+use solver::generator::generate_solved_grid;
+
 use solver::grid::Grid;
 use solver::solver::{solve_round, SolveResults, SolveType};
 
@@ -64,10 +67,25 @@ fn slow_solver_benchmark(c: &mut Criterion) {
     });
 }
 
+fn generate_solved_grid_benchmark(c: &mut Criterion) {
+    c.bench_function("generate solved grid", |b| {
+        let rng = rand_chacha::ChaCha8Rng::seed_from_u64(40);
+        b.iter(|| {
+            generate_solved_grid(
+                black_box(9),
+                black_box(15),
+                black_box(5),
+                black_box(true),
+                &mut (rng.clone()),
+            )
+        })
+    });
+}
+
 criterion_group! {
     name = benches;
     config = Criterion::default();
-    targets = solver_benchmark
+    targets = solver_benchmark, generate_solved_grid_benchmark
 }
 
 criterion_group! {

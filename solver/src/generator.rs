@@ -35,71 +35,148 @@ impl<T: Ord, R> PartialOrd for Task<T, R> {
     }
 }
 
-fn remaining_numbers(grid: &Grid) -> usize {
-    grid.iter_by_cell_pos_matching(|cell| matches!(cell, Cell::Indeterminate(_)))
-        .len()
-}
-
-pub fn recur<Rand: Rng + Send + Clone>(grid: Grid, rng: &mut Rand) -> Option<Grid> {
+pub fn fill_numbers<Rand: Rng + Send + Clone>(grid: Grid, rng: &mut Rand) -> Option<Grid> {
     let mut queue = BinaryHeap::new();
     let mut max_depth = 0;
-    let target_depth = remaining_numbers(&grid);
+
+    let order = {
+        let mut order = grid
+            .iter_by_indeterminates()
+            .into_iter()
+            .map(|(pos, set)| (pos, set.into_iter().collect::<Vec<_>>()))
+            .collect::<Vec<_>>();
+        order.shuffle(rng);
+        for (_, set) in &mut order {
+            set.shuffle(rng);
+        }
+        order
+    };
 
     queue.push(Task(0, rng.clone(), grid));
 
-    while let Some(Task(depth, mut rng, grid)) = queue.pop() {
-        if depth > max_depth {
-            max_depth = depth;
+    while let Some(Task(index, rng, grid)) = queue.pop() {
+        if index > max_depth {
+            max_depth = index;
             debug!(
                 "Reached {}/{} (queue={})",
                 max_depth,
-                target_depth,
+                order.len(),
                 queue.len()
             );
         }
 
-        if grid.is_solved() {
+        if index >= order.len() {
+            assert!(grid.is_solved());
             return Some(grid);
         }
 
-        let ((x, y), nums) = grid
-            .iter_by_cells()
-            .into_iter()
-            .filter_map(|((x, y), cell)| match cell {
-                Cell::Requirement(_) => None,
-                Cell::Solution(_) => None,
-                Cell::Blocker(_) => None,
-                Cell::Indeterminate(nums) => Some(((x, y), nums)),
-                Cell::Black => None,
-            })
-            .next()
-            .unwrap();
+        let pos = order[index].0;
+        let num_order = &order[index].1;
 
-        let nums = nums
-            .into_iter()
-            .map(|num| (num, rng.clone()))
-            .collect::<Vec<_>>();
-        let mut vec: Vec<_> = nums
-            .into_par_iter()
-            .filter_map(|(num, rng)| {
-                let mut new_grid = grid.clone();
-                new_grid.set_cell((x, y), Cell::Requirement(num));
-                while run_fast_basic(&mut new_grid) != Ok(OutOfBasicStrats) {
-                    if validate(&new_grid).is_err() {
-                        break;
+        let options = match grid.get_cell(pos) {
+            Cell::Indeterminate(set) => Some(
+                num_order
+                    .iter()
+                    .copied()
+                    .filter(|&num| set.contains(num))
+                    .map(|num| (num, rng.clone()))
+                    .collect::<Vec<_>>(),
+            )
+            .filter(|set| !set.is_empty()),
+            _ => None,
+        };
+
+        if let Some(options) = options {
+            let vec = options
+                .into_par_iter()
+                .filter_map(|(num, rng)| {
+                    let mut new_grid = grid.clone();
+                    new_grid.set_cell(pos, Cell::Requirement(num));
+                    while run_fast_basic(&mut new_grid) != Ok(OutOfBasicStrats) {
+                        if validate(&new_grid).is_err() {
+                            break;
+                        }
                     }
-                }
-                if validate(&new_grid).is_ok() {
-                    Some(Task(target_depth - remaining_numbers(&grid), rng, new_grid))
-                } else {
-                    None
-                }
-            })
-            .collect();
-        vec.shuffle(&mut rng);
-        queue.append(&mut vec.into_iter().collect());
+                    if validate(&new_grid).is_ok() {
+                        Some(Task(index + 1, rng, new_grid))
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>();
+            queue.extend(vec);
+        } else {
+            queue.push(Task(index + 1, rng, grid));
+        }
     }
     None
+}
+
+pub fn generate_solved_grid<Rand: Rng + Send + Clone>(
+    size: usize,
+    blocker_count: usize,
+    blocker_num_count: usize,
+    symmetric: bool,
+    rng: &mut Rand,
+) -> Option<Grid> {
+    let mut grid = Grid::parse(vec![format!("{}", "0".repeat(2 * size * size))]).unwrap();
+
+    let mut blockers = grid
+        .iter_by_cells()
+        .into_iter()
+        .filter(|((x, y), _)| {
+            if symmetric {
+                *x <= size / 2 && *y <= size / 2
+            } else {
+                true
+            }
+        })
+        .map(|(pos, _)| pos)
+        .collect::<Vec<_>>();
+    blockers.shuffle(rng);
+
+    for (x, y) in blockers.into_iter().take(if symmetric {
+        blocker_count / 2
+    } else {
+        blocker_count
+    }) {
+        grid.set_cell((x, y), Cell::Black);
+        if symmetric {
+            grid.set_cell((size - x - 1, size - y - 1), Cell::Black);
+        }
+    }
+
+    let mut blocker_cells = grid
+        .iter_by_cell_pos_matching(|cell| matches!(cell, Cell::Black))
+        .into_iter()
+        .filter(|(x, y)| {
+            if symmetric {
+                *x <= size / 2 && *y <= size / 2
+            } else {
+                true
+            }
+        })
+        .collect::<Vec<_>>();
+    blocker_cells.shuffle(rng);
+
+    for (x, y) in blocker_cells.into_iter().take(if symmetric {
+        blocker_num_count / 2
+    } else {
+        blocker_num_count
+    }) {
+        let n = rng.random_range(1..=size);
+        grid.set_cell((x, y), Cell::Blocker(n as u8));
+        if symmetric {
+            let n2 = rng.random_range(1..=size);
+            grid.set_cell((size - x - 1, size - y - 1), Cell::Blocker(n2 as u8));
+        }
+    }
+
+    validate(&grid).ok()?;
+
+    debug!("Attempting to generate\n{}", grid);
+
+    fill_numbers(grid, rng)
 }
 
 fn get_grid_hash(grid: &Grid) -> u128 {
@@ -225,66 +302,13 @@ pub fn remove_numbers<Rand: Rng + Send + Clone>(
 
 fn generate_puzzle<Rand: Rng + Send + Clone>(
     size: usize,
-    mut blocker_count: usize,
-    mut blocker_num_count: usize,
+    blocker_count: usize,
+    blocker_num_count: usize,
     target_difficulty: usize,
     symmetric: bool,
-    mut rng: &mut Rand,
+    rng: &mut Rand,
 ) -> Option<(Grid, usize)> {
-    let mut grid = Grid::parse(vec![format!("{}", "0".repeat(2 * size * size))]).unwrap();
-
-    let mut blockers = grid
-        .iter_by_cells()
-        .into_iter()
-        .filter(|((x, y), _)| {
-            if symmetric {
-                *x <= size / 2 && *y <= size / 2
-            } else {
-                true
-            }
-        })
-        .map(|(pos, _)| pos)
-        .collect::<Vec<_>>();
-    blockers.shuffle(&mut rng);
-
-    if symmetric {
-        blocker_count /= 2;
-        blocker_num_count /= 2;
-    }
-    for (x, y) in blockers.into_iter().take(blocker_count) {
-        grid.set_cell((x, y), Cell::Black);
-        if symmetric {
-            grid.set_cell((size - x - 1, size - y - 1), Cell::Black);
-        }
-    }
-
-    let mut blocker_cells = grid
-        .iter_by_cell_pos_matching(|cell| matches!(cell, Cell::Black))
-        .into_iter()
-        .filter(|(x, y)| {
-            if symmetric {
-                *x <= size / 2 && *y <= size / 2
-            } else {
-                true
-            }
-        })
-        .collect::<Vec<_>>();
-    blocker_cells.shuffle(&mut rng);
-
-    for (x, y) in blocker_cells.into_iter().take(blocker_num_count) {
-        let n = rng.random_range(1..=size);
-        grid.set_cell((x, y), Cell::Blocker(n as u8));
-        if symmetric {
-            let n2 = rng.random_range(1..=size);
-            grid.set_cell((size - x - 1, size - y - 1), Cell::Blocker(n2 as u8));
-        }
-    }
-
-    validate(&grid).ok()?;
-
-    debug!("Attempting to generate\n{}", grid);
-
-    let grid = recur(grid, rng)?;
+    let grid = generate_solved_grid(size, blocker_count, blocker_num_count, symmetric, rng)?;
 
     debug!("\nSolved grid:\n{}", grid);
     let final_grid = remove_numbers(grid, target_difficulty, symmetric, rng).unwrap();
