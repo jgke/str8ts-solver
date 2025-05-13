@@ -24,15 +24,11 @@ pub struct Difficulty {
 pub fn puzzle_difficulty(history: &[&SolveType]) -> Difficulty {
     let move_count = history.len();
 
-    let mut star_count = history
+    let star_count = history
         .iter()
         .map(|res| res.difficulty())
         .max()
         .unwrap_or(0);
-
-    if (star_count == 1 || star_count == 3) && move_count > 30 {
-        star_count += 1;
-    }
 
     Difficulty {
         star_count,

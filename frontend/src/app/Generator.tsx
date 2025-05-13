@@ -26,9 +26,8 @@ function GeneratorFields() {
       <label className="flex items-center py-2">
         <span className="mr-4 block dark:text-white">Target difficulty</span>
         <select className="bg-white p-1 text-black" name="difficulty" defaultValue="4">
-          <option value="1">Trivial</option>
-          <option value="2">Easy</option>
-          <option value="3">Medium</option>
+          <option value="1">Easy</option>
+          <option value="2">Medium</option>
           <option value="4">Hard</option>
           <option value="5">(SLOW) Settis, small fishes</option>
           <option value="6">(VERY SLOW) Large fishes, simple guesses</option>

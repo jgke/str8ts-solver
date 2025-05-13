@@ -636,6 +636,8 @@ dependencies = [
 name = "str8ts-solver"
 version = "0.1.0"
 dependencies = [
+ "criterion",
+ "solver",
  "str8ts_cli",
 ]
 

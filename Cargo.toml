@@ -15,5 +15,9 @@ members = [ "solver_wasm", "str8ts_cli" ]
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 str8ts_cli = { path = "str8ts_cli" }
 
+[dev-dependencies]
+criterion = "0.5"
+solver = { path = "./solver" }
+
 [profile.release]
 debug = 1

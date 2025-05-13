@@ -62,6 +62,21 @@ Run tests for the solver:
 $ cargo test --all
 ```
 
+### Coverage
+
+Using cargo-tarpaulin:
+
+```
+$ cargo tarpaulin --workspace -o Html --benches --examples
+```
+
+### Benchmarks
+
+```
+$ cargo bench --all
+$ cargo run --example generator_benchmark
+```
+
 ### Deployment
 
 ```

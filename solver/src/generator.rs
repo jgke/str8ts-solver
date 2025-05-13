@@ -4,9 +4,8 @@ use crate::solver::run_fast_basic;
 use crate::solver::SolveType::OutOfBasicStrats;
 use crate::validator::validate;
 use log::debug;
-use rand::seq::SliceRandom;
-use rand::SeedableRng;
-use rand::{rng, Rng};
+use rand::prelude::*;
+use rand::{rng, SeedableRng};
 use rayon::prelude::*;
 use rustc_hash::FxHashSet;
 use std::cmp::Ordering;
@@ -224,7 +223,7 @@ pub fn remove_numbers<Rand: Rng + Send + Clone>(
     Some(x)
 }
 
-pub fn generate_puzzle<Rand: Rng + Send + Clone>(
+fn generate_puzzle<Rand: Rng + Send + Clone>(
     size: usize,
     mut blocker_count: usize,
     mut blocker_num_count: usize,
@@ -295,15 +294,22 @@ pub fn generate_puzzle<Rand: Rng + Send + Clone>(
     Some((final_grid, difficulty))
 }
 
-pub fn generator(
+pub fn generator_loop(
     size: usize,
     blocker_count: usize,
     blocker_num_count: usize,
-    target_difficulty: usize,
+    mut target_difficulty: usize,
     symmetric: bool,
+    first_seed: u64,
 ) -> Grid {
+    let mut seed = first_seed;
+    if target_difficulty == 3 {
+        target_difficulty = 4;
+    } else if target_difficulty > 7 {
+        target_difficulty = 7;
+    }
     loop {
-        let mut rng = rand_chacha::ChaCha8Rng::from_seed(rng().random());
+        let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(seed);
         match generate_puzzle(
             size,
             blocker_count,
@@ -319,5 +325,24 @@ pub fn generator(
                 }
             }
         }
+        seed = rng.next_u64();
     }
+}
+
+pub fn generator(
+    size: usize,
+    blocker_count: usize,
+    blocker_num_count: usize,
+    target_difficulty: usize,
+    symmetric: bool,
+) -> Grid {
+    let mut rng = rand_chacha::ChaCha8Rng::from_seed(rng().random());
+    generator_loop(
+        size,
+        blocker_count,
+        blocker_num_count,
+        target_difficulty,
+        symmetric,
+        rng.next_u64(),
+    )
 }
