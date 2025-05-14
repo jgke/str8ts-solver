@@ -1,5 +1,5 @@
 use crate::grid::Grid;
-use crate::solver::{into_ty, solve_round, SolveType};
+use crate::solver::{into_ty, run_strat, SolveType, Strategy, StrategyList};
 
 #[derive(Debug, Clone)]
 pub struct Difficulty {
@@ -26,7 +26,7 @@ pub fn puzzle_difficulty(history: &[&SolveType]) -> Difficulty {
 
     let star_count = history
         .iter()
-        .map(|res| res.difficulty())
+        .map(|&res| Strategy::from(res.clone()).difficulty())
         .max()
         .unwrap_or(0);
 
@@ -68,12 +68,12 @@ pub fn puzzle_difficulty(history: &[&SolveType]) -> Difficulty {
     }
 }
 
-pub fn get_puzzle_difficulty(grid: &Grid, enable_guesses: bool) -> Option<Difficulty> {
+pub fn get_puzzle_difficulty(grid: &Grid, strats: &StrategyList) -> Option<Difficulty> {
     let solution = {
         let mut grid = grid.clone();
         let mut history = Vec::new();
         loop {
-            match into_ty(solve_round(&mut grid, enable_guesses)) {
+            match into_ty(run_strat(&mut grid, strats)) {
                 Ok(SolveType::PuzzleSolved) => {
                     break;
                 }

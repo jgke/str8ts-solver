@@ -195,3 +195,74 @@ pub fn validate(grid: &Grid) -> Result<(), ValidationResult> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::solver::SolveMetadata;
+    use crate::utils::*;
+
+    #[test]
+    fn test_invalid_row() {
+        let grid = g("
+####
+#44#
+####
+####
+");
+        assert_eq!(
+            validate(&grid),
+            Err(ValidationResult {
+                ty: Conflict {
+                    pos1: (2, 2),
+                    pos2: (3, 2),
+                    val: 4
+                },
+                meta: SolveMetadata::default()
+            })
+        );
+    }
+
+    #[test]
+    fn test_invalid_col() {
+        let grid = g("
+####
+#4##
+#4##
+####
+");
+        assert_eq!(
+            validate(&grid),
+            Err(ValidationResult {
+                ty: Conflict {
+                    pos1: (2, 2),
+                    pos2: (2, 3),
+                    val: 4
+                },
+                meta: SolveMetadata::default()
+            })
+        );
+    }
+
+    #[test]
+    fn test_invalid_sequence() {
+        let grid = g("
+####
+#124
+####
+####
+");
+        assert_eq!(
+            validate(&grid),
+            Err(ValidationResult {
+                ty: Sequence {
+                    range: (1, 4),
+                    vertical: false,
+                    missing: 3,
+                    top_left: (1, 1)
+                },
+                meta: SolveMetadata::default()
+            })
+        );
+    }
+}

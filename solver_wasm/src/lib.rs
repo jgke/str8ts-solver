@@ -9,7 +9,9 @@ use crate::wasm_grid::WasmGrid;
 use crate::wasm_solve_result::WasmSolveResult;
 use crate::wasm_validation_result::WasmValidationResult;
 use serde::{Deserialize, Serialize};
-use solver::solver::{SolveResults, SolveType, ValidationError, ValidationResult, solve_round};
+use solver::solver::{
+    SolveResults, SolveType, Strategy, ValidationError, ValidationResult, solve_round,
+};
 use solver::{generator, grid, puzzle_coding};
 use wasm_bindgen::prelude::*;
 
@@ -68,7 +70,10 @@ pub fn solve_one(input: JsValue) -> Result<JsValue, JsValue> {
     let grid: WasmGrid = serde_wasm_bindgen::from_value(input)?;
     let mut grid: grid::Grid = grid.into();
     let res = solve_round(&mut grid, true);
-    let difficulty = res.as_ref().map(|res| res.ty.difficulty()).unwrap_or(0);
+    let difficulty = res
+        .as_ref()
+        .map(|res| Strategy::from(res.ty.clone()).difficulty())
+        .unwrap_or(0);
     Ok(serde_wasm_bindgen::to_value(&SolveOneReturn {
         grid: grid.into(),
         res_display: res
@@ -95,7 +100,7 @@ pub fn solve(input: JsValue, use_guesses: bool) -> Result<JsValue, JsValue> {
     loop {
         match solve_round(&mut grid, use_guesses) {
             Ok(strat) => {
-                let difficulty = strat.ty.difficulty();
+                let difficulty = Strategy::from(strat.ty.clone()).difficulty();
                 let was_solved = strat.ty == SolveType::PuzzleSolved;
                 res.push(SolveOneReturn {
                     grid: grid.clone().into(),

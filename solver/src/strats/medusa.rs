@@ -1,6 +1,7 @@
 use crate::bitset::BitSet;
 use crate::grid::{Grid, Point};
-use crate::solver::ValidationResult;
+use crate::solver::SolveType::Medusa;
+use crate::solver::{SolveMetadata, SolveResults, StrategyReturn, ValidationResult};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::hash::Hash;
 
@@ -53,7 +54,7 @@ where
 }
 
 #[allow(clippy::type_complexity)]
-fn split(colors: &Colors) -> (Vec<(Point, u8)>, Vec<(Point, u8)>) {
+fn split(colors: &Colors) -> SolveResults {
     let mut left = Vec::new();
     let mut right = Vec::new();
     for (&pos, nums) in colors {
@@ -67,7 +68,13 @@ fn split(colors: &Colors) -> (Vec<(Point, u8)>, Vec<(Point, u8)>) {
     }
     left.sort();
     right.sort();
-    (left, right)
+
+    SolveResults {
+        ty: Medusa,
+        meta: SolveMetadata {
+            colors: vec![left, right],
+        },
+    }
 }
 
 type Colors = BTreeMap<Point, BTreeMap<u8, bool>>;
@@ -172,9 +179,7 @@ fn block_color(grid: &mut Grid, colors: &Colors, val: bool) -> Result<bool, Vali
 }
 
 #[allow(clippy::type_complexity)]
-pub fn medusa(
-    grid: &mut Grid,
-) -> Result<Option<(Vec<(Point, u8)>, Vec<(Point, u8)>)>, ValidationResult> {
+pub fn medusa(grid: &mut Grid) -> StrategyReturn {
     let mut previously_colored = HashSet::new();
     let pairs = gather_pairs(grid);
     for (orig_pos, orig_set) in grid.iter_by_indeterminates() {
@@ -329,7 +334,7 @@ pub fn medusa(
 mod tests {
     use super::*;
     use crate::solver::solve_basic;
-    use crate::solver::SolveType::OutOfBasicStrats;
+    use crate::solver::ValidationError::OutOfStrats;
     use crate::strats::update_required_and_forbidden;
     use crate::utils::*;
     use rustc_hash::FxHashSet;
@@ -373,29 +378,34 @@ c.....e..
         grid.set_impossible_in(b, true, 7, &set([b, d])).unwrap();
         grid.set_impossible_in(e, true, 6, &set([e, f])).unwrap();
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
         update_required_and_forbidden(&mut grid).unwrap();
 
         assert_eq!(grid.cells[f.1][f.0], det([5, 6, 7]));
 
         assert_eq!(
-            Ok(Some((
-                vec![
-                    ((0, 0), 4),
-                    ((0, 4), 5),
-                    ((4, 0), 7),
-                    ((4, 3), 5),
-                    ((6, 4), 6)
-                ],
-                vec![
-                    ((0, 4), 4),
-                    ((4, 0), 4),
-                    ((4, 3), 7),
-                    ((6, 3), 5),
-                    ((6, 3), 6),
-                    ((6, 4), 5)
-                ]
-            ))),
+            Ok(Some(SolveResults {
+                ty: Medusa,
+                meta: SolveMetadata {
+                    colors: vec![
+                        vec![
+                            ((0, 0), 4),
+                            ((0, 4), 5),
+                            ((4, 0), 7),
+                            ((4, 3), 5),
+                            ((6, 4), 6)
+                        ],
+                        vec![
+                            ((0, 4), 4),
+                            ((4, 0), 4),
+                            ((4, 3), 7),
+                            ((6, 3), 5),
+                            ((6, 3), 6),
+                            ((6, 4), 5)
+                        ]
+                    ]
+                }
+            })),
             medusa(&mut grid)
         );
 
@@ -442,16 +452,21 @@ c.....e..
         grid.set_impossible_in(b, true, 7, &set([b, d])).unwrap();
         grid.set_impossible_in(e, true, 5, &set([e, f])).unwrap();
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
         update_required_and_forbidden(&mut grid).unwrap();
 
         assert_eq!(grid.cells[f.1][f.0], det([5, 7, 8]));
 
         assert_eq!(
-            Ok(Some((
-                vec![(a, 4), (c, 5), (b, 7), (d, 5), (f, 5), (f, 7), (e, 6)],
-                vec![(c, 4), (b, 4), (d, 7), (e, 5)]
-            ))),
+            Ok(Some(SolveResults {
+                ty: Medusa,
+                meta: SolveMetadata {
+                    colors: vec![
+                        vec![(a, 4), (c, 5), (b, 7), (d, 5), (f, 5), (f, 7), (e, 6)],
+                        vec![(c, 4), (b, 4), (d, 7), (e, 5)]
+                    ]
+                }
+            })),
             medusa(&mut grid)
         );
 
@@ -497,22 +512,27 @@ c.....e..
         grid.set_impossible_in(b, true, 7, &set([b, d])).unwrap();
         grid.set_impossible_in(f, true, 7, &set([e, f])).unwrap();
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
         update_required_and_forbidden(&mut grid).unwrap();
 
         assert_eq!(grid.cells[f.1][f.0], det([1, 2, 3, 4, 5, 6, 7, 8, 9]));
 
         assert_eq!(
-            Ok(Some((
-                vec![((0, 0), 4), ((0, 4), 5), ((4, 0), 7), ((6, 4), 7)],
-                vec![
-                    ((0, 4), 4),
-                    ((4, 0), 4),
-                    ((4, 3), 7),
-                    ((6, 3), 7),
-                    ((6, 4), 5)
-                ]
-            ))),
+            Ok(Some(SolveResults {
+                ty: Medusa,
+                meta: SolveMetadata {
+                    colors: vec![
+                        vec![((0, 0), 4), ((0, 4), 5), ((4, 0), 7), ((6, 4), 7)],
+                        vec![
+                            ((0, 4), 4),
+                            ((4, 0), 4),
+                            ((4, 3), 7),
+                            ((6, 3), 7),
+                            ((6, 4), 5)
+                        ]
+                    ]
+                }
+            })),
             medusa(&mut grid)
         );
 
@@ -558,22 +578,27 @@ c.....e..
         grid.set_impossible_in(a, true, 4, &set([a, c])).unwrap();
         grid.set_impossible_in(b, true, 7, &set([b, d])).unwrap();
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
         update_required_and_forbidden(&mut grid).unwrap();
 
         assert_eq!(grid.cells[3][6], det([1, 2, 3, 4, 5, 6, 7, 8, 9]));
 
         assert_eq!(
-            Ok(Some((
-                vec![((0, 0), 4), ((0, 4), 5), ((4, 0), 7), ((4, 3), 5)],
-                vec![
-                    ((0, 4), 4),
-                    ((4, 0), 4),
-                    ((4, 3), 7),
-                    ((6, 3), 5),
-                    ((6, 4), 5)
-                ]
-            ))),
+            Ok(Some(SolveResults {
+                ty: Medusa,
+                meta: SolveMetadata {
+                    colors: vec![
+                        vec![((0, 0), 4), ((0, 4), 5), ((4, 0), 7), ((4, 3), 5)],
+                        vec![
+                            ((0, 4), 4),
+                            ((4, 0), 4),
+                            ((4, 3), 7),
+                            ((6, 3), 5),
+                            ((6, 4), 5)
+                        ]
+                    ]
+                }
+            })),
             medusa(&mut grid)
         );
 
@@ -610,16 +635,21 @@ c.....e..
         grid.set_impossible_in(a, true, 2, &set([a, c])).unwrap();
         grid.set_impossible_in(b, true, 3, &set([b, d])).unwrap();
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
         update_required_and_forbidden(&mut grid).unwrap();
 
         assert_eq!(grid.cells[b.1][b.0], det([2, 3, 4]));
 
         assert_eq!(
-            Ok(Some((
-                vec![((1, 1), 2), ((1, 4), 3), ((3, 1), 3)],
-                vec![((1, 4), 2), ((3, 1), 2), ((3, 4), 3)]
-            ))),
+            Ok(Some(SolveResults {
+                ty: Medusa,
+                meta: SolveMetadata {
+                    colors: vec![
+                        vec![((1, 1), 2), ((1, 4), 3), ((3, 1), 3)],
+                        vec![((1, 4), 2), ((3, 1), 2), ((3, 4), 3)]
+                    ]
+                }
+            })),
             medusa(&mut grid)
         );
 
@@ -654,7 +684,7 @@ c.....e..
         grid.set_impossible_in(a, true, 2, &set([a, c])).unwrap();
         grid.set_impossible_in(b, true, 2, &set([b, d])).unwrap();
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
         update_required_and_forbidden(&mut grid).unwrap();
 
         assert_eq!(grid.cells[d.1][d.0], det([2, 3, 4]));
@@ -663,10 +693,15 @@ c.....e..
         assert_eq!(grid.cells[1][4], det([1, 2, 4, 5]));
 
         assert_eq!(
-            Ok(Some((
-                vec![((1, 1), 2), ((1, 4), 4), ((3, 4), 2)],
-                vec![((1, 4), 2), ((3, 1), 2)]
-            ))),
+            Ok(Some(SolveResults {
+                ty: Medusa,
+                meta: SolveMetadata {
+                    colors: vec![
+                        vec![((1, 1), 2), ((1, 4), 4), ((3, 4), 2)],
+                        vec![((1, 4), 2), ((3, 1), 2)]
+                    ]
+                }
+            })),
             medusa(&mut grid)
         );
 
@@ -713,21 +748,26 @@ c.....e..
         grid.set_impossible_in(a, true, 3, &set([a, c])).unwrap();
         grid.set_impossible_in(b, true, 7, &set([b, d])).unwrap();
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
         update_required_and_forbidden(&mut grid).unwrap();
 
         assert_eq!(
-            Ok(Some((
-                vec![
-                    ((0, 0), 3),
-                    ((0, 4), 1),
-                    ((4, 0), 7),
-                    ((4, 3), 8),
-                    ((6, 3), 7),
-                    ((6, 4), 8)
-                ],
-                vec![((0, 4), 3), ((4, 0), 3), ((4, 3), 7), ((6, 4), 1)]
-            ))),
+            Ok(Some(SolveResults {
+                ty: Medusa,
+                meta: SolveMetadata {
+                    colors: vec![
+                        vec![
+                            ((0, 0), 3),
+                            ((0, 4), 1),
+                            ((4, 0), 7),
+                            ((4, 3), 8),
+                            ((6, 3), 7),
+                            ((6, 4), 8)
+                        ],
+                        vec![((0, 4), 3), ((4, 0), 3), ((4, 3), 7), ((6, 4), 1)]
+                    ]
+                }
+            })),
             medusa(&mut grid)
         );
 
@@ -772,20 +812,25 @@ c.....e..
         grid.set_impossible_in(a, true, 3, &set([a, c])).unwrap();
         grid.set_impossible_in(b, true, 7, &set([b, d])).unwrap();
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
         update_required_and_forbidden(&mut grid).unwrap();
 
         assert_eq!(
-            Ok(Some((
-                vec![
-                    ((0, 0), 3),
-                    ((0, 4), 1),
-                    ((4, 0), 7),
-                    ((4, 3), 8),
-                    ((6, 4), 8)
-                ],
-                vec![((0, 4), 3), ((4, 0), 3), ((4, 3), 7), ((6, 4), 1)]
-            ))),
+            Ok(Some(SolveResults {
+                ty: Medusa,
+                meta: SolveMetadata {
+                    colors: vec![
+                        vec![
+                            ((0, 0), 3),
+                            ((0, 4), 1),
+                            ((4, 0), 7),
+                            ((4, 3), 8),
+                            ((6, 4), 8)
+                        ],
+                        vec![((0, 4), 3), ((4, 0), 3), ((4, 3), 7), ((6, 4), 1)]
+                    ]
+                }
+            })),
             medusa(&mut grid)
         );
 

@@ -1,9 +1,10 @@
 use crate::bitset::BitSet;
 use crate::grid::Cell::*;
 use crate::grid::Grid;
-use crate::solver::ValidationResult;
+use crate::solver::SolveType::Stranded;
+use crate::solver::StrategyReturn;
 
-pub fn stranded(grid: &mut Grid) -> Result<bool, ValidationResult> {
+pub fn stranded(grid: &mut Grid) -> StrategyReturn {
     let mut changes = false;
 
     for compartment in grid.iter_by_compartments() {
@@ -45,7 +46,11 @@ pub fn stranded(grid: &mut Grid) -> Result<bool, ValidationResult> {
         }
     }
 
-    Ok(changes)
+    if changes {
+        Ok(Some(Stranded.into()))
+    } else {
+        Ok(None)
+    }
 }
 
 #[cfg(test)]
@@ -64,7 +69,7 @@ mod tests {
         grid.cells[1][1] = det([1, 2]);
         grid.cells[2][1] = det([1, 2, 4]);
         grid.cells[1][2] = det([1, 2, 4]);
-        assert_eq!(stranded(&mut grid), Ok(true));
+        assert_eq!(stranded(&mut grid), Ok(Some(Stranded.into())));
         assert_eq!(grid.cells[1][1], det([1, 2]));
         assert_eq!(grid.cells[2][1], det([1, 2]));
         assert_eq!(grid.cells[1][2], det([1, 2]));

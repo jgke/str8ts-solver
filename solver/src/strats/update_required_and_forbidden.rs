@@ -1,6 +1,7 @@
 use crate::bitset::BitSet;
 use crate::grid::{Cell::*, CellPair, Grid};
-use crate::solver::ValidationResult;
+use crate::solver::SolveType::RequiredAndForbidden;
+use crate::solver::StrategyReturn;
 use crate::strats::required_by_range;
 
 pub fn required_by_certain(line: &[CellPair]) -> BitSet {
@@ -48,7 +49,7 @@ pub fn forbidden_numbers(_grid: &Grid, line: &[CellPair]) -> BitSet {
     forbidden_by_certain(line)
 }
 
-pub fn update_required_and_forbidden(grid: &mut Grid) -> Result<bool, ValidationResult> {
+pub fn update_required_and_forbidden(grid: &mut Grid) -> StrategyReturn {
     let mut changes = false;
 
     for n in 1..=grid.x as u8 {
@@ -64,5 +65,9 @@ pub fn update_required_and_forbidden(grid: &mut Grid) -> Result<bool, Validation
         }
     }
 
-    Ok(changes)
+    if changes {
+        Ok(Some(RequiredAndForbidden.into()))
+    } else {
+        Ok(None)
+    }
 }

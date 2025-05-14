@@ -41,7 +41,6 @@ interface FocusProps {
 function borderForSolution(cell: WasmSolveType): string {
   if (
     cell === "PuzzleSolved" ||
-    cell === "OutOfBasicStrats" ||
     cell === "UpdateImpossibles" ||
     cell === "Singles" ||
     cell === "Stranded" ||

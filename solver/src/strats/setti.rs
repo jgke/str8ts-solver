@@ -1,7 +1,9 @@
 use crate::bitset::BitSet;
 use crate::grid::Grid;
+use crate::solver::SolveType::Setti;
+use crate::solver::StrategyReturn;
 
-pub fn setti(grid: &mut Grid) -> Option<BitSet> {
+pub fn setti(grid: &mut Grid) -> StrategyReturn {
     let mut changes = BitSet::new();
 
     for n in 1..=grid.x as u8 {
@@ -67,10 +69,10 @@ pub fn setti(grid: &mut Grid) -> Option<BitSet> {
         }
     }
 
-    if changes.is_empty() {
-        None
+    if !changes.is_empty() {
+        Ok(Some(Setti(changes).into()))
     } else {
-        Some(changes)
+        Ok(None)
     }
 }
 
@@ -78,7 +80,8 @@ pub fn setti(grid: &mut Grid) -> Option<BitSet> {
 mod tests {
     use super::*;
     use crate::solver::solve_basic;
-    use crate::solver::SolveType::OutOfBasicStrats;
+    use crate::solver::SolveType::RequiredAndForbidden;
+    use crate::solver::ValidationError::OutOfStrats;
     use crate::strats::update_required_and_forbidden;
     use crate::utils::*;
 
@@ -92,13 +95,16 @@ mod tests {
 .#...
 ");
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
-        assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
+        assert_eq!(
+            update_required_and_forbidden(&mut grid),
+            Ok(Some(RequiredAndForbidden.into()))
+        );
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
         assert_eq!(grid.row_forbidden[4], set([]));
 
-        assert_eq!(setti(&mut grid), Some(set([1, 2, 4, 5])));
+        assert_eq!(setti(&mut grid), Ok(Some(Setti(set([1, 2, 4, 5])).into())));
 
         assert_eq!(grid.row_forbidden[4], set([5]));
 
@@ -107,7 +113,7 @@ mod tests {
         assert_eq!(grid.cells[4][3], det([1, 2, 3, 4, 5]));
         assert_eq!(grid.cells[4][4], det([1, 2, 3, 4, 5]));
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
         assert_eq!(grid.cells[4][0], det([1, 4]));
         assert_eq!(grid.cells[4][2], det([1, 2, 3, 4]));

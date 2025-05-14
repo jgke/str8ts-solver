@@ -1,7 +1,7 @@
 use crate::difficulty::get_puzzle_difficulty;
 use crate::grid::{Cell, Grid, Point};
-use crate::solver::run_fast_basic;
-use crate::solver::SolveType::OutOfBasicStrats;
+use crate::solver::SolveType;
+use crate::solver::{into_ty, run_strat, StrategyList, ValidationError};
 use crate::validator::validate;
 use log::debug;
 use rand::prelude::*;
@@ -92,16 +92,16 @@ pub fn fill_numbers<Rand: Rng + Send + Clone>(grid: Grid, rng: &mut Rand) -> Opt
                 .filter_map(|(num, rng)| {
                     let mut new_grid = grid.clone();
                     new_grid.set_cell(pos, Cell::Requirement(num));
-                    while run_fast_basic(&mut new_grid) != Ok(OutOfBasicStrats) {
-                        if validate(&new_grid).is_err() {
-                            break;
+                    loop {
+                        match into_ty(run_strat(&mut new_grid, &StrategyList::no_guesses())) {
+                            Err(ValidationError::OutOfStrats) | Ok(SolveType::PuzzleSolved) => {
+                                break
+                            }
+                            Ok(_) => {}
+                            Err(_) => return None,
                         }
                     }
-                    if validate(&new_grid).is_ok() {
-                        Some(Task(index + 1, rng, new_grid))
-                    } else {
-                        None
-                    }
+                    Some(Task(index + 1, rng, new_grid))
                 })
                 .collect::<Vec<_>>();
             queue.extend(vec);
@@ -204,8 +204,9 @@ pub fn remove_numbers<Rand: Rng + Send + Clone>(
     let mut queue: BinaryHeap<Task<Point, Rand>> = BinaryHeap::new();
     queue.push(Task((0, 0), rng.clone(), grid.clone()));
     let size = grid.y;
+    let strats = StrategyList::for_difficulty(target_difficulty);
 
-    let diff = get_puzzle_difficulty(&grid, target_difficulty >= 6).unwrap();
+    let diff = get_puzzle_difficulty(&grid, &strats).unwrap();
     let best_difficulty = Arc::new(Mutex::new((diff.star_count, diff.move_count)));
     let best_grid = Arc::new(Mutex::new(grid));
     let mut iterations = 0;
@@ -285,7 +286,7 @@ pub fn remove_numbers<Rand: Rng + Send + Clone>(
                             }
                             seen.insert(grid_hash);
                         }
-                        get_puzzle_difficulty(&grid, target_difficulty >= 6).map(|difficulty| {
+                        get_puzzle_difficulty(&grid, &strats).map(|difficulty| {
                             Task((difficulty.star_count, difficulty.move_count), rng, grid)
                         })
                     })
@@ -313,7 +314,9 @@ fn generate_puzzle<Rand: Rng + Send + Clone>(
     debug!("\nSolved grid:\n{}", grid);
     let final_grid = remove_numbers(grid, target_difficulty, symmetric, rng).unwrap();
     debug!("Calculating final difficulty");
-    let difficulty = get_puzzle_difficulty(&final_grid, true).unwrap().star_count;
+    let difficulty = get_puzzle_difficulty(&final_grid, &StrategyList::all())
+        .unwrap()
+        .star_count;
     debug!("Final difficulty: {}", difficulty);
     Some((final_grid, difficulty))
 }

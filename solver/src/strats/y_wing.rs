@@ -59,7 +59,7 @@ pub fn y_wing(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult>
 mod tests {
     use super::*;
     use crate::solver::solve_basic;
-    use crate::solver::SolveType::OutOfBasicStrats;
+    use crate::solver::ValidationError::OutOfStrats;
     use crate::utils::*;
 
     #[test]
@@ -77,7 +77,7 @@ mod tests {
         grid.cells[1][3] = det([1, 3]);
         grid.cells[3][3] = det([1, 2, 3]);
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
         assert_eq!(grid.cells[3][3], det([1, 2, 3]));
 

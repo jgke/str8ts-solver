@@ -1,9 +1,10 @@
 use crate::grid::Cell::*;
 use crate::grid::Grid;
-use crate::solver::ValidationResult;
+use crate::solver::SolveType::Singles;
+use crate::solver::StrategyReturn;
 use crate::strats::required_in_compartment_by_range;
 
-pub fn singles(grid: &mut Grid) -> Result<bool, ValidationResult> {
+pub fn singles(grid: &mut Grid) -> StrategyReturn {
     let mut changes = false;
 
     for compartment in grid.iter_by_compartments() {
@@ -25,7 +26,11 @@ pub fn singles(grid: &mut Grid) -> Result<bool, ValidationResult> {
         }
     }
 
-    Ok(changes)
+    if changes {
+        Ok(Some(Singles.into()))
+    } else {
+        Ok(None)
+    }
 }
 
 #[cfg(test)]
@@ -46,7 +51,7 @@ mod tests {
         grid.cells[2][0] = det([1, 2, 3]);
         grid.cells[0][1] = det([1, 2]);
         grid.cells[0][2] = det([1, 2, 3]);
-        assert_eq!(singles(&mut grid), Ok(true));
+        assert_eq!(singles(&mut grid), Ok(Some(Singles.into())));
         assert_eq!(grid.cells[2][0], Solution(3));
         assert_eq!(grid.cells[0][2], Solution(3));
     }

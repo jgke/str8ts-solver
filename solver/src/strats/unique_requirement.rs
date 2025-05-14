@@ -1,7 +1,8 @@
 use crate::bitset::BitSet;
 use crate::grid::{Cell, Compartment, Grid, Point};
-use crate::solver::SolveType::UniqueRequirement;
+use crate::solver::SolveType::{DefiniteMinMax, UniqueRequirement, UpdateImpossibles};
 use crate::solver::{SolveMetadata, SolveResults, ValidationError, ValidationResult};
+use crate::strats;
 use crate::strats::get_compartment_range;
 use itertools::Itertools;
 
@@ -510,12 +511,12 @@ fn two_compartment_setti(grid: &mut Grid) -> Result<Option<SolveResults>, Valida
 }
 
 fn will_have_closed_sets(grid: &mut Grid) -> Result<bool, ValidationResult> {
-    crate::strats::trivial(grid);
-    while crate::strats::update_impossibles(grid)? {
-        crate::strats::trivial(grid);
+    strats::trivial(grid);
+    while strats::update_impossibles(grid)?.map(|t| t.ty) == Some(UpdateImpossibles) {
+        strats::trivial(grid);
     }
-    while crate::strats::definite_min_max(grid)? {
-        crate::strats::trivial(grid);
+    while strats::definite_min_max(grid)?.map(|t| t.ty) == Some(DefiniteMinMax) {
+        strats::trivial(grid);
     }
     for ((_compartment, base_set, unresolved_pos), (_other, other_set, other_pos)) in
         compartment_pairs(grid)
@@ -556,10 +557,7 @@ fn solution_causes_closed_sets(grid: &mut Grid) -> Result<Option<SolveResults>, 
     Ok(None)
 }
 
-pub fn unique_requirement(
-    grid: &mut Grid,
-    enable_guesses: bool,
-) -> Result<Option<SolveResults>, ValidationResult> {
+pub fn unique_requirement(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
     for ((x, y), set) in grid.iter_by_indeterminates() {
         if let Some(res) = single_cell_cross_compartment_unique(grid, x, y, set)? {
             return Ok(Some(res));
@@ -580,10 +578,12 @@ pub fn unique_requirement(
         return Ok(Some(res));
     }
 
-    if enable_guesses {
-        if let Some(res) = solution_causes_closed_sets(grid)? {
-            return Ok(Some(res));
-        }
+    Ok(None)
+}
+
+pub fn unique_requirement_guess(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
+    if let Some(res) = solution_causes_closed_sets(grid)? {
+        return Ok(Some(res));
     }
 
     Ok(None)
@@ -594,7 +594,8 @@ mod tests {
     use super::*;
     use crate::grid::Cell;
     use crate::solver::solve_basic;
-    use crate::solver::SolveType::OutOfBasicStrats;
+    use crate::solver::SolveType::RequiredAndForbidden;
+    use crate::solver::ValidationError::OutOfStrats;
     use crate::strats::update_required_and_forbidden;
     use crate::utils::*;
 
@@ -622,12 +623,15 @@ mod tests {
         grid.cells[4][2] = det([1, 2, 3, 4]);
         grid.cells[4][3] = det([1, 2, 3, 4]);
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
-        assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
+        assert_eq!(
+            update_required_and_forbidden(&mut grid),
+            Ok(Some(RequiredAndForbidden.into()))
+        );
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
         assert_eq!(
-            unique_requirement(&mut grid, true),
+            unique_requirement(&mut grid),
             Ok(Some(SolveResults {
                 ty: UniqueRequirement(UrResult::SingleUnique((5, 1), 5)),
                 meta: SolveMetadata {
@@ -664,12 +668,15 @@ mod tests {
         grid.cells[2][2] = det([2, 3, 4]);
         grid.cells[3][1] = det([2, 3, 4]);
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
-        assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
+        assert_eq!(
+            update_required_and_forbidden(&mut grid),
+            Ok(Some(RequiredAndForbidden.into()))
+        );
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
         assert_eq!(
-            unique_requirement(&mut grid, true),
+            unique_requirement(&mut grid),
             Ok(Some(SolveResults {
                 ty: UniqueRequirement(UrResult::IntraCompartmentUnique((1, 2), 4)),
                 meta: SolveMetadata {
@@ -721,12 +728,15 @@ mod tests {
         grid.cells[2][2] = det([3, 4]);
         grid.cells[3][2] = det([2, 3, 4, 5]);
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
-        assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
+        assert_eq!(
+            update_required_and_forbidden(&mut grid),
+            Ok(Some(RequiredAndForbidden.into()))
+        );
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
         assert_eq!(
-            unique_requirement(&mut grid, true),
+            unique_requirement(&mut grid),
             Ok(Some(SolveResults {
                 ty: UniqueRequirement(UrResult::ClosedSetCompartment(
                     vec![(1, 1), (2, 1), (1, 2), (2, 2)],
@@ -760,12 +770,17 @@ mod tests {
         set_range(&mut grid, (1, 2), (3, 2), [1, 2, 3, 4]);
         set_range(&mut grid, (1, 3), (3, 2), [2, 4, 6]);
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
-        assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
+        assert_eq!(
+            update_required_and_forbidden(&mut grid),
+            Ok(Some(RequiredAndForbidden.into()))
+        );
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
+
+        assert_eq!(unique_requirement(&mut grid), Ok(None));
 
         assert_eq!(
-            unique_requirement(&mut grid, true),
+            unique_requirement_guess(&mut grid),
             Ok(Some(SolveResults {
                 ty: UniqueRequirement(UrResult::SolutionCausesClosedSets((2, 2), 4)),
                 meta: SolveMetadata { colors: vec![] }
@@ -789,12 +804,15 @@ mod tests {
         set_range(&mut grid, (1, 1), (2, 2), [1, 2, 3]);
         grid.cells[1][2] = Cell::Black;
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
-        assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
+        assert_eq!(
+            update_required_and_forbidden(&mut grid),
+            Ok(Some(RequiredAndForbidden.into()))
+        );
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
         assert_eq!(
-            unique_requirement(&mut grid, true),
+            unique_requirement(&mut grid),
             Ok(Some(SolveResults {
                 ty: UniqueRequirement(UrResult::SingleCellWouldBecomeFree((1, 2), 2)),
                 meta: SolveMetadata {
@@ -820,15 +838,18 @@ mod tests {
         set_range(&mut grid, (1, 1), (2, 2), [1, 2, 3]);
         set_range(&mut grid, (4, 1), (6, 2), [3, 4, 5, 6, 7]);
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
-        assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
+        assert_eq!(
+            update_required_and_forbidden(&mut grid),
+            Ok(Some(RequiredAndForbidden.into()))
+        );
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
         assert!(!grid.row_requirements[1].contains(3));
         assert!(!grid.row_requirements[2].contains(3));
 
         assert_eq!(
-            unique_requirement(&mut grid, true),
+            unique_requirement(&mut grid),
             Ok(Some(SolveResults {
                 ty: UniqueRequirement(UrResult::UrSetti(
                     vec![(1, 1), (2, 1), (1, 2), (2, 2)],

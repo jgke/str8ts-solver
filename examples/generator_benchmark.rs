@@ -23,7 +23,7 @@ fn bench_generator(msg: &str, difficulty: usize, seed: u64) {
     });
 }
 
-const seeds: [(usize, u64); 5] = [
+const SEEDS: [(usize, u64); 5] = [
     /* these take 2 tries */
     (1, 9353087330078473652),
     (2, 40474797210651839),
@@ -34,7 +34,7 @@ const seeds: [(usize, u64); 5] = [
 ];
 
 fn main() {
-    for (difficulty, seed) in seeds {
+    for (difficulty, seed) in SEEDS {
         bench_generator(&format!("generator diff={}", difficulty), difficulty, seed);
     }
 }
@@ -45,7 +45,7 @@ mod tests {
         super::bench_generator(
             &format!("generator diff={}", i + 1),
             i + 1,
-            super::seeds[i - 1].1,
+            super::SEEDS[i - 1].1,
         );
     }
 

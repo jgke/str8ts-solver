@@ -2,9 +2,12 @@ use crate::bitset::BitSet;
 use crate::grid::Cell::*;
 use crate::grid::{Grid, Point};
 use crate::solver::SolveType::*;
-use crate::solver::{into_ty, solve_round, SolveResults, ValidationError, ValidationResult};
+use crate::solver::{
+    into_ty, solve_round, SolveResults, StrategyReturn, ValidationError, ValidationResult,
+};
 use itertools::Itertools;
 use std::collections::VecDeque;
+use std::rc::Rc;
 
 type ForcedNumber = (Point, u8);
 
@@ -58,7 +61,7 @@ type GuessStepRes = (Point, u8, Vec<(Grid, SolveResults)>, Grid);
 pub struct GuessSolveResult(pub GuessStepRes);
 
 #[allow(clippy::type_complexity)]
-pub fn guess(grid: &mut Grid) -> Result<Option<GuessSolveResult>, ValidationResult> {
+pub fn guess(grid: &mut Grid) -> StrategyReturn {
     let mut temp_grid = grid.clone();
     let num_count = grid.x;
 
@@ -93,7 +96,8 @@ pub fn guess(grid: &mut Grid) -> Result<Option<GuessSolveResult>, ValidationResu
                 }
                 Err(e) => {
                     steps.push((temp_grid.clone(), EndGuess(e).into()));
-                    return Ok(Some(GuessSolveResult(((x, y), n, steps, temp_grid))));
+
+                    return Ok(Some(GuessStep((x, y), n, Rc::new(steps), temp_grid).into()));
                 }
             }
         }
@@ -105,6 +109,7 @@ pub fn guess(grid: &mut Grid) -> Result<Option<GuessSolveResult>, ValidationResu
 mod tests {
     use super::*;
     use crate::solver::solve_basic;
+    use crate::solver::ValidationError::OutOfStrats;
     use crate::strats::{setti, update_required_and_forbidden};
     use crate::utils::*;
 
@@ -118,14 +123,20 @@ mod tests {
 .....
 ");
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
-        assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
-        assert_eq!(setti(&mut grid), Some(set([5])));
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
+        assert_eq!(
+            update_required_and_forbidden(&mut grid),
+            Ok(Some(RequiredAndForbidden.into()))
+        );
+        assert_eq!(setti(&mut grid), Ok(Some(Setti(set([5])).into())));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
         let res = guess(&mut grid);
         let (pos, n, _, _) = match res {
-            Ok(Some(GuessSolveResult(res))) => res,
+            Ok(Some(SolveResults {
+                ty: GuessStep(pos, n, steps, grid),
+                meta: _,
+            })) => (pos, n, steps, grid),
             _ => unreachable!(),
         };
         assert_eq!((0, 2), pos);

@@ -47,7 +47,6 @@ pub enum WasmSolveType {
     EndGuess(WasmValidationResult),
     PuzzleSolved,
     EnumerateSolutions,
-    OutOfBasicStrats,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -140,7 +139,6 @@ impl From<SolveType> for WasmSolveType {
             SolveType::EndGuess(end) => WasmSolveType::EndGuess(end.into()),
             SolveType::PuzzleSolved => WasmSolveType::PuzzleSolved,
             SolveType::EnumerateSolutions => WasmSolveType::EnumerateSolutions,
-            SolveType::OutOfBasicStrats => WasmSolveType::OutOfBasicStrats,
         }
     }
 }
@@ -177,7 +175,6 @@ impl From<WasmSolveType> for SolveType {
             WasmSolveType::EndGuess(res) => SolveType::EndGuess(res.into()),
             WasmSolveType::PuzzleSolved => SolveType::PuzzleSolved,
             WasmSolveType::EnumerateSolutions => SolveType::EnumerateSolutions,
-            WasmSolveType::OutOfBasicStrats => SolveType::OutOfBasicStrats,
         }
     }
 }

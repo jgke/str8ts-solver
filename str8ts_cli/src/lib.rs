@@ -1,4 +1,4 @@
-use solver::solver::SolveType;
+use solver::solver::{SolveType, StrategyList};
 use std::process::ExitCode;
 
 pub fn cli() -> ExitCode {
@@ -83,7 +83,7 @@ pub fn cli() -> ExitCode {
         info!("Generated grid with difficulty {}", target_difficulty);
         info!(
             "Strats required: {:#?}",
-            get_puzzle_difficulty(&grid, true).unwrap()
+            get_puzzle_difficulty(&grid, &StrategyList::all()).unwrap()
         );
         println!("{}", grid);
     } else if solve {

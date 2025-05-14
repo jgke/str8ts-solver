@@ -3,11 +3,139 @@ use crate::grid::{Grid, Point};
 use crate::solver::SolveType::*;
 use crate::solver::ValidationError::*;
 use crate::strats;
-use crate::strats::{enumerate_solutions, UrResult};
+use crate::strats::UrResult;
 use crate::validator::validate;
 use itertools::intersperse;
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::rc::Rc;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Strategy {
+    /* todo: a lot of these have dependencies between them... */
+    UpdateImpossibles,
+    Singles,
+    Stranded,
+    DefiniteMinMax,
+    RequiredRange,
+    Sets,
+    RequiredAndForbidden,
+    RowColBrute,
+    Setti,
+    YWing,
+    Fish,
+    Medusa,
+    UniqueRequirement,
+    UniqueRequirementGuess,
+    Guess,
+    EnumerateSolutions,
+}
+
+impl Strategy {
+    pub fn difficulty(&self) -> usize {
+        match self {
+            Strategy::UpdateImpossibles => 1,
+            Strategy::Stranded => 1,
+            Strategy::DefiniteMinMax => 2,
+            Strategy::Singles => 2,
+            Strategy::RequiredRange => 4,
+            Strategy::Sets => 4,
+            Strategy::RequiredAndForbidden => 5,
+            Strategy::RowColBrute => 5,
+            Strategy::Setti => 5,
+            Strategy::YWing => 5,
+            Strategy::Fish => 5,
+            Strategy::Medusa => 6,
+            Strategy::UniqueRequirement => 6,
+            Strategy::UniqueRequirementGuess => 7,
+            Strategy::Guess => 7,
+            Strategy::EnumerateSolutions => 7,
+        }
+    }
+}
+
+const ALL_STRATEGIES: [Strategy; 16] = [
+    Strategy::UpdateImpossibles,
+    Strategy::Singles,
+    Strategy::Stranded,
+    Strategy::DefiniteMinMax,
+    Strategy::RequiredRange,
+    Strategy::Sets,
+    Strategy::RequiredAndForbidden,
+    Strategy::RowColBrute,
+    Strategy::Setti,
+    Strategy::YWing,
+    Strategy::Fish,
+    Strategy::Medusa,
+    Strategy::UniqueRequirement,
+    Strategy::UniqueRequirementGuess,
+    Strategy::Guess,
+    Strategy::EnumerateSolutions,
+];
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StrategyList {
+    strats: HashMap<Strategy, bool>,
+}
+
+impl StrategyList {
+    pub fn new(strats: &[Strategy]) -> StrategyList {
+        StrategyList {
+            strats: strats.iter().map(|&strat| (strat, true)).collect(),
+        }
+    }
+
+    pub fn all() -> StrategyList {
+        StrategyList::new(&ALL_STRATEGIES)
+    }
+
+    pub fn for_difficulty(difficulty: usize) -> StrategyList {
+        StrategyList::new(
+            &ALL_STRATEGIES
+                .iter()
+                .copied()
+                .filter(|strat| strat.difficulty() <= difficulty)
+                .collect::<Vec<_>>(),
+        )
+    }
+
+    pub fn basic() -> StrategyList {
+        StrategyList::new(&[
+            Strategy::UpdateImpossibles,
+            Strategy::Singles,
+            Strategy::Stranded,
+            Strategy::DefiniteMinMax,
+            Strategy::RequiredRange,
+            Strategy::Sets,
+        ])
+    }
+
+    pub fn fast() -> StrategyList {
+        StrategyList::basic().except(&[Strategy::Sets])
+    }
+
+    pub fn no_guesses() -> StrategyList {
+        StrategyList::all().except(&[
+            Strategy::UniqueRequirementGuess,
+            Strategy::Guess,
+            Strategy::EnumerateSolutions,
+        ])
+    }
+
+    pub fn except(&self, without_strats: &[Strategy]) -> StrategyList {
+        let mut strats = self.strats.clone();
+        for &strat in without_strats {
+            strats.insert(strat, false);
+        }
+        StrategyList { strats }
+    }
+
+    pub fn has(&self, strat: Strategy) -> bool {
+        *self.strats.get(&strat).unwrap_or(&false)
+    }
+}
+
+pub type StrategyReturn = Result<Option<SolveResults>, ValidationResult>;
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct SolveMetadata {
@@ -34,7 +162,6 @@ pub enum SolveType {
     EndGuess(ValidationResult),
     PuzzleSolved,
     EnumerateSolutions,
-    OutOfBasicStrats,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -50,29 +177,28 @@ impl From<SolveType> for SolveResults {
     }
 }
 
-impl SolveType {
-    pub fn difficulty(&self) -> usize {
-        match self {
-            UpdateImpossibles => 1,
-            Stranded => 1,
-            DefiniteMinMax => 2,
-            Singles => 2,
-            RequiredRange => 4,
-            Sets(_) => 4,
-            RequiredAndForbidden => 5,
-            RowColBrute => 5,
-            Setti(_) => 5,
-            YWing(_, _) => 5,
-            Fish(2) | Fish(3) => 5,
-            Fish(_) => 6,
-            Medusa => 6,
-            UniqueRequirement(..) => 6,
-            StartGuess(_, _) => 7,
-            GuessStep(_, _, _, _) => 7,
-            EndGuess(_) => 7,
-            PuzzleSolved => 1,
-            EnumerateSolutions => 7,
-            OutOfBasicStrats => 0,
+impl From<SolveType> for Strategy {
+    fn from(ty: SolveType) -> Self {
+        match ty {
+            UpdateImpossibles => Strategy::UpdateImpossibles,
+            Singles => Strategy::Singles,
+            Stranded => Strategy::Stranded,
+            DefiniteMinMax => Strategy::DefiniteMinMax,
+            RequiredRange => Strategy::RequiredRange,
+            Sets(_) => Strategy::Sets,
+            RequiredAndForbidden => Strategy::RequiredAndForbidden,
+            RowColBrute => Strategy::RowColBrute,
+            Setti(_) => Strategy::Setti,
+            YWing(_, _) => Strategy::YWing,
+            Fish(_) => Strategy::Fish,
+            Medusa => Strategy::Medusa,
+            UniqueRequirement(_) => Strategy::UniqueRequirement,
+            StartGuess(_, _) => Strategy::Guess,
+            GuessStep(_, _, _, _) => Strategy::Guess,
+            EndGuess(_) => Strategy::Guess,
+            EnumerateSolutions => Strategy::EnumerateSolutions,
+            // XXX
+            PuzzleSolved => Strategy::UpdateImpossibles,
         }
     }
 }
@@ -183,7 +309,6 @@ impl Display for SolveResults {
             EndGuess(end) => write!(f, "{}", end),
             PuzzleSolved => write!(f, "Puzzle solved"),
             EnumerateSolutions => write!(f, "Enumerate all possible solutions"),
-            OutOfBasicStrats => write!(f, "Out of basic strats"),
         }
     }
 }
@@ -295,227 +420,100 @@ impl Display for ValidationResult {
     }
 }
 
+macro_rules! run_strat {
+    ($list: ident, $strat: expr, $body: expr) => {
+        if $list.has($strat) {
+            if let Some(res) = $body? {
+                return Ok(res);
+            }
+        }
+    };
+}
+
+pub fn run_strat(grid: &mut Grid, strats: &StrategyList) -> Result<SolveResults, ValidationResult> {
+    validate(grid)?;
+    if grid.is_solved() {
+        return Ok(PuzzleSolved.into());
+    }
+
+    let res = (|| {
+        /* basic strats */
+        run_strat!(
+            strats,
+            Strategy::UpdateImpossibles,
+            strats::update_impossibles(grid)
+        );
+        run_strat!(strats, Strategy::Singles, strats::singles(grid));
+        run_strat!(strats, Strategy::Stranded, strats::stranded(grid));
+        run_strat!(
+            strats,
+            Strategy::DefiniteMinMax,
+            strats::definite_min_max(grid)
+        );
+        run_strat!(
+            strats,
+            Strategy::RequiredRange,
+            strats::required_range(grid)
+        );
+
+        /* advanced strats */
+        run_strat!(
+            strats,
+            Strategy::RequiredAndForbidden,
+            strats::update_required_and_forbidden(grid)
+        );
+        run_strat!(strats, Strategy::Setti, strats::setti(grid));
+        run_strat!(strats, Strategy::RowColBrute, strats::row_col_brute(grid));
+        run_strat!(strats, Strategy::YWing, strats::y_wing(grid));
+        run_strat!(strats, Strategy::Fish, strats::fish(grid));
+
+        run_strat!(strats, Strategy::Medusa, strats::medusa(grid));
+
+        run_strat!(
+            strats,
+            Strategy::UniqueRequirement,
+            strats::unique_requirement(grid)
+        );
+        run_strat!(
+            strats,
+            Strategy::UniqueRequirementGuess,
+            strats::unique_requirement_guess(grid)
+        );
+
+        run_strat!(strats, Strategy::Guess, strats::guess(grid));
+
+        run_strat!(
+            strats,
+            Strategy::EnumerateSolutions,
+            strats::enumerate_solutions(grid)
+        );
+
+        Err(OutOfStrats.into())
+    })();
+    strats::trivial(grid);
+    validate(grid)?;
+    res
+}
+
 pub fn run_fast_basic(grid: &mut Grid) -> Result<SolveType, ValidationResult> {
-    let res: SolveType = {
-        if strats::update_impossibles(grid)? {
-            UpdateImpossibles
-        } else if strats::singles(grid)? {
-            Singles
-        } else if strats::stranded(grid)? {
-            Stranded
-        } else if strats::definite_min_max(grid)? {
-            DefiniteMinMax
-        } else if strats::required_range(grid)? {
-            RequiredRange
-        } else {
-            OutOfBasicStrats
-        }
-    };
-
-    strats::trivial(grid);
-    Ok(res)
-}
-
-pub fn run_basic(grid: &mut Grid) -> Result<SolveResults, ValidationResult> {
-    let res = {
-        if strats::update_impossibles(grid)? {
-            UpdateImpossibles.into()
-        } else if strats::singles(grid)? {
-            Singles.into()
-        } else if strats::stranded(grid)? {
-            Stranded.into()
-        } else if strats::definite_min_max(grid)? {
-            DefiniteMinMax.into()
-        } else if strats::required_range(grid)? {
-            RequiredRange.into()
-        } else if grid.has_requirements() && strats::update_required_and_forbidden(grid)? {
-            RequiredAndForbidden.into()
-        } else if let Some(res) = strats::sets(grid)? {
-            res
-        } else {
-            OutOfBasicStrats.into()
-        }
-    };
-
-    strats::trivial(grid);
-
-    Ok(res)
-}
-
-pub fn run_advanced(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
-    Ok(Some(if strats::update_required_and_forbidden(grid)? {
-        RequiredAndForbidden.into()
-    } else if let Some(set) = strats::setti(grid) {
-        Setti(set).into()
-    } else if strats::row_col_brute(grid)? {
-        RowColBrute.into()
-    } else if let Some(res) = strats::y_wing(grid)? {
-        res
-    } else if let Some(res) = strats::fish(grid)? {
-        res
-    } else {
-        return Ok(None);
-    }))
-}
-
-pub fn run_medusa(
-    grid: &mut Grid,
-    enable_guesses: bool,
-) -> Result<Option<SolveResults>, ValidationResult> {
-    if !enable_guesses {
-        return Ok(None);
-    }
-    Ok(if let Some((left, right)) = strats::medusa(grid)? {
-        let meta = SolveMetadata {
-            colors: vec![left, right],
-        };
-        Some(SolveResults { ty: Medusa, meta })
-    } else {
-        None
-    })
-}
-
-pub fn run_unique(
-    grid: &mut Grid,
-    enable_guesses: bool,
-) -> Result<Option<SolveResults>, ValidationResult> {
-    strats::unique_requirement(grid, enable_guesses)
-}
-
-pub fn run_guess(
-    grid: &mut Grid,
-    enable_guesses: bool,
-) -> Result<Option<SolveResults>, ValidationResult> {
-    if !enable_guesses {
-        return Ok(None);
-    }
-    Ok(strats::guess(grid)?.map(
-        |crate::strats::GuessSolveResult(((x, y), n, steps, error_grid))| {
-            GuessStep((x, y), n, Rc::new(steps), error_grid).into()
-        },
-    ))
-}
-
-pub fn run_enumerate(
-    grid: &mut Grid,
-    enable_guesses: bool,
-) -> Result<Option<SolveResults>, ValidationResult> {
-    if !enable_guesses {
-        return Ok(None);
-    }
-    enumerate_solutions(grid)
+    run_strat(grid, &StrategyList::fast()).map(|t| t.ty)
 }
 
 pub fn solve_round(
     grid: &mut Grid,
     enable_guesses: bool,
 ) -> Result<SolveResults, ValidationResult> {
-    validate(grid)?;
-    if grid.is_solved() {
-        return Ok(PuzzleSolved.into());
-    }
-    match run_basic(grid)? {
-        SolveResults {
-            ty: OutOfBasicStrats,
-            meta: _,
-        } => {
-            validate(grid)?;
-            let res: Result<SolveResults, ValidationResult> = if let Some(res) = run_advanced(grid)?
-            {
-                Ok(res)
-            } else if let Some(res) = run_medusa(grid, enable_guesses)? {
-                Ok(res)
-            } else if let Some(res) = run_unique(grid, enable_guesses)? {
-                Ok(res)
-            } else if let Some(res) = run_guess(grid, enable_guesses)? {
-                Ok(res)
-            } else if let Some(res) = run_enumerate(grid, enable_guesses)? {
-                Ok(res)
-            } else {
-                Err(OutOfStrats.into())
-            };
-            strats::trivial(grid);
-            validate(grid)?;
-            res
-        }
-        otherwise => {
-            validate(grid)?;
-            Ok(otherwise)
-        }
+    if enable_guesses {
+        run_strat(grid, &StrategyList::all())
+    } else {
+        run_strat(grid, &StrategyList::no_guesses())
     }
 }
 
-pub fn solve_basic(grid: &mut Grid) -> Result<SolveType, ValidationResult> {
-    while run_basic(grid)?.ty != OutOfBasicStrats {}
-    Ok(OutOfBasicStrats)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::utils::*;
-
-    #[test]
-    fn test_invalid_row() {
-        let grid = g("
-####
-#44#
-####
-####
-");
-        assert_eq!(
-            validate(&grid),
-            Err(ValidationResult {
-                ty: Conflict {
-                    pos1: (2, 2),
-                    pos2: (3, 2),
-                    val: 4
-                },
-                meta: SolveMetadata::default()
-            })
-        );
-    }
-
-    #[test]
-    fn test_invalid_col() {
-        let grid = g("
-####
-#4##
-#4##
-####
-");
-        assert_eq!(
-            validate(&grid),
-            Err(ValidationResult {
-                ty: Conflict {
-                    pos1: (2, 2),
-                    pos2: (2, 3),
-                    val: 4
-                },
-                meta: SolveMetadata::default()
-            })
-        );
-    }
-
-    #[test]
-    fn test_invalid_sequence() {
-        let grid = g("
-####
-#124
-####
-####
-");
-        assert_eq!(
-            validate(&grid),
-            Err(ValidationResult {
-                ty: Sequence {
-                    range: (1, 4),
-                    vertical: false,
-                    missing: 3,
-                    top_left: (1, 1)
-                },
-                meta: SolveMetadata::default()
-            })
-        );
+pub fn solve_basic(grid: &mut Grid) -> Result<SolveType, ValidationError> {
+    loop {
+        if into_ty(run_strat(grid, &StrategyList::basic()))? == PuzzleSolved {
+            return Ok(PuzzleSolved);
+        }
     }
 }

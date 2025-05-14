@@ -122,7 +122,8 @@ pub fn fish(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
 mod tests {
     use super::*;
     use crate::solver::solve_basic;
-    use crate::solver::SolveType::OutOfBasicStrats;
+    use crate::solver::SolveType::{RequiredAndForbidden, Setti};
+    use crate::solver::ValidationError::OutOfStrats;
     use crate::strats::{setti, update_required_and_forbidden};
     use crate::utils::*;
 
@@ -136,10 +137,13 @@ mod tests {
 ##..2
 ");
 
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
-        assert_eq!(update_required_and_forbidden(&mut grid), Ok(true));
-        assert_eq!(setti(&mut grid), Some(set([2])));
-        assert_eq!(solve_basic(&mut grid), Ok(OutOfBasicStrats));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
+        assert_eq!(
+            update_required_and_forbidden(&mut grid),
+            Ok(Some(RequiredAndForbidden.into()))
+        );
+        assert_eq!(setti(&mut grid), Ok(Some(Setti(set([2])).into())));
+        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
         assert_eq!(grid.cells[0][2], det([1, 2, 3, 4, 5]));
         assert_eq!(grid.cells[0][3], det([1, 2, 3, 4, 5]));

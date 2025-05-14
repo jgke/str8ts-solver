@@ -1,9 +1,10 @@
 use crate::grid::{Grid, Point};
-use crate::solver::ValidationResult;
+use crate::solver::SolveType::RequiredRange;
+use crate::solver::StrategyReturn;
 use crate::strats::required_in_compartment_by_range;
 use rustc_hash::FxHashSet;
 
-pub fn required_range(grid: &mut Grid) -> Result<bool, ValidationResult> {
+pub fn required_range(grid: &mut Grid) -> StrategyReturn {
     let mut changes = false;
 
     for compartment in grid.iter_by_compartments() {
@@ -21,7 +22,11 @@ pub fn required_range(grid: &mut Grid) -> Result<bool, ValidationResult> {
         }
     }
 
-    Ok(changes)
+    if changes {
+        Ok(Some(RequiredRange.into()))
+    } else {
+        Ok(None)
+    }
 }
 
 #[cfg(test)]
@@ -44,7 +49,7 @@ mod tests {
         grid.cells[1][1] = det([1, 2]);
         grid.cells[2][1] = det([1, 2]);
         grid.cells[1][2] = det([1, 2]);
-        assert_eq!(required_range(&mut grid), Ok(true));
+        assert_eq!(required_range(&mut grid), Ok(Some(RequiredRange.into())));
 
         assert_eq!(grid.cells[1][1], det([1, 2]));
         assert_eq!(grid.cells[2][1], det([1, 2]));

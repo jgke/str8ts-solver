@@ -60,8 +60,7 @@ export type WasmSolveType =
   | { GuessStep: [Point, number, [WasmGrid, WasmSolveResult, string][], WasmGrid] }
   | { EndGuess: WasmValidationResult }
   | "PuzzleSolved"
-  | "EnumerateSolutions"
-  | "OutOfBasicStrats";
+  | "EnumerateSolutions";
 
 export interface WasmSolveResult {
   ty: WasmSolveType;
