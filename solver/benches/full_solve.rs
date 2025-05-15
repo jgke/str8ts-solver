@@ -3,7 +3,8 @@ use rand::SeedableRng;
 use solver::generator::generate_solved_grid;
 
 use solver::grid::Grid;
-use solver::solver::{solve_round, SolveResults, SolveType};
+use solver::solve_result::{SolveResults, SolveType};
+use solver::solver::{solve_round};
 
 fn full_solve(mut grid: Grid, enable_chains: bool) -> usize {
     let orig_grid = grid.clone();
@@ -19,10 +20,7 @@ fn full_solve(mut grid: Grid, enable_chains: bool) -> usize {
             }
             Ok(_) => {}
             Err(e) => {
-                panic!(
-                    "Failed to solve grid: {}\n{}\nOriginal grid:\n{}",
-                    e, grid, orig_grid
-                );
+                panic!("Failed to solve grid: {}\n{}\nOriginal grid:\n{}", e, grid, orig_grid);
             }
         }
     }
@@ -43,9 +41,7 @@ fn solver_benchmark(c: &mut Criterion) {
     ])
     .unwrap();
 
-    c.bench_function("grid typical puzzle", |b| {
-        b.iter(|| full_solve(black_box(typical_grid.clone()), true))
-    });
+    c.bench_function("grid typical puzzle", |b| b.iter(|| full_solve(black_box(typical_grid.clone()), true)));
 }
 
 fn slow_solver_benchmark(c: &mut Criterion) {
@@ -62,23 +58,13 @@ fn slow_solver_benchmark(c: &mut Criterion) {
     ])
     .unwrap();
 
-    c.bench_function("grid solve chains", |b| {
-        b.iter(|| full_solve(black_box(chain_grid.clone()), true))
-    });
+    c.bench_function("grid solve chains", |b| b.iter(|| full_solve(black_box(chain_grid.clone()), true)));
 }
 
 fn generate_solved_grid_benchmark(c: &mut Criterion) {
     c.bench_function("generate solved grid", |b| {
         let rng = rand_chacha::ChaCha8Rng::seed_from_u64(40);
-        b.iter(|| {
-            generate_solved_grid(
-                black_box(9),
-                black_box(15),
-                black_box(5),
-                black_box(true),
-                &mut (rng.clone()),
-            )
-        })
+        b.iter(|| generate_solved_grid(black_box(9), black_box(15), black_box(5), black_box(true), &mut (rng.clone())))
     });
 }
 

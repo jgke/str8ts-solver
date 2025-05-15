@@ -1,8 +1,8 @@
 use crate::bitset::BitSet;
 use crate::grid::Cell::*;
 use crate::grid::Grid;
-use crate::solver::SolveType::Stranded;
-use crate::solver::StrategyReturn;
+use crate::solve_result::SolveType::Stranded;
+use crate::strategy::StrategyReturn;
 
 pub fn stranded(grid: &mut Grid) -> StrategyReturn {
     let mut changes = false;

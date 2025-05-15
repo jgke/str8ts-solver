@@ -1,7 +1,7 @@
 use crate::bitset::BitSet;
 use crate::grid::{Cell, Compartment, Grid, Point};
-use crate::solver::SolveType::{DefiniteMinMax, UniqueRequirement, UpdateImpossibles};
-use crate::solver::{SolveMetadata, SolveResults, ValidationError, ValidationResult};
+use crate::solve_result::SolveType::{DefiniteMinMax, UniqueRequirement, UpdateImpossibles};
+use crate::solve_result::{SolveMetadata, SolveResults, ValidationError, ValidationResult};
 use crate::strats;
 use crate::strats::get_compartment_range;
 use itertools::Itertools;
@@ -43,10 +43,7 @@ fn single_cell_cross_compartment_unique(
         }
 
         if free_set.len() > 1 {
-            return Err(ValidationError::Ambiguous {
-                cells: vec![(x, y)],
-            }
-            .into());
+            return Err(ValidationError::Ambiguous { cells: vec![(x, y)] }.into());
         }
         if let Some(res) = free_set.into_iter().next() {
             let colors = vec![grid
@@ -230,9 +227,7 @@ fn compartment_pairs(grid: &Grid) -> Vec<(CPair, CPair)> {
             if vertical != other.vertical {
                 continue;
             }
-            if (!vertical && other.sample_pos().1 <= top_left.1)
-                || (vertical && other.sample_pos().0 <= top_left.0)
-            {
+            if (!vertical && other.sample_pos().1 <= top_left.1) || (vertical && other.sample_pos().0 <= top_left.0) {
                 continue;
             }
 
@@ -255,18 +250,12 @@ fn compartment_pairs(grid: &Grid) -> Vec<(CPair, CPair)> {
             }
 
             for &(x0, y0) in &unresolved_pos {
-                if !other_pos
-                    .iter()
-                    .any(|&(x, y)| if vertical { y0 == y } else { x0 == x })
-                {
+                if !other_pos.iter().any(|&(x, y)| if vertical { y0 == y } else { x0 == x }) {
                     continue 'outer;
                 }
             }
 
-            res.push((
-                (compartment.clone(), base_set, unresolved_pos.clone()),
-                (other, other_set, other_pos),
-            ))
+            res.push(((compartment.clone(), base_set, unresolved_pos.clone()), (other, other_set, other_pos)))
         }
     }
     res
@@ -286,9 +275,7 @@ fn get_set(grid: &Grid, a: Point, b: Point) -> BitSet {
  *
  * The [123] at (0, 0) cannot be 3, as the two other containers would form a closed set.
  */
-fn two_compartments_would_have_closed_set(
-    grid: &mut Grid,
-) -> Result<Option<SolveResults>, ValidationResult> {
+fn two_compartments_would_have_closed_set(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
     fn pair_set_candidate(grid: &Grid, a: Point, b: Point) -> bool {
         let a = grid.get_cell(a).to_unresolved();
         let b = grid.get_cell(b).to_unresolved();
@@ -302,9 +289,7 @@ fn two_compartments_would_have_closed_set(
         }
     }
 
-    'outer: for ((compartment, base_set, unresolved_pos), (_other, other_set, other_pos)) in
-        compartment_pairs(grid)
-    {
+    'outer: for ((compartment, base_set, unresolved_pos), (_other, other_set, other_pos)) in compartment_pairs(grid) {
         if base_set.union(other_set).len() != 3 || (base_set.len() == 2 && other_set.len() == 2) {
             continue;
         }
@@ -316,10 +301,7 @@ fn two_compartments_would_have_closed_set(
             .iter()
             .map(|p| get_coord(vertical, *p))
             .collect::<Vec<_>>()
-            != other_pos
-                .iter()
-                .map(|p| get_coord(vertical, *p))
-                .collect::<Vec<_>>()
+            != other_pos.iter().map(|p| get_coord(vertical, *p)).collect::<Vec<_>>()
         {
             continue;
         }
@@ -340,18 +322,10 @@ fn two_compartments_would_have_closed_set(
             .symmetric_difference(other_set)
             .into_iter()
             .next()
-            .or(cross_set_1
-                .symmetric_difference(cross_set_2)
-                .into_iter()
-                .next())
+            .or(cross_set_1.symmetric_difference(cross_set_2).into_iter().next())
             .unwrap();
 
-        for pos in [
-            unresolved_pos[0],
-            unresolved_pos[1],
-            other_pos[0],
-            other_pos[1],
-        ] {
+        for pos in [unresolved_pos[0], unresolved_pos[1], other_pos[0], other_pos[1]] {
             let mut set = grid.get_cell(pos).to_unresolved();
             set.remove(impossible);
             if set.len() != 2 {
@@ -361,12 +335,8 @@ fn two_compartments_would_have_closed_set(
 
         let mut changes = false;
         if pair_set_candidate(grid, unresolved_pos[0], unresolved_pos[1]) {
-            changes |= grid.set_impossible_in(
-                other_pos[0],
-                vertical,
-                impossible,
-                &other_pos.iter().copied().collect(),
-            )?;
+            changes |=
+                grid.set_impossible_in(other_pos[0], vertical, impossible, &other_pos.iter().copied().collect())?;
         }
         if !changes && pair_set_candidate(grid, other_pos[0], other_pos[1]) {
             changes |= grid.set_impossible_in(
@@ -401,10 +371,7 @@ fn two_compartments_would_have_closed_set(
                 .collect()];
             return Ok(Some(SolveResults {
                 ty: UniqueRequirement(UrResult::ClosedSetCompartment(
-                    unresolved_pos
-                        .into_iter()
-                        .chain(other_pos.into_iter())
-                        .collect(),
+                    unresolved_pos.into_iter().chain(other_pos.into_iter()).collect(),
                     impossible,
                 )),
                 meta: SolveMetadata { colors },
@@ -427,9 +394,7 @@ fn two_compartments_would_have_closed_set(
  * This means we can add 3 to row requirements for both rows.
  */
 fn two_compartment_setti(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
-    for ((compartment, base_set, unresolved_pos), (other, other_set, other_pos)) in
-        compartment_pairs(grid)
-    {
+    for ((compartment, base_set, unresolved_pos), (other, other_set, other_pos)) in compartment_pairs(grid) {
         if base_set.union(other_set).len() != 3 {
             continue;
         }
@@ -482,9 +447,7 @@ fn two_compartment_setti(grid: &mut Grid) -> Result<Option<SolveResults>, Valida
 
         let mut changes = false;
         changes |= grid.requirements_mut(vertical, sample_pos).insert(to_add);
-        changes |= grid
-            .requirements_mut(vertical, other_sample_pos)
-            .insert(to_add);
+        changes |= grid.requirements_mut(vertical, other_sample_pos).insert(to_add);
 
         if changes {
             let colors = vec![vec![compartment.cells, other.cells]
@@ -495,10 +458,7 @@ fn two_compartment_setti(grid: &mut Grid) -> Result<Option<SolveResults>, Valida
                 .collect()];
             return Ok(Some(SolveResults {
                 ty: UniqueRequirement(UrResult::UrSetti(
-                    unresolved_pos
-                        .into_iter()
-                        .chain(other_pos.into_iter())
-                        .collect(),
+                    unresolved_pos.into_iter().chain(other_pos.into_iter()).collect(),
                     vertical,
                     to_add,
                 )),
@@ -518,9 +478,7 @@ fn will_have_closed_sets(grid: &mut Grid) -> Result<bool, ValidationResult> {
     while strats::definite_min_max(grid)?.map(|t| t.ty) == Some(DefiniteMinMax) {
         strats::trivial(grid);
     }
-    for ((_compartment, base_set, unresolved_pos), (_other, other_set, other_pos)) in
-        compartment_pairs(grid)
-    {
+    for ((_compartment, base_set, unresolved_pos), (_other, other_set, other_pos)) in compartment_pairs(grid) {
         if unresolved_pos.len() == 2
             && other_pos.len() == 2
             && base_set == other_set
@@ -548,9 +506,7 @@ fn solution_causes_closed_sets(grid: &mut Grid) -> Result<Option<SolveResults>, 
             subgrid.set_cell(pos, Cell::Solution(num));
             if let Ok(true) = will_have_closed_sets(&mut subgrid) {
                 grid.set_impossible(pos, num)?;
-                return Ok(Some(
-                    UniqueRequirement(UrResult::SolutionCausesClosedSets(pos, num)).into(),
-                ));
+                return Ok(Some(UniqueRequirement(UrResult::SolutionCausesClosedSets(pos, num)).into()));
             }
         }
     }
@@ -593,9 +549,9 @@ pub fn unique_requirement_guess(grid: &mut Grid) -> Result<Option<SolveResults>,
 mod tests {
     use super::*;
     use crate::grid::Cell;
+    use crate::solve_result::SolveType::RequiredAndForbidden;
+    use crate::solve_result::ValidationError::OutOfStrats;
     use crate::solver::solve_basic;
-    use crate::solver::SolveType::RequiredAndForbidden;
-    use crate::solver::ValidationError::OutOfStrats;
     use crate::strats::update_required_and_forbidden;
     use crate::utils::*;
 
@@ -624,10 +580,7 @@ mod tests {
         grid.cells[4][3] = det([1, 2, 3, 4]);
 
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
-        assert_eq!(
-            update_required_and_forbidden(&mut grid),
-            Ok(Some(RequiredAndForbidden.into()))
-        );
+        assert_eq!(update_required_and_forbidden(&mut grid), Ok(Some(RequiredAndForbidden.into())));
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
         assert_eq!(
@@ -669,10 +622,7 @@ mod tests {
         grid.cells[3][1] = det([2, 3, 4]);
 
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
-        assert_eq!(
-            update_required_and_forbidden(&mut grid),
-            Ok(Some(RequiredAndForbidden.into()))
-        );
+        assert_eq!(update_required_and_forbidden(&mut grid), Ok(Some(RequiredAndForbidden.into())));
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
         assert_eq!(
@@ -729,19 +679,13 @@ mod tests {
         grid.cells[3][2] = det([2, 3, 4, 5]);
 
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
-        assert_eq!(
-            update_required_and_forbidden(&mut grid),
-            Ok(Some(RequiredAndForbidden.into()))
-        );
+        assert_eq!(update_required_and_forbidden(&mut grid), Ok(Some(RequiredAndForbidden.into())));
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
         assert_eq!(
             unique_requirement(&mut grid),
             Ok(Some(SolveResults {
-                ty: UniqueRequirement(UrResult::ClosedSetCompartment(
-                    vec![(1, 1), (2, 1), (1, 2), (2, 2)],
-                    2
-                )),
+                ty: UniqueRequirement(UrResult::ClosedSetCompartment(vec![(1, 1), (2, 1), (1, 2), (2, 2)], 2)),
                 meta: SolveMetadata {
                     colors: vec![vec![((1, 1), 2), ((2, 1), 2), ((1, 2), 2), ((2, 2), 2)]]
                 }
@@ -771,10 +715,7 @@ mod tests {
         set_range(&mut grid, (1, 3), (3, 2), [2, 4, 6]);
 
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
-        assert_eq!(
-            update_required_and_forbidden(&mut grid),
-            Ok(Some(RequiredAndForbidden.into()))
-        );
+        assert_eq!(update_required_and_forbidden(&mut grid), Ok(Some(RequiredAndForbidden.into())));
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
         assert_eq!(unique_requirement(&mut grid), Ok(None));
@@ -805,10 +746,7 @@ mod tests {
         grid.cells[1][2] = Cell::Black;
 
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
-        assert_eq!(
-            update_required_and_forbidden(&mut grid),
-            Ok(Some(RequiredAndForbidden.into()))
-        );
+        assert_eq!(update_required_and_forbidden(&mut grid), Ok(Some(RequiredAndForbidden.into())));
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
         assert_eq!(
@@ -839,10 +777,7 @@ mod tests {
         set_range(&mut grid, (4, 1), (6, 2), [3, 4, 5, 6, 7]);
 
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
-        assert_eq!(
-            update_required_and_forbidden(&mut grid),
-            Ok(Some(RequiredAndForbidden.into()))
-        );
+        assert_eq!(update_required_and_forbidden(&mut grid), Ok(Some(RequiredAndForbidden.into())));
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
         assert!(!grid.row_requirements[1].contains(3));
@@ -851,11 +786,7 @@ mod tests {
         assert_eq!(
             unique_requirement(&mut grid),
             Ok(Some(SolveResults {
-                ty: UniqueRequirement(UrResult::UrSetti(
-                    vec![(1, 1), (2, 1), (1, 2), (2, 2)],
-                    false,
-                    3
-                )),
+                ty: UniqueRequirement(UrResult::UrSetti(vec![(1, 1), (2, 1), (1, 2), (2, 2)], false, 3)),
                 meta: SolveMetadata {
                     colors: vec![vec![((1, 1), 3), ((2, 1), 3), ((1, 2), 3), ((2, 2), 3)]]
                 }

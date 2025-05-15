@@ -45,10 +45,7 @@ where
     loop {
         let m = x % radix;
         x = x / radix;
-        result.push(
-            std::char::from_digit(m.try_into().ok().unwrap(), radix.try_into().ok().unwrap())
-                .unwrap(),
-        );
+        result.push(std::char::from_digit(m.try_into().ok().unwrap(), radix.try_into().ok().unwrap()).unwrap());
         if x == T::default() {
             break;
         }

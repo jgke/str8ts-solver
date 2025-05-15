@@ -1,7 +1,7 @@
 use crate::bitset::BitSet;
 use crate::grid::Cell::Solution;
 use crate::grid::{Grid, Point};
-use crate::solver::{SolveMetadata, SolveResults, SolveType, ValidationError, ValidationResult};
+use crate::solve_result::{SolveMetadata, SolveResults, SolveType, ValidationError, ValidationResult};
 use crate::validator::validate;
 
 fn iter(grid: &Grid, indeterminates: &[(Point, BitSet)]) -> Vec<Grid> {

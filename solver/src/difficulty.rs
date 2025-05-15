@@ -1,5 +1,7 @@
 use crate::grid::Grid;
-use crate::solver::{into_ty, run_strat, SolveType, Strategy, StrategyList};
+use crate::solve_result::{into_ty, SolveType};
+use crate::solver::run_strat;
+use crate::strategy::{Strategy, StrategyList};
 
 #[derive(Debug, Clone)]
 pub struct Difficulty {
@@ -34,16 +36,10 @@ pub fn puzzle_difficulty(history: &[&SolveType]) -> Difficulty {
         star_count,
         move_count,
         basic_reductions: history.len() > 1,
-        min_max_reductions: history
-            .iter()
-            .any(|e| matches!(e, SolveType::DefiniteMinMax)),
-        cross_compartment_ranges: history
-            .iter()
-            .any(|e| matches!(e, SolveType::RequiredRange)),
+        min_max_reductions: history.iter().any(|e| matches!(e, SolveType::DefiniteMinMax)),
+        cross_compartment_ranges: history.iter().any(|e| matches!(e, SolveType::RequiredRange)),
         sets: history.iter().any(|e| matches!(e, SolveType::Sets(_))),
-        maintain_reqs_and_blocks: history
-            .iter()
-            .any(|e| matches!(e, SolveType::RequiredAndForbidden)),
+        maintain_reqs_and_blocks: history.iter().any(|e| matches!(e, SolveType::RequiredAndForbidden)),
         setti: history.iter().any(|e| matches!(e, SolveType::Setti(_))),
         y_wing: history.iter().any(|e| matches!(e, SolveType::YWing(_, _))),
         x_wing: history.iter().any(|e| matches!(e, SolveType::Fish(2))),
@@ -54,9 +50,7 @@ pub fn puzzle_difficulty(history: &[&SolveType]) -> Difficulty {
             .max()
             .unwrap_or(0),
         medusa: history.iter().any(|e| matches!(e, SolveType::Medusa)),
-        unique_requirement: history
-            .iter()
-            .any(|e| matches!(e, SolveType::UniqueRequirement(..))),
+        unique_requirement: history.iter().any(|e| matches!(e, SolveType::UniqueRequirement(..))),
         short_guess_count: history
             .iter()
             .filter(|e| matches!(e, SolveType::GuessStep(_, _, steps, _) if steps.len() < 8))

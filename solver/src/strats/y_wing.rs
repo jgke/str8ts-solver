@@ -1,6 +1,6 @@
 use crate::grid::Grid;
-use crate::solver::SolveType::YWing;
-use crate::solver::{SolveMetadata, SolveResults, ValidationResult};
+use crate::solve_result::SolveType::YWing;
+use crate::solve_result::{SolveMetadata, SolveResults, ValidationResult};
 
 #[allow(clippy::type_complexity)]
 pub fn y_wing(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
@@ -58,8 +58,8 @@ pub fn y_wing(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::solve_result::ValidationError::OutOfStrats;
     use crate::solver::solve_basic;
-    use crate::solver::ValidationError::OutOfStrats;
     use crate::utils::*;
 
     #[test]

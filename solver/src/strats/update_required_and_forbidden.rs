@@ -1,7 +1,7 @@
 use crate::bitset::BitSet;
 use crate::grid::{Cell::*, CellPair, Grid};
-use crate::solver::SolveType::RequiredAndForbidden;
-use crate::solver::StrategyReturn;
+use crate::solve_result::SolveType::RequiredAndForbidden;
+use crate::strategy::StrategyReturn;
 use crate::strats::required_by_range;
 
 pub fn required_by_certain(line: &[CellPair]) -> BitSet {

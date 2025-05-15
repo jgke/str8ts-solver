@@ -1,7 +1,7 @@
 use crate::bitset::BitSet;
 use crate::grid::{Cell, Compartment, Grid};
-use crate::solver::SolveType::RowColBrute;
-use crate::solver::StrategyReturn;
+use crate::solve_result::SolveType::RowColBrute;
+use crate::strategy::StrategyReturn;
 use crate::validator::compartment_valid;
 
 pub fn solution_valid(compartments: &[Compartment], requirements: BitSet) -> bool {
@@ -30,10 +30,7 @@ pub fn solution_valid(compartments: &[Compartment], requirements: BitSet) -> boo
         .all(|compartment| compartment_valid(compartment).is_ok())
 }
 
-pub fn compartment_solutions(
-    compartments: &[Compartment],
-    requirements: BitSet,
-) -> Vec<Vec<Compartment>> {
+pub fn compartment_solutions(compartments: &[Compartment], requirements: BitSet) -> Vec<Vec<Compartment>> {
     let mut available_solutions = Vec::new();
     let mut all_solved = true;
     'outer: for (index, compartment) in compartments.iter().enumerate() {
@@ -54,8 +51,7 @@ pub fn compartment_solutions(
                         }
                     }
                     if compartment_valid(&with_solution[index]).is_ok() {
-                        available_solutions
-                            .append(&mut compartment_solutions(&with_solution, requirements))
+                        available_solutions.append(&mut compartment_solutions(&with_solution, requirements))
                     }
                 }
                 break 'outer;
@@ -69,15 +65,11 @@ pub fn compartment_solutions(
 }
 
 fn compartment_contains_number(comp: &Compartment, num: u8) -> bool {
-    comp.cells
-        .iter()
-        .any(|(_, cell)| cell.to_req_or_sol() == Some(num))
+    comp.cells.iter().any(|(_, cell)| cell.to_req_or_sol() == Some(num))
 }
 
 fn solved_compartments_contains_number(compartments: &[Compartment], num: u8) -> bool {
-    compartments
-        .iter()
-        .any(|comp| compartment_contains_number(comp, num))
+    compartments.iter().any(|comp| compartment_contains_number(comp, num))
 }
 
 pub fn row_col_brute(grid: &mut Grid) -> StrategyReturn {
@@ -179,7 +171,7 @@ pub fn row_col_brute(grid: &mut Grid) -> StrategyReturn {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::solver::SolveType::RequiredAndForbidden;
+    use crate::solve_result::SolveType::RequiredAndForbidden;
     use crate::strats::update_required_and_forbidden;
     use crate::utils::*;
 
@@ -199,10 +191,7 @@ mod tests {
         grid.cells[2][0] = Cell::Indeterminate(set([1, 2, 3]));
         grid.cells[3][0] = Cell::Indeterminate(set([1, 2, 3]));
 
-        assert_eq!(
-            update_required_and_forbidden(&mut grid),
-            Ok(Some(RequiredAndForbidden.into()))
-        );
+        assert_eq!(update_required_and_forbidden(&mut grid), Ok(Some(RequiredAndForbidden.into())));
 
         assert_eq!(grid.row_requirements[0].len(), 1);
         assert!(grid.row_requirements[0].contains(2));
@@ -254,10 +243,7 @@ mod tests {
         grid.cells[7][0] = Cell::Indeterminate(set([7, 8, 9]));
         grid.cells[8][0] = Cell::Indeterminate(set([6, 8, 9]));
 
-        assert_eq!(
-            update_required_and_forbidden(&mut grid),
-            Ok(Some(RequiredAndForbidden.into()))
-        );
+        assert_eq!(update_required_and_forbidden(&mut grid), Ok(Some(RequiredAndForbidden.into())));
         assert_eq!(row_col_brute(&mut grid), Ok(Some(RowColBrute.into())));
 
         assert_eq!(grid.cells[0][2], Cell::Indeterminate(set([2, 3, 4, 5, 6])));

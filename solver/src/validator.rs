@@ -1,8 +1,8 @@
 use crate::bitset::BitSet;
 use crate::grid::Cell::*;
 use crate::grid::{Cell, Compartment, Grid};
-use crate::solver::ValidationError::*;
-use crate::solver::ValidationResult;
+use crate::solve_result::ValidationError::*;
+use crate::solve_result::ValidationResult;
 use rustc_hash::FxHashMap;
 
 pub fn cell_has_solutions(x: usize, y: usize, cell: &Cell) -> Result<(), ValidationResult> {
@@ -198,8 +198,8 @@ pub fn validate(grid: &Grid) -> Result<(), ValidationResult> {
 
 #[cfg(test)]
 mod tests {
+    use crate::solve_result::SolveMetadata;
     use super::*;
-    use crate::solver::SolveMetadata;
     use crate::utils::*;
 
     #[test]

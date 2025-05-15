@@ -33,8 +33,7 @@ pub fn trivial(grid: &mut Grid) -> bool {
                     Black => {}
                 }
             }
-            grid.forbidden_mut(vertical, sample_pos)
-                .append(missing_numbers);
+            grid.forbidden_mut(vertical, sample_pos).append(missing_numbers);
         }
     }
 

@@ -1,6 +1,6 @@
 use crate::grid::{CellPair, Grid, Point};
-use crate::solver::SolveType::Fish;
-use crate::solver::{SolveMetadata, SolveResults, ValidationResult};
+use crate::solve_result::SolveType::Fish;
+use crate::solve_result::{SolveMetadata, SolveResults, ValidationResult};
 use itertools::Itertools;
 use rustc_hash::FxHashSet;
 
@@ -73,17 +73,12 @@ pub fn fish(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
 
                     if candidates.len() == fish_count {
                         let mut local_changes = false;
-                        let positions: FxHashSet<Point> = candidates
-                            .iter()
-                            .flat_map(|line| line.iter())
-                            .copied()
-                            .collect();
+                        let positions: FxHashSet<Point> =
+                            candidates.iter().flat_map(|line| line.iter()).copied().collect();
                         #[allow(clippy::iter_over_hash_type)]
                         for position in &positions {
-                            local_changes |=
-                                grid.set_impossible_in(*position, false, num, &positions)?;
-                            local_changes |=
-                                grid.set_impossible_in(*position, true, num, &positions)?;
+                            local_changes |= grid.set_impossible_in(*position, false, num, &positions)?;
+                            local_changes |= grid.set_impossible_in(*position, true, num, &positions)?;
                         }
 
                         #[allow(clippy::iter_over_hash_type)]
@@ -93,13 +88,7 @@ pub fn fish(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
                         }
 
                         if local_changes {
-                            colors.push(
-                                positions
-                                    .into_iter()
-                                    .sorted()
-                                    .map(|pos| (pos, num))
-                                    .collect(),
-                            );
+                            colors.push(positions.into_iter().sorted().map(|pos| (pos, num)).collect());
                         }
 
                         changes |= local_changes;
@@ -121,9 +110,9 @@ pub fn fish(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::solve_result::SolveType::{RequiredAndForbidden, Setti};
+    use crate::solve_result::ValidationError::OutOfStrats;
     use crate::solver::solve_basic;
-    use crate::solver::SolveType::{RequiredAndForbidden, Setti};
-    use crate::solver::ValidationError::OutOfStrats;
     use crate::strats::{setti, update_required_and_forbidden};
     use crate::utils::*;
 
@@ -138,10 +127,7 @@ mod tests {
 ");
 
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
-        assert_eq!(
-            update_required_and_forbidden(&mut grid),
-            Ok(Some(RequiredAndForbidden.into()))
-        );
+        assert_eq!(update_required_and_forbidden(&mut grid), Ok(Some(RequiredAndForbidden.into())));
         assert_eq!(setti(&mut grid), Ok(Some(Setti(set([2])).into())));
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 

@@ -1,7 +1,7 @@
 use crate::bitset::BitSet;
 use crate::grid::Grid;
-use crate::solver::SolveType::Setti;
-use crate::solver::StrategyReturn;
+use crate::solve_result::SolveType::Setti;
+use crate::strategy::StrategyReturn;
 
 pub fn setti(grid: &mut Grid) -> StrategyReturn {
     let mut changes = BitSet::new();
@@ -79,9 +79,9 @@ pub fn setti(grid: &mut Grid) -> StrategyReturn {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::solve_result::SolveType::RequiredAndForbidden;
+    use crate::solve_result::ValidationError::OutOfStrats;
     use crate::solver::solve_basic;
-    use crate::solver::SolveType::RequiredAndForbidden;
-    use crate::solver::ValidationError::OutOfStrats;
     use crate::strats::update_required_and_forbidden;
     use crate::utils::*;
 
@@ -96,10 +96,7 @@ mod tests {
 ");
 
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
-        assert_eq!(
-            update_required_and_forbidden(&mut grid),
-            Ok(Some(RequiredAndForbidden.into()))
-        );
+        assert_eq!(update_required_and_forbidden(&mut grid), Ok(Some(RequiredAndForbidden.into())));
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
         assert_eq!(grid.row_forbidden[4], set([]));

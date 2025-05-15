@@ -1,7 +1,7 @@
 use crate::wasm_solve_result::WasmSolveMetadata;
 use serde::{Deserialize, Serialize};
 use solver::grid::Point;
-use solver::solver::{ValidationError, ValidationResult};
+use solver::solve_result::{ValidationError, ValidationResult};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum WasmValidationError {

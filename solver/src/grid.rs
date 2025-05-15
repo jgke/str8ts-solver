@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 
 use crate::bitset::BitSet;
 use crate::puzzle_coding;
-use crate::solver::{ValidationError, ValidationResult};
+use crate::solve_result::{ValidationError, ValidationResult};
 use Cell::*;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -165,16 +165,10 @@ impl Grid {
             .collect()
     }
 
-    pub fn iter_by_indeterminates_at(
-        &self,
-        center: Point,
-        include_center: bool,
-    ) -> Vec<(Point, BitSet)> {
+    pub fn iter_by_indeterminates_at(&self, center: Point, include_center: bool) -> Vec<(Point, BitSet)> {
         self.iter_by_cells()
             .into_iter()
-            .filter(|&(pos, _)| {
-                (center.0 == pos.0 || center.1 == pos.1) && (include_center || pos != center)
-            })
+            .filter(|&(pos, _)| (center.0 == pos.0 || center.1 == pos.1) && (include_center || pos != center))
             .filter_map(|(pos, cell)| {
                 if let Indeterminate(set) = cell {
                     Some((pos, set))
@@ -277,10 +271,7 @@ impl Grid {
         for x in minx..=maxx {
             cells.push(((x, pos.1), self.get_cell((x, pos.1)).clone()));
         }
-        Compartment {
-            cells,
-            vertical: false,
-        }
+        Compartment { cells, vertical: false }
     }
 
     pub fn vertical_compartment_containing(&self, pos: Point) -> Compartment {
@@ -296,17 +287,11 @@ impl Grid {
         for y in miny..=maxy {
             cells.push(((pos.0, y), self.get_cell((pos.0, y)).clone()));
         }
-        Compartment {
-            cells,
-            vertical: true,
-        }
+        Compartment { cells, vertical: true }
     }
 
     pub fn compartments_containing(&self, pos: Point) -> (Compartment, Compartment) {
-        (
-            self.horizontal_compartment_containing(pos),
-            self.vertical_compartment_containing(pos),
-        )
+        (self.horizontal_compartment_containing(pos), self.vertical_compartment_containing(pos))
     }
 
     pub fn iter_by_row_compartments(&self) -> Vec<Vec<Compartment>> {
@@ -535,10 +520,7 @@ mod tests {
         let remove_set: BitSet = [1, 2].into_iter().collect();
         for y in 0..=1 {
             for x in 0..=2 {
-                assert_eq!(
-                    grid.remove_numbers((x, y), remove_set),
-                    Ok(x >= 1 && y == 1)
-                );
+                assert_eq!(grid.remove_numbers((x, y), remove_set), Ok(x >= 1 && y == 1));
             }
         }
 

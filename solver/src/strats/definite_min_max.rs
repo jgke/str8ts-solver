@@ -1,8 +1,8 @@
 use crate::bitset::BitSet;
 use crate::grid::Compartment;
 use crate::grid::Grid;
-use crate::solver::SolveType::DefiniteMinMax;
-use crate::solver::StrategyReturn;
+use crate::solve_result::SolveType::DefiniteMinMax;
+use crate::strategy::StrategyReturn;
 use crate::strats::get_compartment_range;
 
 pub fn num_count_in_containers(grid: &Grid, current_compartment: &Compartment, num: u8) -> usize {
@@ -61,8 +61,7 @@ pub fn definite_min_max(grid: &mut Grid) -> StrategyReturn {
                             let set = cell.to_unresolved();
                             if !set.is_empty() {
                                 let new_set = set_range(set, min, max);
-                                changes |=
-                                    grid.remove_numbers((*x, *y), set.difference(new_set))?;
+                                changes |= grid.remove_numbers((*x, *y), set.difference(new_set))?;
                             }
                         }
                     }
@@ -82,9 +81,9 @@ pub fn definite_min_max(grid: &mut Grid) -> StrategyReturn {
 mod tests {
     use super::*;
     use crate::grid::Cell;
+    use crate::solve_result::SolveType::{RequiredAndForbidden, Setti, UpdateImpossibles};
+    use crate::solve_result::ValidationError::OutOfStrats;
     use crate::solver::solve_basic;
-    use crate::solver::SolveType::{RequiredAndForbidden, Setti, UpdateImpossibles};
-    use crate::solver::ValidationError::OutOfStrats;
     use crate::strats;
     use crate::utils::*;
 
@@ -96,10 +95,7 @@ mod tests {
 #.##
 ####
 ");
-        assert_eq!(
-            strats::update_impossibles(&mut grid),
-            Ok(Some(UpdateImpossibles.into()))
-        );
+        assert_eq!(strats::update_impossibles(&mut grid), Ok(Some(UpdateImpossibles.into())));
         assert_eq!(definite_min_max(&mut grid), Ok(Some(DefiniteMinMax.into())));
         assert_eq!(grid.cells[1][1], Cell::Requirement(4));
         assert_eq!(grid.cells[2][1], det([3]));
@@ -118,10 +114,7 @@ mod tests {
 
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 
-        assert_eq!(
-            strats::update_required_and_forbidden(&mut grid),
-            Ok(Some(RequiredAndForbidden.into()))
-        );
+        assert_eq!(strats::update_required_and_forbidden(&mut grid), Ok(Some(RequiredAndForbidden.into())));
         assert_eq!(strats::setti(&mut grid), Ok(Some(Setti(set([5])).into())));
 
         assert_eq!(grid.cells[3][2], det([3, 4, 5]));

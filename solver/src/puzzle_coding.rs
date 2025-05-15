@@ -10,7 +10,9 @@ fn parse_format_1(row: Vec<char>) -> Result<Grid, String> {
     let size = ((row.len() / 2) as f64).sqrt() as usize;
     let size2 = size * size;
     if 2 * size2 != row.len() {
-        return Err("Did not recognize puzzle format: Tried to detect as oneline but dimensions did not match".to_string());
+        return Err(
+            "Did not recognize puzzle format: Tried to detect as oneline but dimensions did not match".to_string()
+        );
     }
 
     let mut cells = Vec::new();
@@ -177,28 +179,10 @@ mod tests {
         let url = "https://jgke.fi/games/str8ts-solver?bd=T5B03021a0e1a0a010a0a030p0403020l0b1d1j1d1j131d1k1e1k";
         assert_eq!(
             Grid::new(vec![
-                vec![
-                    Requirement(3),
-                    Requirement(2),
-                    det([1, 5]),
-                    Blocker(4),
-                    det([1, 5])
-                ],
+                vec![Requirement(3), Requirement(2), det([1, 5]), Blocker(4), det([1, 5])],
                 vec![Black, Requirement(1), Black, Black, Requirement(3)],
-                vec![
-                    Solution(5),
-                    Requirement(4),
-                    Requirement(3),
-                    Requirement(2),
-                    Solution(1)
-                ],
-                vec![
-                    Blocker(1),
-                    det([3, 5]),
-                    det([2, 4, 5]),
-                    det([3, 5]),
-                    det([2, 4, 5])
-                ],
+                vec![Solution(5), Requirement(4), Requirement(3), Requirement(2), Solution(1)],
+                vec![Blocker(1), det([3, 5]), det([2, 4, 5]), det([3, 5]), det([2, 4, 5])],
                 vec![
                     det([2, 4]),
                     det([3, 5]),

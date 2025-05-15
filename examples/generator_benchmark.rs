@@ -42,11 +42,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     fn test_i(i: usize) {
-        super::bench_generator(
-            &format!("generator diff={}", i + 1),
-            i + 1,
-            super::SEEDS[i - 1].1,
-        );
+        super::bench_generator(&format!("generator diff={}", i + 1), i + 1, super::SEEDS[i - 1].1);
     }
 
     #[test]

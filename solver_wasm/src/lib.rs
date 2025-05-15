@@ -9,11 +9,11 @@ use crate::wasm_grid::WasmGrid;
 use crate::wasm_solve_result::WasmSolveResult;
 use crate::wasm_validation_result::WasmValidationResult;
 use serde::{Deserialize, Serialize};
-use solver::solver::{
-    SolveResults, SolveType, Strategy, ValidationError, ValidationResult, solve_round,
-};
+use solver::solve_result::{SolveResults, SolveType, ValidationError, ValidationResult};
 use solver::{generator, grid, puzzle_coding};
 use wasm_bindgen::prelude::*;
+use solver::solver::solve_round;
+use solver::strategy::Strategy;
 
 #[wasm_bindgen]
 pub fn parse(puzzle: Vec<String>) -> Result<JsValue, JsValue> {
@@ -76,10 +76,7 @@ pub fn solve_one(input: JsValue) -> Result<JsValue, JsValue> {
         .unwrap_or(0);
     Ok(serde_wasm_bindgen::to_value(&SolveOneReturn {
         grid: grid.into(),
-        res_display: res
-            .as_ref()
-            .map(|ok| ok.to_string())
-            .map_err(|err| err.to_string()),
+        res_display: res.as_ref().map(|ok| ok.to_string()).map_err(|err| err.to_string()),
         res: res.map(|ok| ok.into()).map_err(|err| err.into()),
         difficulty,
     })?)
@@ -137,10 +134,8 @@ pub fn solve(input: JsValue, use_guesses: bool) -> Result<JsValue, JsValue> {
 pub fn puzzle_difficulty(input: JsValue) -> Result<JsValue, JsValue> {
     let history: Vec<WasmSolveResult> = serde_wasm_bindgen::from_value(input)?;
     let history: Vec<SolveResults> = history.into_iter().map(|item| item.into()).collect();
-    let difficulty: WasmDifficulty = solver::difficulty::puzzle_difficulty(
-        &history.iter().map(|res| &res.ty).collect::<Vec<_>>(),
-    )
-    .into();
+    let difficulty: WasmDifficulty =
+        solver::difficulty::puzzle_difficulty(&history.iter().map(|res| &res.ty).collect::<Vec<_>>()).into();
 
     Ok(serde_wasm_bindgen::to_value(&difficulty)?)
 }

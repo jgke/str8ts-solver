@@ -1,7 +1,7 @@
 use crate::bitset::BitSet;
 use crate::grid::Grid;
-use crate::solver::SolveType::UpdateImpossibles;
-use crate::solver::StrategyReturn;
+use crate::solve_result::SolveType::UpdateImpossibles;
+use crate::strategy::StrategyReturn;
 
 pub fn update_impossibles(grid: &mut Grid) -> StrategyReturn {
     let mut row_impossibles: Vec<BitSet> = Vec::new();
@@ -51,10 +51,7 @@ mod tests {
 #.##
 ####
 ");
-        assert_eq!(
-            update_impossibles(&mut grid),
-            Ok(Some(UpdateImpossibles.into()))
-        );
+        assert_eq!(update_impossibles(&mut grid), Ok(Some(UpdateImpossibles.into())));
         assert_eq!(grid.cells[1][1], Cell::Requirement(4));
         assert_eq!(grid.cells[2][1], det([1, 2, 3]));
         assert_eq!(grid.cells[1][2], det([1, 2, 3]));

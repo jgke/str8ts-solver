@@ -24,9 +24,7 @@ pub fn required_in_compartment_by_range(grid_size: usize, compartment: &Compartm
 pub fn required_by_range(grid_size: usize, line: &[CellPair]) -> BitSet {
     Grid::line_to_compartments(false, line.to_vec())
         .into_iter()
-        .flat_map(|compartment| {
-            required_in_compartment_by_range(grid_size, &compartment).into_iter()
-        })
+        .flat_map(|compartment| required_in_compartment_by_range(grid_size, &compartment).into_iter())
         .collect()
 }
 
@@ -42,10 +40,7 @@ pub fn get_compartment_range(
         .iter()
         .filter_map(|(_, cell)| match (cell.to_determinate(), cell) {
             (Some(n), _) => Some((n, n)),
-            (_, Indeterminate(set)) => Some((
-                set.into_iter().min().unwrap(),
-                set.into_iter().max().unwrap(),
-            )),
+            (_, Indeterminate(set)) => Some((set.into_iter().min().unwrap(), set.into_iter().max().unwrap())),
             (_, _) => None,
         })
         .chain(must_contain.into_iter().map(|n| (n, n)))

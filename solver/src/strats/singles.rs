@@ -1,7 +1,7 @@
 use crate::grid::Cell::*;
 use crate::grid::Grid;
-use crate::solver::SolveType::Singles;
-use crate::solver::StrategyReturn;
+use crate::solve_result::SolveType::Singles;
+use crate::strategy::StrategyReturn;
 use crate::strats::required_in_compartment_by_range;
 
 pub fn singles(grid: &mut Grid) -> StrategyReturn {

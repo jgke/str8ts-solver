@@ -1,13 +1,14 @@
-use solver::solver::{SolveType, StrategyList};
+use clap::CommandFactory;
+use clap::Parser;
+use solver::difficulty::get_puzzle_difficulty;
+use solver::generator;
+use solver::grid::Grid;
+use solver::solve_result::{SolveResults, SolveType};
+use solver::solver::solve_round;
+use solver::strategy::StrategyList;
 use std::process::ExitCode;
 
 pub fn cli() -> ExitCode {
-    use clap::CommandFactory;
-    use clap::Parser;
-    use solver::difficulty::get_puzzle_difficulty;
-    use solver::generator;
-    use solver::grid::Grid;
-    use solver::solver::{solve_round, SolveResults};
     /// Generate or solve a srt8ts puzzle.
     #[derive(Parser, Debug)]
     #[command(author, version, about, long_about = None)]
@@ -53,9 +54,7 @@ pub fn cli() -> ExitCode {
     } = Args::parse();
 
     use log::info;
-    env_logger::init_from_env(
-        env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "warn"),
-    );
+    env_logger::init_from_env(env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "warn"));
 
     if (generate && solve) || !(generate || solve) {
         println!("Error: Pass either --generate or --solve\n");
@@ -73,18 +72,9 @@ pub fn cli() -> ExitCode {
             size, size, blocker_count, blocker_num_count
         );
 
-        let grid = generator::generator(
-            size,
-            blocker_count,
-            blocker_num_count,
-            target_difficulty,
-            !not_symmetric,
-        );
+        let grid = generator::generator(size, blocker_count, blocker_num_count, target_difficulty, !not_symmetric);
         info!("Generated grid with difficulty {}", target_difficulty);
-        info!(
-            "Strats required: {:#?}",
-            get_puzzle_difficulty(&grid, &StrategyList::all()).unwrap()
-        );
+        info!("Strats required: {:#?}", get_puzzle_difficulty(&grid, &StrategyList::all()).unwrap());
         println!("{}", grid);
     } else if solve {
         if let Some(puzzle) = puzzle {

@@ -6,9 +6,7 @@ pub struct BitSet(u32);
 impl fmt::Debug for BitSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("BitSet")?;
-        f.debug_set()
-            .entries((1..32).filter(|n| self.contains(*n)))
-            .finish()
+        f.debug_set().entries((1..32).filter(|n| self.contains(*n))).finish()
     }
 }
 

@@ -1,7 +1,8 @@
 use crate::bitset::BitSet;
 use crate::grid::{Grid, Point};
-use crate::solver::SolveType::Medusa;
-use crate::solver::{SolveMetadata, SolveResults, StrategyReturn, ValidationResult};
+use crate::solve_result::SolveType::Medusa;
+use crate::solve_result::{SolveMetadata, SolveResults, ValidationResult};
+use crate::strategy::StrategyReturn;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::hash::Hash;
 
@@ -31,12 +32,8 @@ fn gather_pairs(grid: &Grid) -> Pairs {
                 .filter(|vec| vec.len() == 1)
                 .flatten()
             {
-                res.entry((pos, num))
-                    .or_insert_with(BTreeSet::new)
-                    .insert(other);
-                res.entry((other, num))
-                    .or_insert_with(BTreeSet::new)
-                    .insert(pos);
+                res.entry((pos, num)).or_insert_with(BTreeSet::new).insert(other);
+                res.entry((other, num)).or_insert_with(BTreeSet::new).insert(pos);
             }
         }
     }
@@ -108,11 +105,7 @@ fn get_colors(grid: &mut Grid, pairs: &Pairs, orig_pos: Point, orig_num: u8) -> 
 }
 
 type SeenColor = HashMap<u8, Vec<Point>>;
-fn get_row_and_col_colors(
-    colors: &Colors,
-    center: Point,
-    include_center: bool,
-) -> (SeenColor, SeenColor) {
+fn get_row_and_col_colors(colors: &Colors, center: Point, include_center: bool) -> (SeenColor, SeenColor) {
     let mut seen_false: SeenColor = HashMap::new();
     let mut seen_true: SeenColor = HashMap::new();
 
@@ -139,27 +132,11 @@ fn get_row_and_col_colors(
 fn split_seen(seen: &SeenColor, center: Point) -> (SeenColor, SeenColor) {
     let seen_col = seen
         .iter()
-        .map(|(&k, v)| {
-            (
-                k,
-                v.iter()
-                    .copied()
-                    .filter(|&(x, _)| x == center.0)
-                    .collect::<Vec<_>>(),
-            )
-        })
+        .map(|(&k, v)| (k, v.iter().copied().filter(|&(x, _)| x == center.0).collect::<Vec<_>>()))
         .collect::<HashMap<_, _>>();
     let seen_row = seen
         .iter()
-        .map(|(&k, v)| {
-            (
-                k,
-                v.iter()
-                    .copied()
-                    .filter(|&(_, y)| y == center.1)
-                    .collect::<Vec<_>>(),
-            )
-        })
+        .map(|(&k, v)| (k, v.iter().copied().filter(|&(_, y)| y == center.1).collect::<Vec<_>>()))
         .collect::<HashMap<_, _>>();
     (seen_row, seen_col)
 }
@@ -167,11 +144,7 @@ fn split_seen(seen: &SeenColor, center: Point) -> (SeenColor, SeenColor) {
 fn block_color(grid: &mut Grid, colors: &Colors, val: bool) -> Result<bool, ValidationResult> {
     let mut changes = false;
     for (&pos, cell_colors) in colors {
-        for num in cell_colors
-            .iter()
-            .filter(|(_, b)| **b == val)
-            .map(|(n, _)| *n)
-        {
+        for num in cell_colors.iter().filter(|(_, b)| **b == val).map(|(n, _)| *n) {
             changes |= grid.set_impossible(pos, num)?;
         }
     }
@@ -288,13 +261,8 @@ pub fn medusa(grid: &mut Grid) -> StrategyReturn {
                     }
 
                     /* there is zero or one colors in cell here -- two is handled in Case 3 */
-                    if let Some(shared) = colors
-                        .get(&pos)
-                        .and_then(|map| map.values().copied().next())
-                    {
-                        if (shared && seen_false.contains_key(&num))
-                            || (!shared && seen_true.contains_key(&num))
-                        {
+                    if let Some(shared) = colors.get(&pos).and_then(|map| map.values().copied().next()) {
+                        if (shared && seen_false.contains_key(&num)) || (!shared && seen_true.contains_key(&num)) {
                             changes |= grid.set_impossible(pos, num)?;
                         }
                     }
@@ -333,8 +301,8 @@ pub fn medusa(grid: &mut Grid) -> StrategyReturn {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::solve_result::ValidationError::OutOfStrats;
     use crate::solver::solve_basic;
-    use crate::solver::ValidationError::OutOfStrats;
     use crate::strats::update_required_and_forbidden;
     use crate::utils::*;
     use rustc_hash::FxHashSet;
@@ -388,13 +356,7 @@ c.....e..
                 ty: Medusa,
                 meta: SolveMetadata {
                     colors: vec![
-                        vec![
-                            ((0, 0), 4),
-                            ((0, 4), 5),
-                            ((4, 0), 7),
-                            ((4, 3), 5),
-                            ((6, 4), 6)
-                        ],
+                        vec![((0, 0), 4), ((0, 4), 5), ((4, 0), 7), ((4, 3), 5), ((6, 4), 6)],
                         vec![
                             ((0, 4), 4),
                             ((4, 0), 4),
@@ -523,13 +485,7 @@ c.....e..
                 meta: SolveMetadata {
                     colors: vec![
                         vec![((0, 0), 4), ((0, 4), 5), ((4, 0), 7), ((6, 4), 7)],
-                        vec![
-                            ((0, 4), 4),
-                            ((4, 0), 4),
-                            ((4, 3), 7),
-                            ((6, 3), 7),
-                            ((6, 4), 5)
-                        ]
+                        vec![((0, 4), 4), ((4, 0), 4), ((4, 3), 7), ((6, 3), 7), ((6, 4), 5)]
                     ]
                 }
             })),
@@ -589,13 +545,7 @@ c.....e..
                 meta: SolveMetadata {
                     colors: vec![
                         vec![((0, 0), 4), ((0, 4), 5), ((4, 0), 7), ((4, 3), 5)],
-                        vec![
-                            ((0, 4), 4),
-                            ((4, 0), 4),
-                            ((4, 3), 7),
-                            ((6, 3), 5),
-                            ((6, 4), 5)
-                        ]
+                        vec![((0, 4), 4), ((4, 0), 4), ((4, 3), 7), ((6, 3), 5), ((6, 4), 5)]
                     ]
                 }
             })),
@@ -820,13 +770,7 @@ c.....e..
                 ty: Medusa,
                 meta: SolveMetadata {
                     colors: vec![
-                        vec![
-                            ((0, 0), 3),
-                            ((0, 4), 1),
-                            ((4, 0), 7),
-                            ((4, 3), 8),
-                            ((6, 4), 8)
-                        ],
+                        vec![((0, 0), 3), ((0, 4), 1), ((4, 0), 7), ((4, 3), 8), ((6, 4), 8)],
                         vec![((0, 4), 3), ((4, 0), 3), ((4, 3), 7), ((6, 4), 1)]
                     ]
                 }

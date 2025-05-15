@@ -1,6 +1,6 @@
 use crate::grid::{Grid, Point};
-use crate::solver::SolveType::RequiredRange;
-use crate::solver::StrategyReturn;
+use crate::solve_result::SolveType::RequiredRange;
+use crate::strategy::StrategyReturn;
 use crate::strats::required_in_compartment_by_range;
 use rustc_hash::FxHashSet;
 
@@ -8,17 +8,11 @@ pub fn required_range(grid: &mut Grid) -> StrategyReturn {
     let mut changes = false;
 
     for compartment in grid.iter_by_compartments() {
-        let compartment_positions: FxHashSet<Point> =
-            compartment.cells.iter().map(|(p, _)| *p).collect();
+        let compartment_positions: FxHashSet<Point> = compartment.cells.iter().map(|(p, _)| *p).collect();
         let sample_pos = compartment.sample_pos();
 
         for num in required_in_compartment_by_range(grid.x, &compartment) {
-            changes |= grid.set_impossible_in(
-                sample_pos,
-                compartment.vertical,
-                num,
-                &compartment_positions,
-            )?;
+            changes |= grid.set_impossible_in(sample_pos, compartment.vertical, num, &compartment_positions)?;
         }
     }
 

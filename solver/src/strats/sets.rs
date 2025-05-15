@@ -1,6 +1,6 @@
 use crate::bitset::BitSet;
 use crate::grid::{Grid, Point};
-use crate::solver::{SolveMetadata, SolveResults, SolveType, ValidationResult};
+use crate::solve_result::{SolveMetadata, SolveResults, SolveType, ValidationResult};
 use itertools::Itertools;
 use rustc_hash::FxHashSet;
 
@@ -75,7 +75,7 @@ pub fn sets(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::solver::SolveType::Sets;
+    use crate::solve_result::SolveType::Sets;
     use crate::utils::*;
 
     #[test]

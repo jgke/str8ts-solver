@@ -1,10 +1,10 @@
 use crate::bitset::BitSet;
 use crate::grid::Cell::*;
 use crate::grid::{Grid, Point};
-use crate::solver::SolveType::*;
-use crate::solver::{
-    into_ty, solve_round, SolveResults, StrategyReturn, ValidationError, ValidationResult,
-};
+use crate::solve_result::SolveType::*;
+use crate::solve_result::{into_ty, SolveResults, ValidationError, ValidationResult};
+use crate::solver::solve_round;
+use crate::strategy::StrategyReturn;
 use itertools::Itertools;
 use std::collections::VecDeque;
 use std::rc::Rc;
@@ -15,8 +15,7 @@ type ForcedNumber = (Point, u8);
 pub struct GuessResult(pub ForcedNumber);
 
 fn run_guess(candidates: Vec<(Grid, ForcedNumber)>, max_depth: usize) -> Option<GuessResult> {
-    let mut candidates: VecDeque<((Grid, ForcedNumber), usize)> =
-        candidates.into_iter().map(|c| (c, 0)).collect();
+    let mut candidates: VecDeque<((Grid, ForcedNumber), usize)> = candidates.into_iter().map(|c| (c, 0)).collect();
 
     while let Some(((mut temp_grid, (pos, n)), count)) = candidates.pop_front() {
         if count > max_depth {
@@ -68,16 +67,16 @@ pub fn guess(grid: &mut Grid) -> StrategyReturn {
     if let Some(res) = {
         (2..=3)
             .filter_map(|set_size| gather_and_run_guess(grid, |set| set.len() == set_size, 25))
-            .chain((2..=num_count).filter_map(|set_size| {
-                gather_and_run_guess(grid, |set| set.len() == set_size, usize::MAX)
-            }))
+            .chain(
+                (2..=num_count)
+                    .filter_map(|set_size| gather_and_run_guess(grid, |set| set.len() == set_size, usize::MAX)),
+            )
             .next()
     } {
         let GuessResult(((x, y), n)) = res;
         grid.set_impossible((x, y), n)?;
         temp_grid.set_cell((x, y), Solution(n));
-        let mut steps: Vec<(Grid, SolveResults)> =
-            vec![(temp_grid.clone(), StartGuess((x, y), n).into())];
+        let mut steps: Vec<(Grid, SolveResults)> = vec![(temp_grid.clone(), StartGuess((x, y), n).into())];
 
         loop {
             match solve_round(&mut temp_grid, false) {
@@ -108,8 +107,8 @@ pub fn guess(grid: &mut Grid) -> StrategyReturn {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::solve_result::ValidationError::OutOfStrats;
     use crate::solver::solve_basic;
-    use crate::solver::ValidationError::OutOfStrats;
     use crate::strats::{setti, update_required_and_forbidden};
     use crate::utils::*;
 
@@ -124,10 +123,7 @@ mod tests {
 ");
 
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
-        assert_eq!(
-            update_required_and_forbidden(&mut grid),
-            Ok(Some(RequiredAndForbidden.into()))
-        );
+        assert_eq!(update_required_and_forbidden(&mut grid), Ok(Some(RequiredAndForbidden.into())));
         assert_eq!(setti(&mut grid), Ok(Some(Setti(set([5])).into())));
         assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
 

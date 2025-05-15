@@ -2,7 +2,7 @@ use crate::wasm_grid::WasmGrid;
 use crate::wasm_validation_result::WasmValidationResult;
 use serde::{Deserialize, Serialize};
 use solver::grid::Point;
-use solver::solver::{SolveMetadata, SolveResults, SolveType};
+use solver::solve_result::{SolveMetadata, SolveResults, SolveType};
 use solver::strats::UrResult;
 use std::collections::HashSet;
 use std::rc::Rc;
@@ -38,12 +38,7 @@ pub enum WasmSolveType {
     Medusa,
     UniqueRequirement(WasmUrResult),
     StartGuess(Point, u8),
-    GuessStep(
-        Point,
-        u8,
-        Vec<(WasmGrid, WasmSolveResult, String)>,
-        WasmGrid,
-    ),
+    GuessStep(Point, u8, Vec<(WasmGrid, WasmSolveResult, String)>, WasmGrid),
     EndGuess(WasmValidationResult),
     PuzzleSolved,
     EnumerateSolutions,
@@ -57,17 +52,13 @@ pub struct WasmSolveResult {
 
 impl From<SolveMetadata> for WasmSolveMetadata {
     fn from(value: SolveMetadata) -> Self {
-        WasmSolveMetadata {
-            colors: value.colors,
-        }
+        WasmSolveMetadata { colors: value.colors }
     }
 }
 
 impl From<WasmSolveMetadata> for SolveMetadata {
     fn from(value: WasmSolveMetadata) -> Self {
-        SolveMetadata {
-            colors: value.colors,
-        }
+        SolveMetadata { colors: value.colors }
     }
 }
 
@@ -75,17 +66,11 @@ impl From<UrResult> for WasmUrResult {
     fn from(value: UrResult) -> Self {
         match value {
             UrResult::SingleUnique((x, y), n) => WasmUrResult::SingleUnique((x, y), n),
-            UrResult::IntraCompartmentUnique((x, y), n) => {
-                WasmUrResult::IntraCompartmentUnique((x, y), n)
-            }
+            UrResult::IntraCompartmentUnique((x, y), n) => WasmUrResult::IntraCompartmentUnique((x, y), n),
             UrResult::ClosedSetCompartment(set, n) => WasmUrResult::ClosedSetCompartment(set, n),
-            UrResult::SingleCellWouldBecomeFree((x, y), n) => {
-                WasmUrResult::SingleCellWouldBecomeFree((x, y), n)
-            }
+            UrResult::SingleCellWouldBecomeFree((x, y), n) => WasmUrResult::SingleCellWouldBecomeFree((x, y), n),
             UrResult::UrSetti(set, b, n) => WasmUrResult::UrSetti(set, b, n),
-            UrResult::SolutionCausesClosedSets((x, y), n) => {
-                WasmUrResult::SolutionCausesClosedSets((x, y), n)
-            }
+            UrResult::SolutionCausesClosedSets((x, y), n) => WasmUrResult::SolutionCausesClosedSets((x, y), n),
         }
     }
 }
@@ -94,17 +79,11 @@ impl From<WasmUrResult> for UrResult {
     fn from(value: WasmUrResult) -> Self {
         match value {
             WasmUrResult::SingleUnique((x, y), n) => UrResult::SingleUnique((x, y), n),
-            WasmUrResult::IntraCompartmentUnique((x, y), n) => {
-                UrResult::IntraCompartmentUnique((x, y), n)
-            }
+            WasmUrResult::IntraCompartmentUnique((x, y), n) => UrResult::IntraCompartmentUnique((x, y), n),
             WasmUrResult::ClosedSetCompartment(set, n) => UrResult::ClosedSetCompartment(set, n),
-            WasmUrResult::SingleCellWouldBecomeFree((x, y), n) => {
-                UrResult::SingleCellWouldBecomeFree((x, y), n)
-            }
+            WasmUrResult::SingleCellWouldBecomeFree((x, y), n) => UrResult::SingleCellWouldBecomeFree((x, y), n),
             WasmUrResult::UrSetti(set, b, n) => UrResult::UrSetti(set, b, n),
-            WasmUrResult::SolutionCausesClosedSets((x, y), n) => {
-                UrResult::SolutionCausesClosedSets((x, y), n)
-            }
+            WasmUrResult::SolutionCausesClosedSets((x, y), n) => UrResult::SolutionCausesClosedSets((x, y), n),
         }
     }
 }
@@ -163,13 +142,7 @@ impl From<WasmSolveType> for SolveType {
             WasmSolveType::GuessStep((x, y), n, steps, grid) => SolveType::GuessStep(
                 (x, y),
                 n,
-                Rc::new(
-                    steps
-                        .iter()
-                        .cloned()
-                        .map(|(l, r, _)| (l.into(), r.into()))
-                        .collect(),
-                ),
+                Rc::new(steps.iter().cloned().map(|(l, r, _)| (l.into(), r.into())).collect()),
                 grid.into(),
             ),
             WasmSolveType::EndGuess(res) => SolveType::EndGuess(res.into()),

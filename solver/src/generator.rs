@@ -1,7 +1,8 @@
 use crate::difficulty::get_puzzle_difficulty;
 use crate::grid::{Cell, Grid, Point};
-use crate::solver::SolveType;
-use crate::solver::{into_ty, run_strat, StrategyList, ValidationError};
+use crate::solve_result::{into_ty, SolveType, ValidationError};
+use crate::solver::run_strat;
+use crate::strategy::StrategyList;
 use crate::validator::validate;
 use log::debug;
 use rand::prelude::*;
@@ -57,12 +58,7 @@ pub fn fill_numbers<Rand: Rng + Send + Clone>(grid: Grid, rng: &mut Rand) -> Opt
     while let Some(Task(index, rng, grid)) = queue.pop() {
         if index > max_depth {
             max_depth = index;
-            debug!(
-                "Reached {}/{} (queue={})",
-                max_depth,
-                order.len(),
-                queue.len()
-            );
+            debug!("Reached {}/{} (queue={})", max_depth, order.len(), queue.len());
         }
 
         if index >= order.len() {
@@ -94,9 +90,7 @@ pub fn fill_numbers<Rand: Rng + Send + Clone>(grid: Grid, rng: &mut Rand) -> Opt
                     new_grid.set_cell(pos, Cell::Requirement(num));
                     loop {
                         match into_ty(run_strat(&mut new_grid, &StrategyList::no_guesses())) {
-                            Err(ValidationError::OutOfStrats) | Ok(SolveType::PuzzleSolved) => {
-                                break
-                            }
+                            Err(ValidationError::OutOfStrats) | Ok(SolveType::PuzzleSolved) => break,
                             Ok(_) => {}
                             Err(_) => return None,
                         }
@@ -135,11 +129,10 @@ pub fn generate_solved_grid<Rand: Rng + Send + Clone>(
         .collect::<Vec<_>>();
     blockers.shuffle(rng);
 
-    for (x, y) in blockers.into_iter().take(if symmetric {
-        blocker_count / 2
-    } else {
-        blocker_count
-    }) {
+    for (x, y) in blockers
+        .into_iter()
+        .take(if symmetric { blocker_count / 2 } else { blocker_count })
+    {
         grid.set_cell((x, y), Cell::Black);
         if symmetric {
             grid.set_cell((size - x - 1, size - y - 1), Cell::Black);
@@ -286,9 +279,8 @@ pub fn remove_numbers<Rand: Rng + Send + Clone>(
                             }
                             seen.insert(grid_hash);
                         }
-                        get_puzzle_difficulty(&grid, &strats).map(|difficulty| {
-                            Task((difficulty.star_count, difficulty.move_count), rng, grid)
-                        })
+                        get_puzzle_difficulty(&grid, &strats)
+                            .map(|difficulty| Task((difficulty.star_count, difficulty.move_count), rng, grid))
                     })
                     .collect::<Vec<_>>()
                     .into_par_iter()
@@ -337,14 +329,7 @@ pub fn generator_loop(
     }
     loop {
         let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(seed);
-        match generate_puzzle(
-            size,
-            blocker_count,
-            blocker_num_count,
-            target_difficulty,
-            symmetric,
-            &mut rng,
-        ) {
+        match generate_puzzle(size, blocker_count, blocker_num_count, target_difficulty, symmetric, &mut rng) {
             None => {}
             Some((grid, difficulty)) => {
                 if difficulty == target_difficulty {
@@ -364,12 +349,5 @@ pub fn generator(
     symmetric: bool,
 ) -> Grid {
     let mut rng = rand_chacha::ChaCha8Rng::from_seed(rng().random());
-    generator_loop(
-        size,
-        blocker_count,
-        blocker_num_count,
-        target_difficulty,
-        symmetric,
-        rng.next_u64(),
-    )
+    generator_loop(size, blocker_count, blocker_num_count, target_difficulty, symmetric, rng.next_u64())
 }
