@@ -45,7 +45,7 @@ impl Strategy {
     }
 }
 
-const ALL_STRATEGIES: [Strategy; 16] = [
+const ALL_STRATEGIES: &[Strategy] = &[
     Strategy::UpdateImpossibles,
     Strategy::Singles,
     Strategy::Stranded,

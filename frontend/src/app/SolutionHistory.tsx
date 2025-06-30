@@ -49,13 +49,14 @@ function borderForSolution(cell: WasmSolveType): string {
     cell === "EnumerateSolutions"
   )
     return "";
+  if (cell === "Medusa") return "border-t-8 border-t-blue-800";
   if (cell === "RequiredAndForbidden" || cell === "RowColBrute" || "Setti" in cell)
     return "border-t-8 border-t-blue-700";
   if ("YWing" in cell || "Sets" in cell) return "border-t-8 border-t-blue-700";
   if ("Fish" in cell && (cell.Fish === 2 || cell.Fish === 3)) return "border-t-8 border-t-blue-700";
   if ("Fish" in cell) return "border-t-8 border-t-blue-800";
   if ("SimpleUniqueRequirement" in cell) return "border-t-8 border-t-blue-800";
-  if ("Medusa" in cell || "UniqueRequirement" in cell) return "border-t-8 border-t-blue-800";
+  if ("UniqueRequirement" in cell) return "border-t-8 border-t-blue-800";
   if ("StartGuess" in cell || "GuessStep" in cell || "EndGuess" in cell) return "border-t-8 border-t-blue-800";
   unreachable(cell);
 }

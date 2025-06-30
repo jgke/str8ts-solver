@@ -1,8 +1,7 @@
 use crate::bitset::BitSet;
 use crate::grid::{Cell, Compartment, Grid, Point};
-use crate::solve_result::SolveType::{DefiniteMinMax, UniqueRequirement, UpdateImpossibles};
+use crate::solve_result::SolveType::UniqueRequirement;
 use crate::solve_result::{SolveMetadata, SolveResults, ValidationError, ValidationResult};
-use crate::strats;
 use crate::strats::get_compartment_range;
 use itertools::Itertools;
 
@@ -470,26 +469,26 @@ fn two_compartment_setti(grid: &mut Grid) -> Result<Option<SolveResults>, Valida
     Ok(None)
 }
 
-fn will_have_closed_sets(grid: &mut Grid) -> Result<bool, ValidationResult> {
-    strats::trivial(grid);
-    while strats::update_impossibles(grid)?.map(|t| t.ty) == Some(UpdateImpossibles) {
-        strats::trivial(grid);
-    }
-    while strats::definite_min_max(grid)?.map(|t| t.ty) == Some(DefiniteMinMax) {
-        strats::trivial(grid);
-    }
-    for ((_compartment, base_set, unresolved_pos), (_other, other_set, other_pos)) in compartment_pairs(grid) {
-        if unresolved_pos.len() == 2
-            && other_pos.len() == 2
-            && base_set == other_set
-            && base_set.len() == other_set.len()
-            && unresolved_pos.len() == base_set.len()
-        {
-            return Ok(true);
-        }
-    }
-    Ok(false)
-}
+//fn will_have_closed_sets(grid: &mut Grid) -> Result<bool, ValidationResult> {
+//    strats::trivial(grid);
+//    while strats::update_impossibles(grid)?.map(|t| t.ty) == Some(UpdateImpossibles) {
+//        strats::trivial(grid);
+//    }
+//    while strats::definite_min_max(grid)?.map(|t| t.ty) == Some(DefiniteMinMax) {
+//        strats::trivial(grid);
+//    }
+//    for ((_compartment, base_set, unresolved_pos), (_other, other_set, other_pos)) in compartment_pairs(grid) {
+//        if unresolved_pos.len() == 2
+//            && other_pos.len() == 2
+//            && base_set == other_set
+//            && base_set.len() == other_set.len()
+//            && unresolved_pos.len() == base_set.len()
+//        {
+//            return Ok(true);
+//        }
+//    }
+//    Ok(false)
+//}
 
 /* Setting a cell to be some number causes the grid to immediately contain
  * closed sets, causing ambiguity:
@@ -499,19 +498,19 @@ fn will_have_closed_sets(grid: &mut Grid) -> Result<bool, ValidationResult> {
  *
  * Setting (1, 1) to be 4 causes the remaining cells to be [23] pairs.
  */
-fn solution_causes_closed_sets(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
-    for (pos, set) in grid.iter_by_indeterminates() {
-        for num in set {
-            let mut subgrid = grid.clone();
-            subgrid.set_cell(pos, Cell::Solution(num));
-            if let Ok(true) = will_have_closed_sets(&mut subgrid) {
-                grid.set_impossible(pos, num)?;
-                return Ok(Some(UniqueRequirement(UrResult::SolutionCausesClosedSets(pos, num)).into()));
-            }
-        }
-    }
-    Ok(None)
-}
+// fn solution_causes_closed_sets(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
+//     for (pos, set) in grid.iter_by_indeterminates() {
+//         for num in set {
+//             let mut subgrid = grid.clone();
+//             subgrid.set_cell(pos, Cell::Solution(num));
+//             if let Ok(true) = will_have_closed_sets(&mut subgrid) {
+//                 grid.set_impossible(pos, num)?;
+//                 return Ok(Some(UniqueRequirement(UrResult::SolutionCausesClosedSets(pos, num)).into()));
+//             }
+//         }
+//     }
+//     Ok(None)
+// }
 
 pub fn unique_requirement(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
     for ((x, y), set) in grid.iter_by_indeterminates() {
@@ -537,11 +536,12 @@ pub fn unique_requirement(grid: &mut Grid) -> Result<Option<SolveResults>, Valid
     Ok(None)
 }
 
-pub fn unique_requirement_guess(grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
-    if let Some(res) = solution_causes_closed_sets(grid)? {
-        return Ok(Some(res));
-    }
-
+// Seems to be bugged...
+pub fn unique_requirement_guess(_grid: &mut Grid) -> Result<Option<SolveResults>, ValidationResult> {
+//    if let Some(res) = solution_causes_closed_sets(grid)? {
+//        return Ok(Some(res));
+//    }
+//
     Ok(None)
 }
 
@@ -695,41 +695,41 @@ mod tests {
         assert_eq!(grid.cells[3][2], det([3, 4, 5]));
     }
 
-    #[test]
-    fn test_two_compartment_intra() {
-        let mut grid = g("
-#########
-#.1.#####
-#...#####
-#.......#
-##......#
-#.......#
-#.......#
-#.......#
-#.......#
-");
-        grid.cells[1][1] = det([2, 3]);
-        grid.cells[1][3] = det([2, 3]);
-        grid.cells[3][3] = det([9]);
-        set_range(&mut grid, (1, 2), (3, 2), [1, 2, 3, 4]);
-        set_range(&mut grid, (1, 3), (3, 2), [2, 4, 6]);
-
-        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
-        assert_eq!(update_required_and_forbidden(&mut grid), Ok(Some(RequiredAndForbidden.into())));
-        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
-
-        assert_eq!(unique_requirement(&mut grid), Ok(None));
-
-        assert_eq!(
-            unique_requirement_guess(&mut grid),
-            Ok(Some(SolveResults {
-                ty: UniqueRequirement(UrResult::SolutionCausesClosedSets((2, 2), 4)),
-                meta: SolveMetadata { colors: vec![] }
-            }))
-        );
-
-        assert_eq!(grid.cells[2][2], det([2, 3]));
-    }
+//    #[test]
+//    fn test_two_compartment_intra() {
+//        let mut grid = g("
+//#########
+//#.1.#####
+//#...#####
+//#.......#
+//##......#
+//#.......#
+//#.......#
+//#.......#
+//#.......#
+//");
+//        grid.cells[1][1] = det([2, 3]);
+//        grid.cells[1][3] = det([2, 3]);
+//        grid.cells[3][3] = det([9]);
+//        set_range(&mut grid, (1, 2), (3, 2), [1, 2, 3, 4]);
+//        set_range(&mut grid, (1, 3), (3, 2), [2, 4, 6]);
+//
+//        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
+//        assert_eq!(update_required_and_forbidden(&mut grid), Ok(Some(RequiredAndForbidden.into())));
+//        assert_eq!(solve_basic(&mut grid), Err(OutOfStrats));
+//
+//        assert_eq!(unique_requirement(&mut grid), Ok(None));
+//
+//        assert_eq!(
+//            unique_requirement_guess(&mut grid),
+//            Ok(Some(SolveResults {
+//                ty: UniqueRequirement(UrResult::SolutionCausesClosedSets((2, 2), 4)),
+//                meta: SolveMetadata { colors: vec![] }
+//            }))
+//        );
+//
+//        assert_eq!(grid.cells[2][2], det([2, 3]));
+//    }
 
     #[test]
     fn compartment_would_have_free_cell() {

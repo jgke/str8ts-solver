@@ -54,7 +54,7 @@ export type WasmSolveType =
   | { Setti: number[] }
   | { YWing: [Point, number] }
   | { Fish: number }
-  | { Medusa: [[Point, number][], [Point, number][]] }
+  | "Medusa"
   | { UniqueRequirement: WasmUrResult }
   | { StartGuess: [Point, number] }
   | { GuessStep: [Point, number, [WasmGrid, WasmSolveResult, string][], WasmGrid] }
